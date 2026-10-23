@@ -383,61 +383,30 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                Icon(
+                                  isCompany
+                                      ? Icons.business
+                                      : Icons.person_outline,
+                                  color: AppColors.primaryAccent,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: AppSpacing.compact),
                                 Expanded(
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        isCompany
-                                            ? Icons.business
-                                            : Icons.person_outline,
-                                        color: AppColors.primaryAccent,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: AppSpacing.compact),
-                                      Expanded(
-                                        child: Text(
-                                          customer.displayName,
-                                          style: AppTypography.sectionTitle(
-                                            color: AppColors.textPrimary,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    customer.displayName,
+                                    style: AppTypography.sectionTitle(
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    StatusBadge(
-                                      label: customer.customerType
-                                          .toUpperCase(),
-                                      color: isCompany
-                                          ? AppColors.info
-                                          : AppColors.textSecondary,
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.edit_outlined,
-                                        size: 18,
-                                        color: AppColors.textMuted,
-                                      ),
-                                      tooltip: 'Edit customer',
-                                      onPressed: () =>
-                                          _openEditCustomerDialog(customer),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        size: 18,
-                                        color: AppColors.error,
-                                      ),
-                                      tooltip: 'Delete customer',
-                                      onPressed: () =>
-                                          _confirmDeleteCustomer(customer),
-                                    ),
-                                  ],
+                                const SizedBox(width: AppSpacing.compact),
+                                StatusBadge(
+                                  label: customer.customerType
+                                      .toUpperCase(),
+                                  color: isCompany
+                                      ? AppColors.info
+                                      : AppColors.textSecondary,
                                 ),
                               ],
                             ),
@@ -479,6 +448,48 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
                                     Icons.person_pin_outlined,
                                     'Contact: ${customer.profile!.fullName}',
                                   ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.compact),
+                            const Divider(
+                              color: AppColors.borderSubtle,
+                              height: 1,
+                            ),
+                            const SizedBox(height: AppSpacing.compact),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton.icon(
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 14,
+                                  ),
+                                  label: const Text('Edit'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.textPrimary,
+                                    side: const BorderSide(
+                                      color: AppColors.borderSubtle,
+                                    ),
+                                  ),
+                                  onPressed: () =>
+                                      _openEditCustomerDialog(customer),
+                                ),
+                                const SizedBox(width: AppSpacing.compact),
+                                OutlinedButton.icon(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 14,
+                                  ),
+                                  label: const Text('Delete'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.error,
+                                    side: const BorderSide(
+                                      color: AppColors.error,
+                                    ),
+                                  ),
+                                  onPressed: () =>
+                                      _confirmDeleteCustomer(customer),
+                                ),
                               ],
                             ),
                           ],

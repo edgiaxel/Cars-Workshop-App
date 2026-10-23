@@ -280,97 +280,93 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                                   ),
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  StatusBadge(
-                                    label: b.status.label.toUpperCase(),
-                                    color: statusColor,
-                                  ),
-                                  const SizedBox(width: AppSpacing.compact),
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(
-                                      Icons.more_vert,
-                                      color: AppColors.textSecondary,
-                                      size: 20,
+                              PopupMenuButton<String>(
+                                icon: const Icon(
+                                  Icons.more_vert,
+                                  color: AppColors.textSecondary,
+                                  size: 20,
+                                ),
+                                color: AppColors.surfacePrimary,
+                                onSelected: (action) {
+                                  switch (action) {
+                                    case 'approve':
+                                      _updateBookingStatusDialog(
+                                        b,
+                                        BookingStatus.approved,
+                                      );
+                                      break;
+                                    case 'schedule':
+                                      _updateBookingStatusDialog(
+                                        b,
+                                        BookingStatus.scheduled,
+                                      );
+                                      break;
+                                    case 'complete':
+                                      _updateBookingStatusDialog(
+                                        b,
+                                        BookingStatus.completed,
+                                      );
+                                      break;
+                                    case 'reject':
+                                      _updateBookingStatusDialog(
+                                        b,
+                                        BookingStatus.rejected,
+                                      );
+                                      break;
+                                    case 'cancel':
+                                      _updateBookingStatusDialog(
+                                        b,
+                                        BookingStatus.cancelled,
+                                      );
+                                      break;
+                                    case 'delete':
+                                      _confirmDeleteBooking(b);
+                                      break;
+                                  }
+                                },
+                                itemBuilder: (ctx) => [
+                                  if (b.status != BookingStatus.approved)
+                                    const PopupMenuItem(
+                                      value: 'approve',
+                                      child: Text('Approve Booking'),
                                     ),
-                                    color: AppColors.surfacePrimary,
-                                    onSelected: (action) {
-                                      switch (action) {
-                                        case 'approve':
-                                          _updateBookingStatusDialog(
-                                            b,
-                                            BookingStatus.approved,
-                                          );
-                                          break;
-                                        case 'schedule':
-                                          _updateBookingStatusDialog(
-                                            b,
-                                            BookingStatus.scheduled,
-                                          );
-                                          break;
-                                        case 'complete':
-                                          _updateBookingStatusDialog(
-                                            b,
-                                            BookingStatus.completed,
-                                          );
-                                          break;
-                                        case 'reject':
-                                          _updateBookingStatusDialog(
-                                            b,
-                                            BookingStatus.rejected,
-                                          );
-                                          break;
-                                        case 'cancel':
-                                          _updateBookingStatusDialog(
-                                            b,
-                                            BookingStatus.cancelled,
-                                          );
-                                          break;
-                                        case 'delete':
-                                          _confirmDeleteBooking(b);
-                                          break;
-                                      }
-                                    },
-                                    itemBuilder: (ctx) => [
-                                      if (b.status != BookingStatus.approved)
-                                        const PopupMenuItem(
-                                          value: 'approve',
-                                          child: Text('Approve Booking'),
-                                        ),
-                                      if (b.status != BookingStatus.scheduled)
-                                        const PopupMenuItem(
-                                          value: 'schedule',
-                                          child: Text('Schedule Appointment'),
-                                        ),
-                                      if (b.status != BookingStatus.completed)
-                                        const PopupMenuItem(
-                                          value: 'complete',
-                                          child: Text('Mark Completed'),
-                                        ),
-                                      if (b.status != BookingStatus.rejected)
-                                        const PopupMenuItem(
-                                          value: 'reject',
-                                          child: Text('Reject Booking'),
-                                        ),
-                                      if (b.status != BookingStatus.cancelled)
-                                        const PopupMenuItem(
-                                          value: 'cancel',
-                                          child: Text('Cancel Booking'),
-                                        ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Text(
-                                          'Delete Record',
-                                          style: TextStyle(
-                                            color: AppColors.error,
-                                          ),
-                                        ),
+                                  if (b.status != BookingStatus.scheduled)
+                                    const PopupMenuItem(
+                                      value: 'schedule',
+                                      child: Text('Schedule Appointment'),
+                                    ),
+                                  if (b.status != BookingStatus.completed)
+                                    const PopupMenuItem(
+                                      value: 'complete',
+                                      child: Text('Mark Completed'),
+                                    ),
+                                  if (b.status != BookingStatus.rejected)
+                                    const PopupMenuItem(
+                                      value: 'reject',
+                                      child: Text('Reject Booking'),
+                                    ),
+                                  if (b.status != BookingStatus.cancelled)
+                                    const PopupMenuItem(
+                                      value: 'cancel',
+                                      child: Text('Cancel Booking'),
+                                    ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text(
+                                      'Delete Record',
+                                      style: TextStyle(
+                                        color: AppColors.error,
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ],
                               ),
                             ],
+                          ),
+                          const SizedBox(height: AppSpacing.compact),
+                          StatusBadge(
+                            label: b.status.label.toUpperCase(),
+                            color: statusColor,
                           ),
                           const SizedBox(height: AppSpacing.compact),
                           Text(

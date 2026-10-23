@@ -404,56 +404,25 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                const Icon(
+                                  Icons.engineering,
+                                  color: AppColors.primaryAccent,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: AppSpacing.compact),
                                 Expanded(
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.engineering,
-                                        color: AppColors.primaryAccent,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: AppSpacing.compact),
-                                      Expanded(
-                                        child: Text(
-                                          mechanic.displayName,
-                                          style: AppTypography.sectionTitle(
-                                            color: AppColors.textPrimary,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    mechanic.displayName,
+                                    style: AppTypography.sectionTitle(
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    StatusBadge(
-                                      label: mechanic.employeeCode,
-                                      color: AppColors.info,
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.edit_outlined,
-                                        size: 18,
-                                        color: AppColors.textMuted,
-                                      ),
-                                      tooltip: 'Edit technician',
-                                      onPressed: () =>
-                                          _openEditMechanicDialog(mechanic),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        size: 18,
-                                        color: AppColors.error,
-                                      ),
-                                      tooltip: 'Remove technician',
-                                      onPressed: () =>
-                                          _confirmDeleteMechanic(mechanic),
-                                    ),
-                                  ],
+                                const SizedBox(width: AppSpacing.compact),
+                                StatusBadge(
+                                  label: mechanic.employeeCode,
+                                  color: AppColors.info,
                                 ),
                               ],
                             ),
@@ -496,6 +465,48 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
                                     'PHONE',
                                     mechanic.profile!.phone!,
                                   ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.compact),
+                            const Divider(
+                              color: AppColors.borderSubtle,
+                              height: 1,
+                            ),
+                            const SizedBox(height: AppSpacing.compact),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton.icon(
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 14,
+                                  ),
+                                  label: const Text('Edit'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.textPrimary,
+                                    side: const BorderSide(
+                                      color: AppColors.borderSubtle,
+                                    ),
+                                  ),
+                                  onPressed: () =>
+                                      _openEditMechanicDialog(mechanic),
+                                ),
+                                const SizedBox(width: AppSpacing.compact),
+                                OutlinedButton.icon(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 14,
+                                  ),
+                                  label: const Text('Delete'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.error,
+                                    side: const BorderSide(
+                                      color: AppColors.error,
+                                    ),
+                                  ),
+                                  onPressed: () =>
+                                      _confirmDeleteMechanic(mechanic),
+                                ),
                               ],
                             ),
                           ],

@@ -24,8 +24,7 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width ?? double.infinity,
+    final button = SizedBox(
       height: 48,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
@@ -71,6 +70,25 @@ class PrimaryButton extends StatelessWidget {
                 ],
               ),
       ),
+    );
+
+    if (width != null) {
+      return SizedBox(
+        width: width,
+        child: button,
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.hasBoundedWidth) {
+          return SizedBox(
+            width: double.infinity,
+            child: button,
+          );
+        }
+        return button;
+      },
     );
   }
 }

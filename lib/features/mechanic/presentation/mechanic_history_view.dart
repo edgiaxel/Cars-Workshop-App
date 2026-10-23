@@ -270,31 +270,71 @@ class _MechanicHistoryPageState extends ConsumerState<MechanicHistoryPage> {
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Status: ${item.status.label}',
-                                  style: AppTypography.technical(
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
-                                OutlinedButton.icon(
-                                  onPressed: () =>
-                                      _showArchivedLogDialog(context, item),
-                                  icon: const Icon(
-                                    Icons.receipt_long,
-                                    size: 16,
-                                  ),
-                                  label: const Text('View Telemetry Log'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppColors.primaryAccent,
-                                    side: const BorderSide(
-                                      color: AppColors.primaryAccent,
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isNarrow = constraints.maxWidth < 360;
+                                if (isNarrow) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Status: ${item.status.label}',
+                                        style: AppTypography.technical(
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                      const SizedBox(height: AppSpacing.compact),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: OutlinedButton.icon(
+                                          onPressed: () =>
+                                              _showArchivedLogDialog(context, item),
+                                          icon: const Icon(
+                                            Icons.receipt_long,
+                                            size: 16,
+                                          ),
+                                          label: const Text('View Telemetry Log'),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: AppColors.primaryAccent,
+                                            side: const BorderSide(
+                                              color: AppColors.primaryAccent,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Status: ${item.status.label}',
+                                        style: AppTypography.technical(
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ],
+                                    const SizedBox(width: AppSpacing.compact),
+                                    OutlinedButton.icon(
+                                      onPressed: () =>
+                                          _showArchivedLogDialog(context, item),
+                                      icon: const Icon(
+                                        Icons.receipt_long,
+                                        size: 16,
+                                      ),
+                                      label: const Text('View Telemetry Log'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: AppColors.primaryAccent,
+                                        side: const BorderSide(
+                                          color: AppColors.primaryAccent,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ],
                         ),

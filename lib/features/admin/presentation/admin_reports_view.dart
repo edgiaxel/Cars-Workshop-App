@@ -288,26 +288,11 @@ class AdminReportsPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Wrapped header to guarantee no row overflow on small screens
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: AppTypography.sectionTitle(
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.compact),
-                      StatusBadge(
-                        label: status.toUpperCase(),
-                        color: statusColor,
-                      ),
-                    ],
+                  Text(
+                    title,
+                    style: AppTypography.sectionTitle(
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.compact),
                   Text(
@@ -315,6 +300,11 @@ class AdminReportsPage extends ConsumerWidget {
                     style: AppTypography.bodySmall(
                       color: AppColors.textSecondary,
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.standard),
+                  StatusBadge(
+                    label: status.toUpperCase(),
+                    color: statusColor,
                   ),
                 ],
               ),

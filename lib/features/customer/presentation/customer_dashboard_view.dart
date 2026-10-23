@@ -117,7 +117,6 @@ class CustomerDashboardView extends ConsumerWidget {
                   StatCard(
                     title: 'My Vehicles',
                     value: '${vehicles.length} Cars',
-                    technicalCode: 'GAR-FLEET',
                     badgeText: 'REGISTERED',
                     badgeColor: AppColors.info,
                     icon: Icons.directions_car_outlined,
@@ -125,7 +124,6 @@ class CustomerDashboardView extends ConsumerWidget {
                   StatCard(
                     title: 'Active Bookings',
                     value: '${activeBookings.length} Queued',
-                    technicalCode: 'BKG-ACT',
                     badgeText: activeBookings.isNotEmpty ? 'SCHEDULED' : 'NONE',
                     badgeColor: activeBookings.isNotEmpty
                         ? AppColors.warning
@@ -135,7 +133,6 @@ class CustomerDashboardView extends ConsumerWidget {
                   StatCard(
                     title: 'Reminders',
                     value: '${reminders.length} Due',
-                    technicalCode: 'REM-DUE',
                     badgeText: reminders.isNotEmpty ? 'ATTENTION' : 'CLEAR',
                     badgeColor: reminders.isNotEmpty
                         ? AppColors.primaryAccent
@@ -145,7 +142,6 @@ class CustomerDashboardView extends ConsumerWidget {
                   StatCard(
                     title: 'Service History',
                     value: '${completedOrders.length} Records',
-                    technicalCode: 'HIST-ARCH',
                     badgeText: 'COMPLETED',
                     badgeColor: AppColors.statusCompleted,
                     icon: Icons.receipt_long_outlined,

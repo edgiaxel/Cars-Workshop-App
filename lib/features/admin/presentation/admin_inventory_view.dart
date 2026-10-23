@@ -12,6 +12,7 @@ import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/pit_card.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../../../shared/widgets/search_filter_bar.dart';
+import '../../../shared/widgets/secondary_button.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/status_badge.dart';
 import 'admin_shell.dart';
@@ -54,9 +55,13 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
   }
 
   void _openPartDialog([SparePart? part]) {
-    showDialog<void>(
+    showModalBottomSheet<void>(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfacePrimary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (dialogCtx) => _PartFormDialog(
         part: part,
         onSave: (payload) async {
@@ -216,8 +221,6 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
@@ -228,37 +231,14 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                                       ),
                                     ),
                                   ),
-                                  Row(
-                                    children: [
-                                      StatusBadge(
-                                        label: isLowStock
-                                            ? 'LOW STOCK'
-                                            : 'IN STOCK',
-                                        color: isLowStock
-                                            ? AppColors.error
-                                            : AppColors.statusCompleted,
-                                      ),
-                                      const SizedBox(width: AppSpacing.compact),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.edit_outlined,
-                                          color: AppColors.textMuted,
-                                          size: 18,
-                                        ),
-                                        tooltip: 'Edit part',
-                                        onPressed: () => _openPartDialog(part),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: AppColors.error,
-                                          size: 18,
-                                        ),
-                                        tooltip: 'Delete part',
-                                        onPressed: () =>
-                                            _confirmDeletePart(part),
-                                      ),
-                                    ],
+                                  const SizedBox(width: AppSpacing.compact),
+                                  StatusBadge(
+                                    label: isLowStock
+                                        ? 'LOW STOCK'
+                                        : 'IN STOCK',
+                                    color: isLowStock
+                                        ? AppColors.error
+                                        : AppColors.statusCompleted,
                                   ),
                                 ],
                               ),
@@ -327,6 +307,47 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                                     style: AppTypography.label(
                                       color: AppColors.primaryAccent,
                                     ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.compact),
+                              const Divider(
+                                color: AppColors.borderSubtle,
+                                height: 1,
+                              ),
+                              const SizedBox(height: AppSpacing.compact),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  OutlinedButton.icon(
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      size: 14,
+                                    ),
+                                    label: const Text('Edit'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.textPrimary,
+                                      side: const BorderSide(
+                                        color: AppColors.borderSubtle,
+                                      ),
+                                    ),
+                                    onPressed: () => _openPartDialog(part),
+                                  ),
+                                  const SizedBox(width: AppSpacing.compact),
+                                  OutlinedButton.icon(
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      size: 14,
+                                    ),
+                                    label: const Text('Delete'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.error,
+                                      side: const BorderSide(
+                                        color: AppColors.error,
+                                      ),
+                                    ),
+                                    onPressed: () =>
+                                        _confirmDeletePart(part),
                                   ),
                                 ],
                               ),
@@ -467,34 +488,37 @@ class _PartFormDialogState extends State<_PartFormDialog> {
   Widget build(BuildContext context) {
     final isEditing = widget.part != null;
 
-    return Dialog(
-      backgroundColor: AppColors.surfacePrimary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 550),
-        child: SingleChildScrollView(
-          padding: AppSpacing.paddingSection,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      isEditing ? 'Edit Spare Part' : 'Add New Spare Part',
-                      style: AppTypography.sectionTitle(),
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.standard,
+        right: AppSpacing.standard,
+        top: AppSpacing.section,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.section,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isEditing ? 'EDIT SPARE PART' : 'ADD NEW SPARE PART',
+                    style: AppTypography.sectionTitle(
+                      color: AppColors.textPrimary,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: AppColors.textMuted),
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.textMuted),
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.pop(context),
+                  ),
+                ],
+              ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: AppSpacing.compact),
                   Container(
@@ -669,22 +693,22 @@ class _PartFormDialogState extends State<_PartFormDialog> {
                 ),
                 const SizedBox(height: AppSpacing.section),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: AppTypography.label(color: AppColors.textMuted),
+                    Expanded(
+                      child: SecondaryButton(
+                        text: 'Cancel',
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.pop(context),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.compact),
-                    PrimaryButton(
-                      text: isEditing ? 'Save Changes' : 'Create Part',
-                      isLoading: _isLoading,
-                      onPressed: _submit,
+                    const SizedBox(width: AppSpacing.standard),
+                    Expanded(
+                      child: PrimaryButton(
+                        text: isEditing ? 'Save Changes' : 'Create Part',
+                        isLoading: _isLoading,
+                        onPressed: _submit,
+                      ),
                     ),
                   ],
                 ),
@@ -692,8 +716,7 @@ class _PartFormDialogState extends State<_PartFormDialog> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

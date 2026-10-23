@@ -383,8 +383,8 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   service.scheduledStart != null
@@ -394,7 +394,9 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
                                     color: AppColors.textMuted,
                                   ),
                                 ),
+                                const SizedBox(height: AppSpacing.compact),
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     OutlinedButton(
                                       onPressed: () => _showJobDetailsDialog(

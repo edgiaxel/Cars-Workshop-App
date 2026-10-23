@@ -15,6 +15,7 @@ import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/pit_card.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../../../shared/widgets/search_filter_bar.dart';
+import '../../../shared/widgets/secondary_button.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/status_badge.dart';
 import 'admin_shell.dart';
@@ -58,9 +59,13 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
   }
 
   void _openOrderDialog([ServiceOrder? order]) {
-    showDialog<void>(
+    showModalBottomSheet<void>(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfacePrimary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (dialogCtx) => _ServiceOrderFormDialog(
         order: order,
         onSave: (payload) async {
@@ -259,95 +264,91 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                                   ),
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  StatusBadge.forServiceStatus(
-                                    order.status.value,
+                              PopupMenuButton<String>(
+                                icon: const Icon(
+                                  Icons.more_vert,
+                                  color: AppColors.textSecondary,
+                                  size: 20,
+                                ),
+                                color: AppColors.surfacePrimary,
+                                onSelected: (action) {
+                                  switch (action) {
+                                    case 'edit':
+                                      _openOrderDialog(order);
+                                      break;
+                                    case 'status_in_progress':
+                                      _quickStatusUpdate(
+                                        order,
+                                        ServiceStatus.inProgress,
+                                      );
+                                      break;
+                                    case 'status_waiting_parts':
+                                      _quickStatusUpdate(
+                                        order,
+                                        ServiceStatus.waitingForParts,
+                                      );
+                                      break;
+                                    case 'status_completed':
+                                      _quickStatusUpdate(
+                                        order,
+                                        ServiceStatus.completed,
+                                      );
+                                      break;
+                                    case 'status_closed':
+                                      _quickStatusUpdate(
+                                        order,
+                                        ServiceStatus.closed,
+                                      );
+                                      break;
+                                    case 'delete':
+                                      _confirmDeleteOrder(order);
+                                      break;
+                                  }
+                                },
+                                itemBuilder: (ctx) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Text('Edit Order Details'),
                                   ),
-                                  const SizedBox(width: AppSpacing.compact),
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(
-                                      Icons.more_vert,
-                                      color: AppColors.textSecondary,
-                                      size: 20,
+                                  if (order.status !=
+                                      ServiceStatus.inProgress)
+                                    const PopupMenuItem(
+                                      value: 'status_in_progress',
+                                      child: Text('Mark In Progress'),
                                     ),
-                                    color: AppColors.surfacePrimary,
-                                    onSelected: (action) {
-                                      switch (action) {
-                                        case 'edit':
-                                          _openOrderDialog(order);
-                                          break;
-                                        case 'status_in_progress':
-                                          _quickStatusUpdate(
-                                            order,
-                                            ServiceStatus.inProgress,
-                                          );
-                                          break;
-                                        case 'status_waiting_parts':
-                                          _quickStatusUpdate(
-                                            order,
-                                            ServiceStatus.waitingForParts,
-                                          );
-                                          break;
-                                        case 'status_completed':
-                                          _quickStatusUpdate(
-                                            order,
-                                            ServiceStatus.completed,
-                                          );
-                                          break;
-                                        case 'status_closed':
-                                          _quickStatusUpdate(
-                                            order,
-                                            ServiceStatus.closed,
-                                          );
-                                          break;
-                                        case 'delete':
-                                          _confirmDeleteOrder(order);
-                                          break;
-                                      }
-                                    },
-                                    itemBuilder: (ctx) => [
-                                      const PopupMenuItem(
-                                        value: 'edit',
-                                        child: Text('Edit Order Details'),
+                                  if (order.status !=
+                                      ServiceStatus.waitingForParts)
+                                    const PopupMenuItem(
+                                      value: 'status_waiting_parts',
+                                      child: Text('Mark Waiting For Parts'),
+                                    ),
+                                  if (order.status !=
+                                      ServiceStatus.completed)
+                                    const PopupMenuItem(
+                                      value: 'status_completed',
+                                      child: Text('Mark Completed'),
+                                    ),
+                                  if (order.status != ServiceStatus.closed)
+                                    const PopupMenuItem(
+                                      value: 'status_closed',
+                                      child: Text('Close Order'),
+                                    ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text(
+                                      'Delete Order',
+                                      style: TextStyle(
+                                        color: AppColors.error,
                                       ),
-                                      if (order.status !=
-                                          ServiceStatus.inProgress)
-                                        const PopupMenuItem(
-                                          value: 'status_in_progress',
-                                          child: Text('Mark In Progress'),
-                                        ),
-                                      if (order.status !=
-                                          ServiceStatus.waitingForParts)
-                                        const PopupMenuItem(
-                                          value: 'status_waiting_parts',
-                                          child: Text('Mark Waiting For Parts'),
-                                        ),
-                                      if (order.status !=
-                                          ServiceStatus.completed)
-                                        const PopupMenuItem(
-                                          value: 'status_completed',
-                                          child: Text('Mark Completed'),
-                                        ),
-                                      if (order.status != ServiceStatus.closed)
-                                        const PopupMenuItem(
-                                          value: 'status_closed',
-                                          child: Text('Close Order'),
-                                        ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Text(
-                                          'Delete Order',
-                                          style: TextStyle(
-                                            color: AppColors.error,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ],
                               ),
                             ],
+                          ),
+                          const SizedBox(height: AppSpacing.compact),
+                          StatusBadge.forServiceStatus(
+                            order.status.value,
                           ),
                           const SizedBox(height: AppSpacing.compact),
                           Text(
@@ -538,36 +539,39 @@ class _ServiceOrderFormDialogState
     final vehiclesAsync = ref.watch(vehiclesProvider);
     final mechanicsAsync = ref.watch(mechanicsProvider);
 
-    return Dialog(
-      backgroundColor: AppColors.surfacePrimary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 550),
-        child: SingleChildScrollView(
-          padding: AppSpacing.paddingSection,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      isEditing
-                          ? 'Edit Service Order'
-                          : 'Create Service Ticket',
-                      style: AppTypography.sectionTitle(),
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.standard,
+        right: AppSpacing.standard,
+        top: AppSpacing.section,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.section,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isEditing
+                        ? 'EDIT SERVICE ORDER'
+                        : 'CREATE SERVICE TICKET',
+                    style: AppTypography.sectionTitle(
+                      color: AppColors.textPrimary,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: AppColors.textMuted),
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.textMuted),
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.pop(context),
+                  ),
+                ],
+              ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: AppSpacing.compact),
                   Container(
@@ -750,29 +754,28 @@ class _ServiceOrderFormDialogState
                     hintText: 'Customer symptoms, diagnostics plan, etc.',
                   ),
                 ),
-                const SizedBox(height: AppSpacing.section),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
+              const SizedBox(height: AppSpacing.section),
+              Row(
+                children: [
+                  Expanded(
+                    child: SecondaryButton(
+                      text: 'Cancel',
                       onPressed: _isLoading
                           ? null
                           : () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: AppTypography.label(color: AppColors.textMuted),
-                      ),
                     ),
-                    const SizedBox(width: AppSpacing.compact),
-                    PrimaryButton(
+                  ),
+                  const SizedBox(width: AppSpacing.standard),
+                  Expanded(
+                    child: PrimaryButton(
                       text: isEditing ? 'Save Changes' : 'Create Ticket',
                       isLoading: _isLoading,
                       onPressed: _submit,
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

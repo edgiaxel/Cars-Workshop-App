@@ -552,56 +552,25 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                const Icon(
+                                  Icons.directions_car,
+                                  color: AppColors.primaryAccent,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: AppSpacing.compact),
                                 Expanded(
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.directions_car,
-                                        color: AppColors.primaryAccent,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: AppSpacing.compact),
-                                      Expanded(
-                                        child: Text(
-                                          vehicle.displayName,
-                                          style: AppTypography.sectionTitle(
-                                            color: AppColors.textPrimary,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    vehicle.displayName,
+                                    style: AppTypography.sectionTitle(
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    StatusBadge(
-                                      label: vehicle.identifierLabel,
-                                      color: AppColors.primaryAccent,
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.edit_outlined,
-                                        size: 18,
-                                        color: AppColors.textMuted,
-                                      ),
-                                      tooltip: 'Edit vehicle',
-                                      onPressed: () =>
-                                          _openVehicleDialog(vehicle: vehicle),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        size: 18,
-                                        color: AppColors.error,
-                                      ),
-                                      tooltip: 'Remove vehicle',
-                                      onPressed: () =>
-                                          _confirmDeleteVehicle(vehicle),
-                                    ),
-                                  ],
+                                const SizedBox(width: AppSpacing.compact),
+                                StatusBadge(
+                                  label: vehicle.identifierLabel,
+                                  color: AppColors.primaryAccent,
                                 ),
                               ],
                             ),
@@ -665,6 +634,48 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
                                     Icons.confirmation_number_outlined,
                                     'VIN: ${vehicle.vin!}',
                                   ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.compact),
+                            const Divider(
+                              color: AppColors.borderSubtle,
+                              height: 1,
+                            ),
+                            const SizedBox(height: AppSpacing.compact),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton.icon(
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 14,
+                                  ),
+                                  label: const Text('Edit'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.textPrimary,
+                                    side: const BorderSide(
+                                      color: AppColors.borderSubtle,
+                                    ),
+                                  ),
+                                  onPressed: () =>
+                                      _openVehicleDialog(vehicle: vehicle),
+                                ),
+                                const SizedBox(width: AppSpacing.compact),
+                                OutlinedButton.icon(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 14,
+                                  ),
+                                  label: const Text('Delete'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.error,
+                                    side: const BorderSide(
+                                      color: AppColors.error,
+                                    ),
+                                  ),
+                                  onPressed: () =>
+                                      _confirmDeleteVehicle(vehicle),
+                                ),
                               ],
                             ),
                           ],

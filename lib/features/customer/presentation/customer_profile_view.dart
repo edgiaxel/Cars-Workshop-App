@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/router/route_paths.dart';
@@ -163,12 +164,12 @@ class CustomerProfilePage extends ConsumerWidget {
     final customer = customerAsync.asData?.value;
     final vehicles = vehiclesAsync.asData?.value ?? [];
 
-    final displayName =
-        customer?.displayName ?? profile?.fullName ?? 'Axel Zeed';
-    final email = authState.email ?? 'lexazeed@gmail.com';
-    final phone = customer?.profile?.phone ?? '+62 812-9988-7766';
-    final address = customer?.address ?? 'Jl. Dipati Ukur No. 45, Bandung';
+    final displayName = customer?.displayName ?? profile?.fullName ?? 'User';
+    final email = authState.email ?? 'user@pitmate.co';
+    final phone = customer?.profile?.phone ?? profile?.phone ?? '-';
+    final address = customer?.address ?? '-';
     final customerType = customer?.customerType ?? 'individual';
+    final rawAccountId = customer?.id ?? profile?.id ?? 'cust-001';
 
     return CustomerShell(
       currentRoute: RoutePaths.customerProfile,
@@ -177,41 +178,41 @@ class CustomerProfilePage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SectionHeader(
+            const SectionHeader(
               title: 'CUSTOMER ACCOUNT PROFILE',
               subtitle:
                   'Identity, contact details, and workshop garage membership',
-              action: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.edit, size: 16),
-                    label: const Text('Edit Profile'),
-                    onPressed: () => _showEditProfileDialog(
-                      context,
-                      displayName,
-                      phone,
-                      address,
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryAccent,
-                      side: const BorderSide(color: AppColors.primaryAccent),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.compact),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.lock_reset, size: 16),
-                    label: const Text('Security'),
-                    onPressed: () => _showSecurityDialog(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textPrimary,
-                      side: const BorderSide(color: AppColors.borderSubtle),
-                    ),
-                  ),
-                ],
-              ),
             ),
             const SizedBox(height: AppSpacing.compact),
+            Row(
+              children: [
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('Edit Profile'),
+                  onPressed: () => _showEditProfileDialog(
+                    context,
+                    displayName,
+                    phone,
+                    address,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryAccent,
+                    side: const BorderSide(color: AppColors.primaryAccent),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.compact),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.lock_reset, size: 16),
+                  label: const Text('Security'),
+                  onPressed: () => _showSecurityDialog(context),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textPrimary,
+                    side: const BorderSide(color: AppColors.borderSubtle),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.standard),
 
             PitCard(
               technicalLabel:
@@ -220,55 +221,51 @@ class CustomerProfilePage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundColor: AppColors.surfaceSecondary,
-                            child: Text(
-                              (displayName.isNotEmpty ? displayName[0] : 'A')
-                                  .toUpperCase(),
-                              style: AppTypography.displayLarge().copyWith(
-                                fontSize: 24,
-                                color: AppColors.primaryAccent,
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: AppColors.surfaceSecondary,
+                        child: Text(
+                          (displayName.isNotEmpty ? displayName[0] : 'U')
+                              .toUpperCase(),
+                          style: AppTypography.displayLarge().copyWith(
+                            fontSize: 24,
+                            color: AppColors.primaryAccent,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.standard),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: AppTypography.sectionTitle(
+                                color: AppColors.textPrimary,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: AppSpacing.standard),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                displayName,
-                                style: AppTypography.sectionTitle(
-                                  color: AppColors.textPrimary,
-                                ),
+                            Text(
+                              email,
+                              style: AppTypography.bodySmall(
+                                color: AppColors.textSecondary,
                               ),
-                              Text(
-                                email,
-                                style: AppTypography.bodySmall(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const StatusBadge(
-                        label: 'VERIFIED CLIENT',
-                        color: AppColors.statusCompleted,
+                            ),
+                            const SizedBox(height: AppSpacing.compact),
+                            const StatusBadge(
+                              label: 'VERIFIED CLIENT',
+                              color: AppColors.statusCompleted,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.standard),
                   const Divider(color: AppColors.borderSubtle, height: 1),
                   const SizedBox(height: AppSpacing.standard),
-                  _buildProfileRow(
-                    'Account ID',
-                    customer?.id ?? profile?.id ?? 'cust-001',
-                  ),
+                  _buildAccountIdRow(context, rawAccountId),
                   _buildProfileRow(
                     'Customer Tier',
                     customerType == 'corporate'
@@ -289,36 +286,53 @@ class CustomerProfilePage extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.section),
-
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.standard),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSecondary,
-                borderRadius: BorderRadius.circular(AppRadius.card),
-                border: Border.all(color: AppColors.borderSubtle),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.verified_user_outlined,
-                    size: 20,
-                    color: AppColors.statusCompleted,
-                  ),
-                  const SizedBox(width: AppSpacing.standard),
-                  Expanded(
-                    child: Text(
-                      'Account profile is bound to public.customers in Supabase PostgreSQL with verified RLS access policies.',
-                      style: AppTypography.bodySmall(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAccountIdRow(BuildContext context, String rawId) {
+    final displayId = rawId.length > 8 ? rawId.substring(0, 8) : rawId;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'ACCOUNT ID',
+            style: AppTypography.technical(color: AppColors.textMuted),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                displayId.toUpperCase(),
+                style: AppTypography.technical(color: AppColors.textPrimary),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(
+                  Icons.copy,
+                  size: 14,
+                  color: AppColors.primaryAccent,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                tooltip: 'Copy ID',
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: rawId));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Account ID copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

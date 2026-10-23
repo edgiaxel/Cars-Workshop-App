@@ -13,6 +13,7 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/pit_card.dart';
 import '../../../shared/widgets/primary_button.dart';
+import '../../../shared/widgets/secondary_button.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/status_badge.dart';
 import 'customer_shell.dart';
@@ -44,9 +45,13 @@ class _CustomerBookingsPageState extends ConsumerState<CustomerBookingsPage> {
   }
 
   void _openBookingDialog() {
-    showDialog<void>(
+    showModalBottomSheet<void>(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfacePrimary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (dialogCtx) => _CustomerBookingDialog(
         onBookingCreated: () {
           ref.invalidate(customerBookingsProvider(null));
@@ -180,7 +185,6 @@ class _CustomerBookingsPageState extends ConsumerState<CustomerBookingsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
@@ -191,28 +195,23 @@ class _CustomerBookingsPageState extends ConsumerState<CustomerBookingsPage> {
                                     ),
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    StatusBadge(
-                                      label: b.status.label.toUpperCase(),
-                                      color: statusColor,
+                                if (isCancellable)
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.cancel_outlined,
+                                      size: 20,
                                     ),
-                                    if (isCancellable) ...[
-                                      const SizedBox(width: AppSpacing.compact),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.cancel_outlined,
-                                          size: 20,
-                                        ),
-                                        color: AppColors.error,
-                                        tooltip: 'Cancel Booking',
-                                        onPressed: () =>
-                                            _confirmCancelBooking(b),
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                                    color: AppColors.error,
+                                    tooltip: 'Cancel Booking',
+                                    onPressed: () =>
+                                        _confirmCancelBooking(b),
+                                  ),
                               ],
+                            ),
+                            const SizedBox(height: AppSpacing.compact),
+                            StatusBadge(
+                              label: b.status.label.toUpperCase(),
+                              color: statusColor,
                             ),
                             const SizedBox(height: AppSpacing.compact),
                             Text(
@@ -367,15 +366,16 @@ class _CustomerBookingDialogState
   Widget build(BuildContext context) {
     final vehiclesAsync = ref.watch(customerVehiclesProvider(null));
 
-    return Dialog(
-      backgroundColor: AppColors.surfacePrimary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: SingleChildScrollView(
-          padding: AppSpacing.paddingSection,
-          child: Form(
-            key: _formKey,
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.standard,
+        right: AppSpacing.standard,
+        top: AppSpacing.section,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.section,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -519,22 +519,22 @@ class _CustomerBookingDialogState
                 ),
                 const SizedBox(height: AppSpacing.section),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: AppTypography.label(color: AppColors.textMuted),
+                    Expanded(
+                      child: SecondaryButton(
+                        text: 'Cancel',
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.pop(context),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.compact),
-                    PrimaryButton(
-                      text: 'Submit Request',
-                      isLoading: _isLoading,
-                      onPressed: _submit,
+                    const SizedBox(width: AppSpacing.standard),
+                    Expanded(
+                      child: PrimaryButton(
+                        text: 'Submit Request',
+                        isLoading: _isLoading,
+                        onPressed: _submit,
+                      ),
                     ),
                   ],
                 ),
@@ -542,7 +542,6 @@ class _CustomerBookingDialogState
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

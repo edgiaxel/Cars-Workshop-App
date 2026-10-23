@@ -110,10 +110,15 @@ class MechanicEarningsPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SectionHeader(
+            const SectionHeader(
               title: 'COMPENSATION & EARNINGS',
-              subtitle: 'Technician base hourly agreement, commission structure, and service allocations',
-              action: OutlinedButton.icon(
+              subtitle:
+                  'Technician base hourly agreement, commission structure, and service allocations',
+            ),
+            const SizedBox(height: AppSpacing.compact),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
                 icon: const Icon(Icons.receipt_long, size: 16),
                 label: const Text('Request Statement'),
                 onPressed: () => _showStatementDialog(context, mechanicName),
@@ -123,7 +128,7 @@ class MechanicEarningsPage extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.compact),
+            const SizedBox(height: AppSpacing.standard),
 
             // Profile rate metrics
             LayoutBuilder(
@@ -233,15 +238,23 @@ class MechanicEarningsPage extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label.toUpperCase(),
-            style: AppTypography.technical(color: AppColors.textMuted),
+          Expanded(
+            flex: 4,
+            child: Text(
+              label.toUpperCase(),
+              style: AppTypography.technical(color: AppColors.textMuted),
+            ),
           ),
-          Text(
-            value,
-            style: AppTypography.bodySmall(color: AppColors.textPrimary),
+          const SizedBox(width: AppSpacing.compact),
+          Expanded(
+            flex: 5,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTypography.bodySmall(color: AppColors.textPrimary),
+            ),
           ),
         ],
       ),
