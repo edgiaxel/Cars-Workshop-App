@@ -51,21 +51,6 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
         .setFilter(query: _searchQuery, status: status);
   }
 
-  Color _getStatusColor(BookingStatus status) {
-    switch (status) {
-      case BookingStatus.requested:
-        return AppColors.warning;
-      case BookingStatus.approved:
-        return AppColors.info;
-      case BookingStatus.scheduled:
-        return AppColors.statusInProgress;
-      case BookingStatus.completed:
-        return AppColors.statusCompleted;
-      case BookingStatus.rejected:
-      case BookingStatus.cancelled:
-        return AppColors.error;
-    }
-  }
 
   void _updateBookingStatusDialog(Booking booking, BookingStatus newStatus) {
     final notesController = TextEditingController(
@@ -110,7 +95,7 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: _getStatusColor(newStatus),
+              backgroundColor: newStatus.color,
             ),
             onPressed: () async {
               Navigator.pop(dialogCtx);
@@ -258,7 +243,6 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                       const SizedBox(height: AppSpacing.standard),
                   itemBuilder: (context, index) {
                     final b = bookings[index];
-                    final statusColor = _getStatusColor(b.status);
                     final shortId = b.id.length >= 8
                         ? b.id.substring(0, 8).toUpperCase()
                         : b.id.toUpperCase();
@@ -364,10 +348,7 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                             ],
                           ),
                           const SizedBox(height: AppSpacing.compact),
-                          StatusBadge(
-                            label: b.status.label.toUpperCase(),
-                            color: statusColor,
-                          ),
+                          StatusBadge.forBookingStatus(b.status),
                           const SizedBox(height: AppSpacing.compact),
                           Text(
                             'Client: ${b.customer?.displayName ?? 'Unknown Client'} • Vehicle: ${b.vehicle?.displayName ?? 'Vehicle'} (${b.vehicle?.identifierLabel ?? 'NO-PLATE'})',

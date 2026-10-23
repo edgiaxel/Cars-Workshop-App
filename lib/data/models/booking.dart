@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+
+import '../../app/theme/app_colors.dart';
 import 'customer.dart';
 import 'vehicle.dart';
 
@@ -14,10 +17,30 @@ enum BookingStatus {
   final String label;
 
   static BookingStatus fromString(String val) {
+    final cleaned = val.trim().toLowerCase().replaceAll(' ', '_');
     return BookingStatus.values.firstWhere(
-      (s) => s.value == val.toLowerCase(),
+      (s) =>
+          s.value == cleaned ||
+          s.name.toLowerCase() == cleaned ||
+          s.label.toLowerCase() == val.trim().toLowerCase(),
       orElse: () => BookingStatus.requested,
     );
+  }
+
+  Color get color {
+    switch (this) {
+      case BookingStatus.requested:
+        return AppColors.warning;
+      case BookingStatus.approved:
+        return AppColors.info;
+      case BookingStatus.scheduled:
+        return AppColors.statusInProgress;
+      case BookingStatus.completed:
+        return AppColors.statusCompleted;
+      case BookingStatus.rejected:
+      case BookingStatus.cancelled:
+        return AppColors.error;
+    }
   }
 }
 

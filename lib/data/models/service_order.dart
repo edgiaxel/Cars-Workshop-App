@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+
+import '../../app/theme/app_colors.dart';
 import 'customer.dart';
 import 'mechanic.dart';
 import 'vehicle.dart';
@@ -22,10 +25,38 @@ enum ServiceStatus {
   final String label;
 
   static ServiceStatus fromString(String val) {
+    final cleaned = val.trim().toLowerCase().replaceAll(' ', '_');
     return ServiceStatus.values.firstWhere(
-      (s) => s.value == val.toLowerCase(),
+      (s) =>
+          s.value == cleaned ||
+          s.name.toLowerCase() == cleaned ||
+          s.label.toLowerCase() == val.trim().toLowerCase(),
       orElse: () => ServiceStatus.requested,
     );
+  }
+
+  Color get color {
+    switch (this) {
+      case ServiceStatus.requested:
+      case ServiceStatus.approved:
+      case ServiceStatus.scheduled:
+      case ServiceStatus.completionReview:
+        return AppColors.statusRequested;
+      case ServiceStatus.inspection:
+      case ServiceStatus.diagnosis:
+      case ServiceStatus.waitingForApproval:
+      case ServiceStatus.waitingForParts:
+        return AppColors.statusWaitingParts;
+      case ServiceStatus.inProgress:
+        return AppColors.statusInProgress;
+      case ServiceStatus.completed:
+      case ServiceStatus.payment:
+        return AppColors.statusCompleted;
+      case ServiceStatus.closed:
+        return AppColors.statusClosed;
+      case ServiceStatus.cancelled:
+        return AppColors.statusCancelled;
+    }
   }
 }
 

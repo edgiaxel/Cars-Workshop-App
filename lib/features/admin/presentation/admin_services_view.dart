@@ -310,8 +310,7 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                                     value: 'edit',
                                     child: Text('Edit Order Details'),
                                   ),
-                                  if (order.status !=
-                                      ServiceStatus.inProgress)
+                                  if (order.status != ServiceStatus.inProgress)
                                     const PopupMenuItem(
                                       value: 'status_in_progress',
                                       child: Text('Mark In Progress'),
@@ -322,8 +321,7 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                                       value: 'status_waiting_parts',
                                       child: Text('Mark Waiting For Parts'),
                                     ),
-                                  if (order.status !=
-                                      ServiceStatus.completed)
+                                  if (order.status != ServiceStatus.completed)
                                     const PopupMenuItem(
                                       value: 'status_completed',
                                       child: Text('Mark Completed'),
@@ -337,9 +335,7 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                                     value: 'delete',
                                     child: Text(
                                       'Delete Order',
-                                      style: TextStyle(
-                                        color: AppColors.error,
-                                      ),
+                                      style: TextStyle(color: AppColors.error),
                                     ),
                                   ),
                                 ],
@@ -347,9 +343,7 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                             ],
                           ),
                           const SizedBox(height: AppSpacing.compact),
-                          StatusBadge.forServiceStatus(
-                            order.status.value,
-                          ),
+                          StatusBadge.forServiceStatus(order.status.value),
                           const SizedBox(height: AppSpacing.compact),
                           Text(
                             'Vehicle: ${order.vehicle?.displayName ?? 'Vehicle'} (${order.vehicle?.identifierLabel ?? 'NO-PLATE'}) • Client: ${order.customer?.displayName ?? 'Client'}',
@@ -557,203 +551,193 @@ class _ServiceOrderFormDialogState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    isEditing
-                        ? 'EDIT SERVICE ORDER'
-                        : 'CREATE SERVICE TICKET',
+                    isEditing ? 'EDIT SERVICE ORDER' : 'CREATE SERVICE TICKET',
                     style: AppTypography.sectionTitle(
                       color: AppColors.textPrimary,
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: AppColors.textMuted),
-                    onPressed: _isLoading
-                        ? null
-                        : () => Navigator.pop(context),
+                    onPressed: _isLoading ? null : () => Navigator.pop(context),
                   ),
                 ],
               ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: AppSpacing.compact),
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.compact),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.error),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: AppTypography.bodySmall(color: AppColors.error),
-                    ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: AppSpacing.compact),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.compact),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.error),
                   ),
-                ],
-                const SizedBox(height: AppSpacing.standard),
-                customersAsync.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Error loading customers: $e'),
-                  data: (customers) {
-                    if (_selectedCustomerId == null && customers.isNotEmpty) {
-                      _selectedCustomerId = customers.first.id;
-                    }
-                    return DropdownButtonFormField<String>(
-                      initialValue: _selectedCustomerId,
-                      dropdownColor: AppColors.surfacePrimary,
-                      decoration: const InputDecoration(
-                        labelText: 'Customer *',
-                      ),
-                      items: customers
-                          .map(
-                            (c) => DropdownMenuItem(
-                              value: c.id,
-                              child: Text(c.displayName),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedCustomerId = val;
-                          _selectedVehicleId = null;
-                        });
-                      },
-                      validator: (v) =>
-                          v == null ? 'Customer is required' : null,
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.compact),
-                vehiclesAsync.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Error loading vehicles: $e'),
-                  data: (vehicles) {
-                    final filteredVehicles = _selectedCustomerId != null
-                        ? vehicles
-                              .where((v) => v.customerId == _selectedCustomerId)
-                              .toList()
-                        : vehicles;
-
-                    if (_selectedVehicleId == null &&
-                        filteredVehicles.isNotEmpty) {
-                      _selectedVehicleId = filteredVehicles.first.id;
-                    }
-
-                    return DropdownButtonFormField<String>(
-                      initialValue: _selectedVehicleId,
-                      dropdownColor: AppColors.surfacePrimary,
-                      decoration: const InputDecoration(labelText: 'Vehicle *'),
-                      items: filteredVehicles
-                          .map(
-                            (v) => DropdownMenuItem(
-                              value: v.id,
-                              child: Text(
-                                '${v.displayName} (${v.identifierLabel})',
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (val) =>
-                          setState(() => _selectedVehicleId = val),
-                      validator: (v) =>
-                          v == null ? 'Vehicle is required' : null,
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.compact),
-                mechanicsAsync.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Error loading mechanics: $e'),
-                  data: (mechanics) {
-                    return DropdownButtonFormField<String?>(
-                      initialValue: _selectedMechanicId,
-                      dropdownColor: AppColors.surfacePrimary,
-                      decoration: const InputDecoration(
-                        labelText: 'Assign Lead Technician',
-                      ),
-                      items: [
-                        const DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text('Unassigned'),
-                        ),
-                        ...mechanics.map(
-                          (m) => DropdownMenuItem<String?>(
-                            value: m.id,
-                            child: Text(
-                              '${m.displayName} (${m.specialization ?? 'General'})',
-                            ),
-                          ),
-                        ),
-                      ],
-                      onChanged: (val) =>
-                          setState(() => _selectedMechanicId = val),
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.compact),
-                TextFormField(
-                  controller: _titleController,
-                  style: AppTypography.bodyMedium(),
-                  decoration: const InputDecoration(
-                    labelText: 'Service Title *',
-                    hintText: 'e.g. 10,000 KM Maintenance & Brake Service',
+                  child: Text(
+                    _errorMessage!,
+                    style: AppTypography.bodySmall(color: AppColors.error),
                   ),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'Title is required'
-                      : null,
                 ),
-                const SizedBox(height: AppSpacing.compact),
-                if (isEditing) ...[
-                  DropdownButtonFormField<ServiceStatus>(
-                    initialValue: _selectedStatus,
+              ],
+              const SizedBox(height: AppSpacing.standard),
+              customersAsync.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (e, _) => Text('Error loading customers: $e'),
+                data: (customers) {
+                  if (_selectedCustomerId == null && customers.isNotEmpty) {
+                    _selectedCustomerId = customers.first.id;
+                  }
+                  return DropdownButtonFormField<String>(
+                    initialValue: _selectedCustomerId,
                     dropdownColor: AppColors.surfacePrimary,
-                    decoration: const InputDecoration(labelText: 'Status *'),
-                    items: ServiceStatus.values
+                    decoration: const InputDecoration(labelText: 'Customer *'),
+                    items: customers
                         .map(
-                          (s) =>
-                              DropdownMenuItem(value: s, child: Text(s.label)),
+                          (c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.displayName),
+                          ),
                         )
                         .toList(),
                     onChanged: (val) {
-                      if (val != null) setState(() => _selectedStatus = val);
+                      setState(() {
+                        _selectedCustomerId = val;
+                        _selectedVehicleId = null;
+                      });
                     },
-                  ),
-                  const SizedBox(height: AppSpacing.compact),
-                ],
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _estimatedTotalController,
-                        keyboardType: TextInputKeyData.number,
-                        style: AppTypography.bodyMedium(),
-                        decoration: const InputDecoration(
-                          labelText: 'Estimated Total (IDR)',
-                          hintText: '0',
+                    validator: (v) => v == null ? 'Customer is required' : null,
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.compact),
+              vehiclesAsync.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (e, _) => Text('Error loading vehicles: $e'),
+                data: (vehicles) {
+                  final filteredVehicles = _selectedCustomerId != null
+                      ? vehicles
+                            .where((v) => v.customerId == _selectedCustomerId)
+                            .toList()
+                      : vehicles;
+
+                  if (_selectedVehicleId == null &&
+                      filteredVehicles.isNotEmpty) {
+                    _selectedVehicleId = filteredVehicles.first.id;
+                  }
+
+                  return DropdownButtonFormField<String>(
+                    initialValue: _selectedVehicleId,
+                    dropdownColor: AppColors.surfacePrimary,
+                    decoration: const InputDecoration(labelText: 'Vehicle *'),
+                    items: filteredVehicles
+                        .map(
+                          (v) => DropdownMenuItem(
+                            value: v.id,
+                            child: Text(
+                              '${v.displayName} (${v.identifierLabel})',
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) =>
+                        setState(() => _selectedVehicleId = val),
+                    validator: (v) => v == null ? 'Vehicle is required' : null,
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.compact),
+              mechanicsAsync.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (e, _) => Text('Error loading mechanics: $e'),
+                data: (mechanics) {
+                  return DropdownButtonFormField<String?>(
+                    initialValue: _selectedMechanicId,
+                    dropdownColor: AppColors.surfacePrimary,
+                    decoration: const InputDecoration(
+                      labelText: 'Assign Lead Technician',
+                    ),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Unassigned'),
+                      ),
+                      ...mechanics.map(
+                        (m) => DropdownMenuItem<String?>(
+                          value: m.id,
+                          child: Text(
+                            '${m.displayName} (${m.specialization ?? 'General'})',
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.compact),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _odometerController,
-                        keyboardType: TextInputKeyData.number,
-                        style: AppTypography.bodyMedium(),
-                        decoration: const InputDecoration(
-                          labelText: 'Odometer (KM)',
-                          hintText: 'e.g. 24500',
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                    onChanged: (val) =>
+                        setState(() => _selectedMechanicId = val),
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.compact),
+              TextFormField(
+                controller: _titleController,
+                style: AppTypography.bodyMedium(),
+                decoration: const InputDecoration(
+                  labelText: 'Service Title *',
+                  hintText: 'e.g. 10,000 KM Maintenance & Brake Service',
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Title is required' : null,
+              ),
+              const SizedBox(height: AppSpacing.compact),
+              if (isEditing) ...[
+                DropdownButtonFormField<ServiceStatus>(
+                  initialValue: _selectedStatus,
+                  dropdownColor: AppColors.surfacePrimary,
+                  decoration: const InputDecoration(labelText: 'Status *'),
+                  items: ServiceStatus.values
+                      .map(
+                        (s) => DropdownMenuItem(value: s, child: Text(s.label)),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedStatus = val);
+                  },
                 ),
                 const SizedBox(height: AppSpacing.compact),
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 2,
-                  style: AppTypography.bodyMedium(),
-                  decoration: const InputDecoration(
-                    labelText: 'Description / Job Notes',
-                    hintText: 'Customer symptoms, diagnostics plan, etc.',
+              ],
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _estimatedTotalController,
+                      keyboardType: TextInputKeyData.number,
+                      style: AppTypography.bodyMedium(),
+                      decoration: const InputDecoration(
+                        labelText: 'Estimated Total (IDR)',
+                        hintText: '0',
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: AppSpacing.compact),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _odometerController,
+                      keyboardType: TextInputKeyData.number,
+                      style: AppTypography.bodyMedium(),
+                      decoration: const InputDecoration(
+                        labelText: 'Odometer (KM)',
+                        hintText: 'e.g. 24500',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.compact),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 2,
+                style: AppTypography.bodyMedium(),
+                decoration: const InputDecoration(
+                  labelText: 'Description / Job Notes',
+                  hintText: 'Customer symptoms, diagnostics plan, etc.',
                 ),
+              ),
               const SizedBox(height: AppSpacing.section),
               Row(
                 children: [

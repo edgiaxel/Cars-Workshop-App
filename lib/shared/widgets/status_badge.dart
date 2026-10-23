@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
+import '../../data/models/booking.dart';
+import '../../data/models/service_order.dart';
 
 /// Semantic status badge adhering strictly to DESIGN.md sections 4.3, 5, and 8.
 ///
@@ -19,54 +21,40 @@ class StatusBadge extends StatelessWidget {
   final Color color;
   final IconData? icon;
 
-  /// Factory mapping service order status strings to semantic status badges.
-  factory StatusBadge.forServiceStatus(String status) {
-    switch (status.trim().toLowerCase()) {
-      case 'requested':
-      case 'approved':
-      case 'scheduled':
-        return StatusBadge(label: status, color: AppColors.statusRequested);
-      case 'inspection':
-      case 'diagnosis':
-      case 'waiting_for_approval':
-      case 'waiting_for_parts':
-        return StatusBadge(
-          label: status.replaceAll('_', ' '),
-          color: AppColors.statusInspection,
-        );
-      case 'in_progress':
-        return const StatusBadge(
-          label: 'IN PROGRESS',
-          color: AppColors.statusInProgress,
-        );
-      case 'completion_review':
-        return const StatusBadge(
-          label: 'COMPLETION REVIEW',
-          color: AppColors.statusCompletionReview,
-        );
-      case 'completed':
-      case 'payment':
-        return StatusBadge(
-          label: status.toUpperCase(),
-          color: AppColors.statusCompleted,
-        );
-      case 'closed':
-        return const StatusBadge(
-          label: 'CLOSED',
-          color: AppColors.statusClosed,
-        );
-      case 'cancelled':
-      case 'rejected':
-        return StatusBadge(
-          label: status.toUpperCase(),
-          color: AppColors.statusCancelled,
-        );
-      default:
-        return StatusBadge(
-          label: status.toUpperCase(),
-          color: AppColors.neutral,
-        );
+  /// Factory mapping service order status strings or enums to semantic status badges.
+  /// Uses [ServiceStatus] as the single source of truth for both label and color.
+  factory StatusBadge.forServiceStatus(dynamic status) {
+    final ServiceStatus s;
+    if (status is ServiceStatus) {
+      s = status;
+    } else if (status is String) {
+      s = ServiceStatus.fromString(status);
+    } else {
+      s = ServiceStatus.requested;
     }
+
+    return StatusBadge(
+      label: s.label.toUpperCase(),
+      color: s.color,
+    );
+  }
+
+  /// Factory mapping booking status strings or enums to semantic status badges.
+  /// Uses [BookingStatus] as the single source of truth for both label and color.
+  factory StatusBadge.forBookingStatus(dynamic status) {
+    final BookingStatus b;
+    if (status is BookingStatus) {
+      b = status;
+    } else if (status is String) {
+      b = BookingStatus.fromString(status);
+    } else {
+      b = BookingStatus.requested;
+    }
+
+    return StatusBadge(
+      label: b.label.toUpperCase(),
+      color: b.color,
+    );
   }
 
   /// Factory mapping task status strings to semantic status badges.

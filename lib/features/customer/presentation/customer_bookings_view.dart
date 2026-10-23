@@ -28,21 +28,6 @@ class CustomerBookingsPage extends ConsumerStatefulWidget {
 }
 
 class _CustomerBookingsPageState extends ConsumerState<CustomerBookingsPage> {
-  Color _getStatusColor(BookingStatus status) {
-    switch (status) {
-      case BookingStatus.requested:
-        return AppColors.warning;
-      case BookingStatus.approved:
-        return AppColors.info;
-      case BookingStatus.scheduled:
-        return AppColors.statusInProgress;
-      case BookingStatus.completed:
-        return AppColors.statusCompleted;
-      case BookingStatus.rejected:
-      case BookingStatus.cancelled:
-        return AppColors.error;
-    }
-  }
 
   void _openBookingDialog() {
     showModalBottomSheet<void>(
@@ -171,7 +156,6 @@ class _CustomerBookingsPageState extends ConsumerState<CustomerBookingsPage> {
                         const SizedBox(height: AppSpacing.standard),
                     itemBuilder: (context, index) {
                       final b = bookings[index];
-                      final statusColor = _getStatusColor(b.status);
                       final isCancellable =
                           b.status == BookingStatus.requested ||
                           b.status == BookingStatus.scheduled;
@@ -209,10 +193,7 @@ class _CustomerBookingsPageState extends ConsumerState<CustomerBookingsPage> {
                               ],
                             ),
                             const SizedBox(height: AppSpacing.compact),
-                            StatusBadge(
-                              label: b.status.label.toUpperCase(),
-                              color: statusColor,
-                            ),
+                            StatusBadge.forBookingStatus(b.status),
                             const SizedBox(height: AppSpacing.compact),
                             Text(
                               'Vehicle: ${b.vehicle?.displayName ?? 'Your Vehicle'} (${b.vehicle?.identifierLabel ?? 'NO-PLATE'})',
