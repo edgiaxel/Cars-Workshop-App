@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/router/route_paths.dart';
 import '../../../app/theme/app_colors.dart';
@@ -9,6 +10,7 @@ import '../../../data/models/service_order.dart';
 import '../../../shared/providers/customer_provider.dart';
 import '../../../shared/providers/mechanic_provider.dart';
 import '../../../shared/providers/service_order_provider.dart';
+import '../../../shared/providers/spare_part_provider.dart';
 import '../../../shared/providers/vehicle_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
@@ -59,18 +61,14 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
   }
 
   void _openOrderDialog([ServiceOrder? order]) {
-    showModalBottomSheet<void>(
+    showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfacePrimary,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      barrierDismissible: false,
       builder: (dialogCtx) => _ServiceOrderFormDialog(
         order: order,
         onSave: (payload) async {
           if (order == null) {
-            await ref
+            final created = await ref
                 .read(serviceOrdersProvider.notifier)
                 .createServiceOrder(
                   customerId: payload['customer_id'] as String,
@@ -81,6 +79,17 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                   estimatedTotal: payload['estimated_total'] as double? ?? 0.0,
                   odometerKm: payload['odometer_km'] as int?,
                 );
+
+            final parts =
+                payload['selected_parts'] as List<Map<String, dynamic>>?;
+            if (parts != null && parts.isNotEmpty) {
+              await ref
+                  .read(sparePartsProvider.notifier)
+                  .deductPartsForServiceOrder(
+                    serviceOrderId: created.id,
+                    items: parts,
+                  );
+            }
           } else {
             await ref
                 .read(serviceOrdersProvider.notifier)
@@ -130,7 +139,6 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text(
           'Delete Service Order',
           style: AppTypography.sectionTitle(),
@@ -186,6 +194,14 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
   @override
   Widget build(BuildContext context) {
     final ordersAsync = ref.watch(serviceOrdersProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark
+        ? AppColors.textPrimary
+        : AppColors.lightTextPrimary;
+    final textSecondary = isDark
+        ? AppColors.textSecondary
+        : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
 
     return AdminShell(
       currentRoute: RoutePaths.adminServices,
@@ -198,11 +214,22 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
               title: 'SERVICE ORDERS CONTROL',
               subtitle:
                   'Active workshop job tickets and bay allocation pipeline',
-              action: PrimaryButton(
-                text: 'Create Order',
-                icon: Icons.add,
-                width: 150,
-                onPressed: () => _openOrderDialog(),
+              action: Wrap(
+                spacing: AppSpacing.compact,
+                runSpacing: AppSpacing.compact,
+                children: [
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.alt_route, size: 16),
+                    label: const Text('Workshop Queue'),
+                    onPressed: () => context.go(RoutePaths.adminQueue),
+                  ),
+                  PrimaryButton(
+                    text: 'Create Order',
+                    icon: Icons.add,
+                    width: 140,
+                    onPressed: () => _openOrderDialog(),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: AppSpacing.compact),
@@ -260,17 +287,19 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                                 child: Text(
                                   order.title,
                                   style: AppTypography.sectionTitle(
-                                    color: AppColors.textPrimary,
+                                    color: textPrimary,
                                   ),
                                 ),
                               ),
                               PopupMenuButton<String>(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.more_vert,
-                                  color: AppColors.textSecondary,
+                                  color: textSecondary,
                                   size: 20,
                                 ),
-                                color: AppColors.surfacePrimary,
+                                color: isDark
+                                    ? AppColors.surfacePrimary
+                                    : AppColors.lightSurfacePrimary,
                                 onSelected: (action) {
                                   switch (action) {
                                     case 'edit':
@@ -306,30 +335,45 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                                   }
                                 },
                                 itemBuilder: (ctx) => [
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'edit',
-                                    child: Text('Edit Order Details'),
+                                    child: Text(
+                                      'Edit Order Details',
+                                      style: TextStyle(color: textPrimary),
+                                    ),
                                   ),
                                   if (order.status != ServiceStatus.inProgress)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'status_in_progress',
-                                      child: Text('Mark In Progress'),
+                                      child: Text(
+                                        'Mark In Progress',
+                                        style: TextStyle(color: textPrimary),
+                                      ),
                                     ),
                                   if (order.status !=
                                       ServiceStatus.waitingForParts)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'status_waiting_parts',
-                                      child: Text('Mark Waiting For Parts'),
+                                      child: Text(
+                                        'Mark Waiting For Parts',
+                                        style: TextStyle(color: textPrimary),
+                                      ),
                                     ),
                                   if (order.status != ServiceStatus.completed)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'status_completed',
-                                      child: Text('Mark Completed'),
+                                      child: Text(
+                                        'Mark Completed',
+                                        style: TextStyle(color: textPrimary),
+                                      ),
                                     ),
                                   if (order.status != ServiceStatus.closed)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'status_closed',
-                                      child: Text('Close Order'),
+                                      child: Text(
+                                        'Close Order',
+                                        style: TextStyle(color: textPrimary),
+                                      ),
                                     ),
                                   const PopupMenuItem(
                                     value: 'delete',
@@ -343,12 +387,26 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                             ],
                           ),
                           const SizedBox(height: AppSpacing.compact),
-                          StatusBadge.forServiceStatus(order.status.value),
+                          Wrap(
+                            spacing: AppSpacing.compact,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              StatusBadge.forServiceStatus(order.status.value),
+                              StatusBadge.forIntakeOrigin(order.intakeOrigin),
+                              if (order.arrivedAt != null)
+                                StatusBadge(
+                                  label:
+                                      'ARRIVED ${order.arrivedAt!.hour.toString().padLeft(2, '0')}:${order.arrivedAt!.minute.toString().padLeft(2, '0')}',
+                                  color: AppColors.info,
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: AppSpacing.compact),
                           Text(
                             'Vehicle: ${order.vehicle?.displayName ?? 'Vehicle'} (${order.vehicle?.identifierLabel ?? 'NO-PLATE'}) • Client: ${order.customer?.displayName ?? 'Client'}',
                             style: AppTypography.bodySmall(
-                              color: AppColors.textSecondary,
+                              color: textSecondary,
                             ),
                           ),
                           if (order.description != null &&
@@ -356,14 +414,14 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                             const SizedBox(height: 4),
                             Text(
                               order.description!,
-                              style: AppTypography.bodySmall(
-                                color: AppColors.textMuted,
-                              ),
+                              style: AppTypography.bodySmall(color: textMuted),
                             ),
                           ],
                           const SizedBox(height: AppSpacing.standard),
-                          const Divider(
-                            color: AppColors.borderSubtle,
+                          Divider(
+                            color: isDark
+                                ? AppColors.borderSubtle
+                                : AppColors.lightBorderSubtle,
                             height: 1,
                           ),
                           const SizedBox(height: AppSpacing.compact),
@@ -374,21 +432,29 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
                               _buildMetaBadge(
                                 'Technician',
                                 order.mechanicDisplayName,
+                                textPrimary: textPrimary,
+                                textMuted: textMuted,
                               ),
                               _buildMetaBadge(
                                 'Odometer',
                                 order.odometerKm != null
                                     ? '${order.odometerKm} km'
                                     : 'N/A',
+                                textPrimary: textPrimary,
+                                textMuted: textMuted,
                               ),
                               _buildMetaBadge(
                                 'Est. Total',
                                 'IDR ${order.estimatedTotal.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
+                                textPrimary: textPrimary,
+                                textMuted: textMuted,
                               ),
                               if (order.createdAt != null)
                                 _buildMetaBadge(
                                   'Logged',
                                   '${order.createdAt!.year}-${order.createdAt!.month.toString().padLeft(2, '0')}-${order.createdAt!.day.toString().padLeft(2, '0')}',
+                                  textPrimary: textPrimary,
+                                  textMuted: textMuted,
                                 ),
                             ],
                           ),
@@ -405,18 +471,17 @@ class _AdminServicesPageState extends ConsumerState<AdminServicesPage> {
     );
   }
 
-  Widget _buildMetaBadge(String label, String value) {
+  Widget _buildMetaBadge(
+    String label,
+    String value, {
+    required Color textPrimary,
+    required Color textMuted,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          '$label: ',
-          style: AppTypography.technical(color: AppColors.textMuted),
-        ),
-        Text(
-          value,
-          style: AppTypography.bodySmall(color: AppColors.textPrimary),
-        ),
+        Text('$label: ', style: AppTypography.technical(color: textMuted)),
+        Text(value, style: AppTypography.bodySmall(color: textPrimary)),
       ],
     );
   }
@@ -445,6 +510,7 @@ class _ServiceOrderFormDialogState
   String? _selectedVehicleId;
   String? _selectedMechanicId;
   ServiceStatus _selectedStatus = ServiceStatus.requested;
+  final Map<String, int> _selectedParts = {}; // sparePartId -> quantity
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -512,6 +578,9 @@ class _ServiceOrderFormDialogState
         'status': _selectedStatus,
         'estimated_total': estTotal,
         'odometer_km': odo,
+        'selected_parts': _selectedParts.entries
+            .map((e) => {'spare_part_id': e.key, 'quantity': e.value})
+            .toList(),
       };
 
       await widget.onSave(payload);
@@ -529,20 +598,31 @@ class _ServiceOrderFormDialogState
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.order != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? AppColors.surfaceCard : AppColors.lightSurfaceCard;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final borderSubtle =
+        isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
+
     final customersAsync = ref.watch(customersProvider);
     final vehiclesAsync = ref.watch(vehiclesProvider);
     final mechanicsAsync = ref.watch(mechanicsProvider);
+    final sparePartsAsync = ref.watch(sparePartsProvider);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: AppSpacing.standard,
-        right: AppSpacing.standard,
-        top: AppSpacing.section,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.section,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: dialogBg,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 500,
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.standard),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -552,12 +632,10 @@ class _ServiceOrderFormDialogState
                 children: [
                   Text(
                     isEditing ? 'EDIT SERVICE ORDER' : 'CREATE SERVICE TICKET',
-                    style: AppTypography.sectionTitle(
-                      color: AppColors.textPrimary,
-                    ),
+                    style: AppTypography.sectionTitle(color: textPrimary),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textMuted),
+                    icon: Icon(Icons.close, color: textMuted),
                     onPressed: _isLoading ? null : () => Navigator.pop(context),
                   ),
                 ],
@@ -577,176 +655,368 @@ class _ServiceOrderFormDialogState
                   ),
                 ),
               ],
-              const SizedBox(height: AppSpacing.standard),
-              customersAsync.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Error loading customers: $e'),
-                data: (customers) {
-                  if (_selectedCustomerId == null && customers.isNotEmpty) {
-                    _selectedCustomerId = customers.first.id;
-                  }
-                  return DropdownButtonFormField<String>(
-                    initialValue: _selectedCustomerId,
-                    dropdownColor: AppColors.surfacePrimary,
-                    decoration: const InputDecoration(labelText: 'Customer *'),
-                    items: customers
-                        .map(
-                          (c) => DropdownMenuItem(
-                            value: c.id,
-                            child: Text(c.displayName),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedCustomerId = val;
-                        _selectedVehicleId = null;
-                      });
-                    },
-                    validator: (v) => v == null ? 'Customer is required' : null,
-                  );
-                },
-              ),
               const SizedBox(height: AppSpacing.compact),
-              vehiclesAsync.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Error loading vehicles: $e'),
-                data: (vehicles) {
-                  final filteredVehicles = _selectedCustomerId != null
-                      ? vehicles
-                            .where((v) => v.customerId == _selectedCustomerId)
-                            .toList()
-                      : vehicles;
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Customer
+                        customersAsync.when(
+                          loading: () => const LinearProgressIndicator(),
+                          error: (e, _) => Text('Error loading customers: $e'),
+                          data: (customers) {
+                            if (_selectedCustomerId == null &&
+                                customers.isNotEmpty) {
+                              _selectedCustomerId = customers.first.id;
+                            }
+                            return DropdownButtonFormField<String>(
+                              initialValue: _selectedCustomerId,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Customer *',
+                              ),
+                              items: customers
+                                  .map(
+                                    (c) => DropdownMenuItem(
+                                      value: c.id,
+                                      child: Text(
+                                        c.displayName,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedCustomerId = val;
+                                  _selectedVehicleId = null;
+                                });
+                              },
+                              validator: (v) =>
+                                  v == null ? 'Customer is required' : null,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
 
-                  if (_selectedVehicleId == null &&
-                      filteredVehicles.isNotEmpty) {
-                    _selectedVehicleId = filteredVehicles.first.id;
-                  }
+                        // Vehicle
+                        vehiclesAsync.when(
+                          loading: () => const LinearProgressIndicator(),
+                          error: (e, _) => Text('Error loading vehicles: $e'),
+                          data: (vehicles) {
+                            final filteredVehicles = _selectedCustomerId != null
+                                ? vehicles
+                                    .where(
+                                      (v) => v.customerId == _selectedCustomerId,
+                                    )
+                                    .toList()
+                                : vehicles;
 
-                  return DropdownButtonFormField<String>(
-                    initialValue: _selectedVehicleId,
-                    dropdownColor: AppColors.surfacePrimary,
-                    decoration: const InputDecoration(labelText: 'Vehicle *'),
-                    items: filteredVehicles
-                        .map(
-                          (v) => DropdownMenuItem(
-                            value: v.id,
-                            child: Text(
-                              '${v.displayName} (${v.identifierLabel})',
-                            ),
+                            if (_selectedVehicleId == null &&
+                                filteredVehicles.isNotEmpty) {
+                              _selectedVehicleId = filteredVehicles.first.id;
+                            }
+
+                            return DropdownButtonFormField<String>(
+                              initialValue: _selectedVehicleId,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Vehicle *',
+                              ),
+                              items: filteredVehicles
+                                  .map(
+                                    (v) => DropdownMenuItem(
+                                      value: v.id,
+                                      child: Text(
+                                        '${v.displayName} (${v.identifierLabel})',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) =>
+                                  setState(() => _selectedVehicleId = val),
+                              validator: (v) =>
+                                  v == null ? 'Vehicle is required' : null,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        // Lead Technician (specialization kept, no overflow)
+                        mechanicsAsync.when(
+                          loading: () => const LinearProgressIndicator(),
+                          error: (e, _) => Text('Error loading mechanics: $e'),
+                          data: (mechanics) {
+                            return DropdownButtonFormField<String?>(
+                              initialValue: _selectedMechanicId,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Assign Lead Technician',
+                              ),
+                              items: [
+                                const DropdownMenuItem<String?>(
+                                  value: null,
+                                  child: Text('Unassigned'),
+                                ),
+                                ...mechanics.map(
+                                  (m) => DropdownMenuItem<String?>(
+                                    value: m.id,
+                                    child: Text(
+                                      m.specialization != null &&
+                                              m.specialization!.isNotEmpty
+                                          ? '${m.displayName} (${m.specialization})'
+                                          : m.displayName,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (val) =>
+                                  setState(() => _selectedMechanicId = val),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        // Service Title
+                        TextFormField(
+                          controller: _titleController,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Service Title *',
+                            hintText:
+                                'e.g. 10,000 KM Maintenance & Brake Service',
                           ),
-                        )
-                        .toList(),
-                    onChanged: (val) =>
-                        setState(() => _selectedVehicleId = val),
-                    validator: (v) => v == null ? 'Vehicle is required' : null,
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.compact),
-              mechanicsAsync.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Error loading mechanics: $e'),
-                data: (mechanics) {
-                  return DropdownButtonFormField<String?>(
-                    initialValue: _selectedMechanicId,
-                    dropdownColor: AppColors.surfacePrimary,
-                    decoration: const InputDecoration(
-                      labelText: 'Assign Lead Technician',
-                    ),
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('Unassigned'),
-                      ),
-                      ...mechanics.map(
-                        (m) => DropdownMenuItem<String?>(
-                          value: m.id,
-                          child: Text(
-                            '${m.displayName} (${m.specialization ?? 'General'})',
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? 'Title is required'
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        // Status if editing
+                        if (isEditing) ...[
+                          DropdownButtonFormField<ServiceStatus>(
+                            initialValue: _selectedStatus,
+                            isExpanded: true,
+                            decoration:
+                                const InputDecoration(labelText: 'Status *'),
+                            items: ServiceStatus.values
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s,
+                                    child: Text(s.label),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _selectedStatus = val);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: AppSpacing.standard),
+                        ],
+
+                        // Estimated Total
+                        TextFormField(
+                          controller: _estimatedTotalController,
+                          keyboardType: TextInputType.number,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Estimated Total (IDR)',
+                            hintText: '0',
                           ),
                         ),
-                      ),
-                    ],
-                    onChanged: (val) =>
-                        setState(() => _selectedMechanicId = val),
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.compact),
-              TextFormField(
-                controller: _titleController,
-                style: AppTypography.bodyMedium(),
-                decoration: const InputDecoration(
-                  labelText: 'Service Title *',
-                  hintText: 'e.g. 10,000 KM Maintenance & Brake Service',
-                ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Title is required' : null,
-              ),
-              const SizedBox(height: AppSpacing.compact),
-              if (isEditing) ...[
-                DropdownButtonFormField<ServiceStatus>(
-                  initialValue: _selectedStatus,
-                  dropdownColor: AppColors.surfacePrimary,
-                  decoration: const InputDecoration(labelText: 'Status *'),
-                  items: ServiceStatus.values
-                      .map(
-                        (s) => DropdownMenuItem(value: s, child: Text(s.label)),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _selectedStatus = val);
-                  },
-                ),
-                const SizedBox(height: AppSpacing.compact),
-              ],
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _estimatedTotalController,
-                      keyboardType: TextInputKeyData.number,
-                      style: AppTypography.bodyMedium(),
-                      decoration: const InputDecoration(
-                        labelText: 'Estimated Total (IDR)',
-                        hintText: '0',
-                      ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        // Odometer
+                        TextFormField(
+                          controller: _odometerController,
+                          keyboardType: TextInputType.number,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Odometer (KM)',
+                            hintText: 'e.g. 24500',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        // Spare Parts Allocation Section
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.compact),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.surfaceBackground
+                                : AppColors.lightSurfaceBackground,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: borderSubtle),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'ALLOCATE SPARE PARTS',
+                                    style: AppTypography.technical(
+                                      color: textMuted,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${_selectedParts.length} parts added',
+                                    style: AppTypography.bodySmall(
+                                      color: textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.compact),
+                              sparePartsAsync.when(
+                                loading: () => const LinearProgressIndicator(),
+                                error: (e, _) =>
+                                    Text('Error loading parts: $e'),
+                                data: (parts) {
+                                  return DropdownButtonFormField<String>(
+                                    isExpanded: true,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Add Part from Inventory',
+                                      hintText: 'Choose available part...',
+                                    ),
+                                    items: parts.map((p) {
+                                      final isAvailable = p.stock > 0;
+                                      return DropdownMenuItem<String>(
+                                        value: p.id,
+                                        enabled: isAvailable,
+                                        child: Text(
+                                          isAvailable
+                                              ? '${p.name} (${p.stock} ${p.unit} in stock)'
+                                              : '${p.name} [Out of Stock - 0 ${p.unit}]',
+                                          style: TextStyle(
+                                            color: isAvailable
+                                                ? textPrimary
+                                                : textMuted,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (selectedId) {
+                                      if (selectedId != null) {
+                                        setState(() {
+                                          _selectedParts[selectedId] =
+                                              (_selectedParts[selectedId] ??
+                                                  0) +
+                                              1;
+                                        });
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                              if (_selectedParts.isNotEmpty) ...[
+                                const SizedBox(height: AppSpacing.compact),
+                                ..._selectedParts.entries.map((entry) {
+                                  final part = sparePartsAsync.value
+                                      ?.firstWhere((p) => p.id == entry.key);
+                                  if (part == null) return const SizedBox.shrink();
+
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 4,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            '${part.name} (Stock: ${part.stock} ${part.unit})',
+                                            style: AppTypography.bodySmall(
+                                              color: textPrimary,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.remove_circle_outline,
+                                            size: 18,
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              if (entry.value > 1) {
+                                                _selectedParts[entry.key] =
+                                                    entry.value - 1;
+                                              } else {
+                                                _selectedParts
+                                                    .remove(entry.key);
+                                              }
+                                            });
+                                          },
+                                        ),
+                                        Text(
+                                          '${entry.value} ${part.unit}',
+                                          style: AppTypography.label(
+                                            color: AppColors.primaryAccent,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.add_circle_outline,
+                                            size: 18,
+                                          ),
+                                          onPressed: entry.value < part.stock
+                                              ? () {
+                                                  setState(() {
+                                                    _selectedParts[entry.key] =
+                                                        entry.value + 1;
+                                                  });
+                                                }
+                                              : null,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        // Description
+                        TextFormField(
+                          controller: _descriptionController,
+                          maxLines: 2,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Description / Job Notes',
+                            hintText:
+                                'Customer symptoms, diagnostics plan, etc.',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.compact),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _odometerController,
-                      keyboardType: TextInputKeyData.number,
-                      style: AppTypography.bodyMedium(),
-                      decoration: const InputDecoration(
-                        labelText: 'Odometer (KM)',
-                        hintText: 'e.g. 24500',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.compact),
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 2,
-                style: AppTypography.bodyMedium(),
-                decoration: const InputDecoration(
-                  labelText: 'Description / Job Notes',
-                  hintText: 'Customer symptoms, diagnostics plan, etc.',
                 ),
               ),
-              const SizedBox(height: AppSpacing.section),
+
+              const SizedBox(height: AppSpacing.standard),
               Row(
                 children: [
                   Expanded(
                     child: SecondaryButton(
                       text: 'Cancel',
-                      onPressed: _isLoading
-                          ? null
-                          : () => Navigator.pop(context),
+                      onPressed:
+                          _isLoading ? null : () => Navigator.pop(context),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.standard),
@@ -765,8 +1035,4 @@ class _ServiceOrderFormDialogState
       ),
     );
   }
-}
-
-extension TextInputKeyData on TextInputType {
-  static const TextInputType number = TextInputType.number;
 }

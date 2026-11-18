@@ -47,7 +47,7 @@ void main() {
     );
 
     testWidgets(
-      'Admin drawer renders all 8 navigation destinations on mobile',
+      'Admin drawer renders all 9 navigation destinations on mobile',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(400, 800);
         tester.view.devicePixelRatio = 1.0;
@@ -78,14 +78,42 @@ void main() {
         scaffoldState.openDrawer();
         await tester.pumpAndSettle();
 
-        expect(find.text('Dashboard'), findsOneWidget);
-        expect(find.text('Customers'), findsOneWidget);
-        expect(find.text('Mechanics'), findsOneWidget);
-        expect(find.text('Vehicles'), findsOneWidget);
-        expect(find.text('Bookings'), findsOneWidget);
-        expect(find.text('Services'), findsOneWidget);
-        expect(find.text('Inventory'), findsOneWidget);
-        expect(find.text('Reports'), findsOneWidget);
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: find.text('Dashboard')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: find.text('Workshop Queue')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: find.text('Customers')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: find.text('Mechanics')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: find.text('Vehicles')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: find.text('Bookings')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: find.text('Services')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: find.text('Inventory')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: find.byType(Drawer), matching: find.text('Reports')),
+          findsOneWidget,
+        );
       },
     );
 

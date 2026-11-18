@@ -14,6 +14,12 @@ const List<RoleShellDestination> adminDestinations = [
     selectedIcon: Icons.dashboard,
   ),
   RoleShellDestination(
+    label: 'Workshop Queue',
+    route: RoutePaths.adminQueue,
+    icon: Icons.alt_route_outlined,
+    selectedIcon: Icons.alt_route,
+  ),
+  RoleShellDestination(
     label: 'Customers',
     route: RoutePaths.adminCustomers,
     icon: Icons.people_outline,

@@ -75,6 +75,7 @@ class SparePartsNotifier extends AsyncNotifier<List<SparePart>> {
     required double unitCost,
     required double sellingPrice,
     int minimumStock = 0,
+    int initialStock = 0,
     bool isActive = true,
   }) async {
     final repository = ref.read(sparePartRepositoryProvider);
@@ -92,11 +93,50 @@ class SparePartsNotifier extends AsyncNotifier<List<SparePart>> {
       unitCost: unitCost,
       sellingPrice: sellingPrice,
       minimumStock: minimumStock,
+      initialStock: initialStock,
       isActive: isActive,
     );
 
     ref.invalidateSelf();
     return created;
+  }
+
+  Future<void> adjustStock({
+    required String id,
+    required int quantity,
+    String? notes,
+    String transactionType = 'adjustment',
+  }) async {
+    final repository = ref.read(sparePartRepositoryProvider);
+    if (repository == null) {
+      throw Exception('Supabase spare part repository is unconfigured.');
+    }
+
+    await repository.adjustStock(
+      id: id,
+      quantity: quantity,
+      notes: notes,
+      transactionType: transactionType,
+    );
+
+    ref.invalidateSelf();
+  }
+
+  Future<void> deductPartsForServiceOrder({
+    required String serviceOrderId,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    final repository = ref.read(sparePartRepositoryProvider);
+    if (repository == null) {
+      throw Exception('Supabase spare part repository is unconfigured.');
+    }
+
+    await repository.deductPartsForServiceOrder(
+      serviceOrderId: serviceOrderId,
+      items: items,
+    );
+
+    ref.invalidateSelf();
   }
 
   Future<SparePart> updateSparePart({

@@ -21,10 +21,9 @@ class MechanicEarningsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text(
           'PAYOUT STATEMENT GENERATION',
-          style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+          style: AppTypography.sectionTitle(),
         ),
         content: SizedBox(
           width: 420,

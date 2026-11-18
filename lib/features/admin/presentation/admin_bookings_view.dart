@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/router/route_paths.dart';
 import '../../../app/theme/app_colors.dart';
@@ -60,7 +61,6 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text(
           'Update Status to ${newStatus.label}',
           style: AppTypography.sectionTitle(),
@@ -139,7 +139,6 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text('Delete Booking', style: AppTypography.sectionTitle()),
         content: Text(
           'Are you sure you want to delete this booking request (#${booking.id.substring(0, 8).toUpperCase()})?',
@@ -190,6 +189,12 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
   @override
   Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(bookingsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
 
     return AdminShell(
       currentRoute: RoutePaths.adminBookings,
@@ -202,6 +207,11 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
               title: 'SERVICE BOOKINGS INTAKE',
               subtitle:
                   'Customer appointment requests and workshop scheduling queue',
+              action: OutlinedButton.icon(
+                icon: const Icon(Icons.alt_route, size: 16),
+                label: const Text('Workshop Queue'),
+                onPressed: () => context.go(RoutePaths.adminQueue),
+              ),
             ),
             const SizedBox(height: AppSpacing.compact),
             SearchFilterBar(
@@ -248,7 +258,7 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                         : b.id.toUpperCase();
 
                     return PitCard(
-                      technicalLabel: 'BOOKING SLOT • #$shortId',
+                      technicalLabel: 'BOOKING SLOT \u2022 #$shortId',
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -260,17 +270,19 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                                 child: Text(
                                   b.requestedService,
                                   style: AppTypography.sectionTitle(
-                                    color: AppColors.textPrimary,
+                                    color: textPrimary,
                                   ),
                                 ),
                               ),
                               PopupMenuButton<String>(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.more_vert,
-                                  color: AppColors.textSecondary,
+                                  color: textSecondary,
                                   size: 20,
                                 ),
-                                color: AppColors.surfacePrimary,
+                                color: isDark
+                                    ? AppColors.surfacePrimary
+                                    : AppColors.lightSurfacePrimary,
                                 onSelected: (action) {
                                   switch (action) {
                                     case 'approve':
@@ -310,29 +322,44 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                                 },
                                 itemBuilder: (ctx) => [
                                   if (b.status != BookingStatus.approved)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'approve',
-                                      child: Text('Approve Booking'),
+                                      child: Text(
+                                        'Approve Booking',
+                                        style: TextStyle(color: textPrimary),
+                                      ),
                                     ),
                                   if (b.status != BookingStatus.scheduled)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'schedule',
-                                      child: Text('Schedule Appointment'),
+                                      child: Text(
+                                        'Schedule Appointment',
+                                        style: TextStyle(color: textPrimary),
+                                      ),
                                     ),
                                   if (b.status != BookingStatus.completed)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'complete',
-                                      child: Text('Mark Completed'),
+                                      child: Text(
+                                        'Mark Completed',
+                                        style: TextStyle(color: textPrimary),
+                                      ),
                                     ),
                                   if (b.status != BookingStatus.rejected)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'reject',
-                                      child: Text('Reject Booking'),
+                                      child: Text(
+                                        'Reject Booking',
+                                        style: TextStyle(color: textPrimary),
+                                      ),
                                     ),
                                   if (b.status != BookingStatus.cancelled)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'cancel',
-                                      child: Text('Cancel Booking'),
+                                      child: Text(
+                                        'Cancel Booking',
+                                        style: TextStyle(color: textPrimary),
+                                      ),
                                     ),
                                   const PopupMenuItem(
                                     value: 'delete',
@@ -351,9 +378,9 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                           StatusBadge.forBookingStatus(b.status),
                           const SizedBox(height: AppSpacing.compact),
                           Text(
-                            'Client: ${b.customer?.displayName ?? 'Unknown Client'} • Vehicle: ${b.vehicle?.displayName ?? 'Vehicle'} (${b.vehicle?.identifierLabel ?? 'NO-PLATE'})',
+                            'Client: ${b.customer?.displayName ?? 'Unknown Client'} \u2022 Vehicle: ${b.vehicle?.displayName ?? 'Vehicle'} (${b.vehicle?.identifierLabel ?? 'NO-PLATE'})',
                             style: AppTypography.bodySmall(
-                              color: AppColors.textSecondary,
+                              color: textSecondary,
                             ),
                           ),
                           if (b.description != null &&
@@ -362,7 +389,7 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                             Text(
                               b.description!,
                               style: AppTypography.bodySmall(
-                                color: AppColors.textMuted,
+                                color: textMuted,
                               ),
                             ),
                           ],
@@ -377,17 +404,19 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                             ),
                           ],
                           const SizedBox(height: AppSpacing.standard),
-                          const Divider(
-                            color: AppColors.borderSubtle,
+                          Divider(
+                            color: isDark
+                                ? AppColors.borderSubtle
+                                : AppColors.lightBorderSubtle,
                             height: 1,
                           ),
                           const SizedBox(height: AppSpacing.compact),
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.schedule,
                                 size: 14,
-                                color: AppColors.textMuted,
+                                color: textMuted,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -398,6 +427,29 @@ class _AdminBookingsPageState extends ConsumerState<AdminBookingsPage> {
                               ),
                             ],
                           ),
+                          if (b.status == BookingStatus.requested ||
+                              b.status == BookingStatus.approved ||
+                              b.status == BookingStatus.scheduled) ...[
+                            const SizedBox(height: AppSpacing.standard),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryAccent,
+                                    foregroundColor: Colors.black,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.check_circle_outline,
+                                    size: 16,
+                                  ),
+                                  label: const Text('Check In to Queue'),
+                                  onPressed: () =>
+                                      context.go(RoutePaths.adminQueue),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     );

@@ -25,6 +25,11 @@ class SearchFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppColors.surfaceSecondary : AppColors.lightSurfacePrimary;
+    final border = isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
+    final textMuted = isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -36,18 +41,18 @@ class SearchFilterBar extends StatelessWidget {
             hintText: searchHint,
             prefixIcon: const Icon(Icons.search, size: 20),
             filled: true,
-            fillColor: AppColors.surfaceSecondary,
+            fillColor: surface,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.standard,
               vertical: AppSpacing.compact,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
-              borderSide: const BorderSide(color: AppColors.borderSubtle),
+              borderSide: BorderSide(color: border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
-              borderSide: const BorderSide(color: AppColors.borderSubtle),
+              borderSide: BorderSide(color: border),
             ),
           ),
         ),
@@ -64,19 +69,15 @@ class SearchFilterBar extends StatelessWidget {
                     label: Text(
                       filter.toUpperCase(),
                       style: AppTypography.technical(
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.textSecondary,
+                        color: isSelected ? Colors.white : textMuted,
                       ).copyWith(fontSize: 11),
                     ),
                     selected: isSelected,
                     onSelected: (_) => onFilterSelected?.call(filter),
-                    backgroundColor: AppColors.surfaceSecondary,
+                    backgroundColor: surface,
                     selectedColor: AppColors.primaryAccent,
                     side: BorderSide(
-                      color: isSelected
-                          ? AppColors.primaryAccent
-                          : AppColors.borderSubtle,
+                      color: isSelected ? AppColors.primaryAccent : border,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadius.pill),

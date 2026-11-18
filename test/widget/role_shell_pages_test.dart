@@ -47,7 +47,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Admin Terminal'), findsOneWidget);
-      expect(find.text('ROLE: ADMIN'), findsOneWidget);
       expect(find.text('Christian Horner'), findsOneWidget);
       expect(find.text('admin@pitmate.co'), findsOneWidget);
       expect(find.byIcon(Icons.logout), findsWidgets);
@@ -81,7 +80,6 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Mechanic Workbench'), findsOneWidget);
-        expect(find.text('ROLE: MECHANIC'), findsOneWidget);
         expect(find.text('Max Verstappen'), findsOneWidget);
         expect(find.text('verstappen@pitmate.co'), findsOneWidget);
         expect(find.byIcon(Icons.logout), findsWidgets);
@@ -116,7 +114,6 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Customer Portal'), findsOneWidget);
-        expect(find.text('ROLE: CUSTOMER'), findsOneWidget);
         expect(find.text('Axel Zeed'), findsOneWidget);
         expect(find.text('lexazeed@gmail.com'), findsOneWidget);
         expect(find.byIcon(Icons.logout), findsWidgets);

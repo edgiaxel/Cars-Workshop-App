@@ -16,6 +16,17 @@ abstract class AuthRemoteDataSource {
     String? phone,
   });
 
+  Future<AuthResponse> verifyOtp({
+    required String email,
+    required String token,
+    OtpType type = OtpType.signup,
+  });
+
+  Future<void> resendOtp({
+    required String email,
+    OtpType type = OtpType.signup,
+  });
+
   Future<void> signOut();
 
   Future<void> resetPasswordForEmail(String email);
@@ -81,6 +92,44 @@ class SupabaseAuthRemoteDataSource implements AuthRemoteDataSource {
     }
 
     return response;
+  }
+
+  @override
+  Future<AuthResponse> verifyOtp({
+    required String email,
+    required String token,
+    OtpType type = OtpType.signup,
+  }) async {
+    final response = await _client.auth.verifyOTP(
+      email: email.trim(),
+      token: token.trim(),
+      type: type,
+    );
+
+    if (response.user != null) {
+      final userMeta = response.user!.userMetadata;
+      final fullName = userMeta?['full_name'] as String? ?? 'Customer';
+      final phone = userMeta?['phone'] as String?;
+
+      await createCustomerProfile(
+        userId: response.user!.id,
+        fullName: fullName.trim(),
+        phone: phone?.trim(),
+      );
+    }
+
+    return response;
+  }
+
+  @override
+  Future<void> resendOtp({
+    required String email,
+    OtpType type = OtpType.signup,
+  }) async {
+    await _client.auth.resend(
+      email: email.trim(),
+      type: type,
+    );
   }
 
   @override

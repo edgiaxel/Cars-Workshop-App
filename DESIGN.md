@@ -949,25 +949,16 @@ Due in approximately
 
 ---
 
-# 30. Dialogs and Bottom Sheets
+# 30. Dialogs and Modals
 
-Dialogs should be reserved for focused decisions.
+PitMate uses a unified, floating center dialog architecture for all entity creation, editing, and status workflows:
 
-Good uses:
-
-- Confirmation
-- Destructive actions
-- Important warnings
-- Short forms
-
-Bottom sheets may be used for:
-
-- Filters
-- Quick actions
-- Status selection
-- Compact contextual actions
-
-Do not use dialogs for entire complex workflows.
+### Canonical Dialog Structure
+- Centered floating container (`maxWidth: 480–500 px`, corner radius `16 px`, background `surfaceCard`).
+- **Fixed Top Header**: Title in motorsport technical uppercase (`AppTypography.sectionTitle`), with close `X` button.
+- **Scrollable Single-Column Body**: Bounded by `Flexible(child: SingleChildScrollView(child: Form(...)))` with inputs stacked vertically. Never horizontally squish inputs or use double columns in compact phone dialogs.
+- **Pinned Bottom Actions**: Full-width action row (`SecondaryButton` cancel, `PrimaryButton` submit) pinned at the bottom.
+- **Keyboard Handling**: Never add `MediaQuery.viewInsets.bottom` manually to container padding, as Flutter's `Dialog` handles keyboard insets automatically. Manual padding additions cause destructive blank-box pushing when the virtual keyboard rises.
 
 ---
 
@@ -1269,3 +1260,90 @@ The motorsport identity should make PitMate distinctive, while the underlying in
 **Usability comes first.  
 Consistency comes second.  
 Visual identity reinforces both.**
+
+---
+
+# UAS Design Addendum — Light Theme, Queue, Reports, Stitch, Anti-Slop
+
+This addendum expands the existing motorsport-inspired design system. Dark mode remains the default, but the design is no longer dark-only. Both themes must feel like the same product, not unrelated redesigns.
+
+## 1. Motorsport Light Palette
+
+Use semantic tokens; component code must not reference raw palette literals directly.
+
+Suggested starting values, subject to contrast verification in the actual UI:
+
+```text
+Light Background Primary:   #F7F9FC
+Light Background Secondary: #EEF2F6
+Light Surface Primary:      #FFFFFF
+Light Surface Secondary:    #F1F5F9
+Light Surface Elevated:     #FFFFFF
+Light Border Subtle:        #D8E0E8
+Light Text Primary:         #0F172A
+Light Text Secondary:       #475569
+Light Text Muted:           #64748B
+Brand Accent (retain current): #E10600
+Dark Background Primary:    #0B0D10
+Dark Background Secondary:  #11151A
+Dark Surface Primary:       #171C22
+Dark Surface Secondary:     #1E252D
+Dark Surface Elevated:      #252D36
+Dark Border Subtle:         #2D3742
+Dark Text Primary:          #F5F7FA
+Dark Text Secondary:        #AAB4C0
+Dark Text Muted:             #707B88
+```
+
+The existing `DESIGN.md` defines motorsport red (`#E10600`) as PitMate's brand accent. Keep that as the default in both themes for this UAS unless the product owner explicitly approves a rebrand. Do not silently replace it with amber or introduce competing red and amber brand accents. Verify accent contrast in light mode and use an appropriate darker semantic variant when needed. Status colors must be semantic and remain distinguishable in both themes; never rely on color alone to communicate status.
+
+## 2. Queue screen
+
+The Admin Workshop Queue must prioritize physical state clarity over decorative density. Use distinct sections/tabs or a strong segmented filter for Upcoming, Waiting, In Service, Blocked, and Recently Completed. Cards must visibly distinguish:
+
+- Intake origin: Booking / Walk-in / Legacy origin unknown.
+- Arrival timestamp and wait duration when arrived.
+- Current service status.
+- Vehicle/customer/service identifiers.
+- Next permitted action.
+
+A scheduled booking that has not arrived must not resemble a vehicle already waiting in the workshop. “Waiting for parts” and “waiting for approval” require explicit blocker text. The mechanic version is limited to assigned work.
+
+## 3. Report dashboard
+
+Use a clear report hierarchy:
+
+- Date-range control and applied-range label.
+- KPI cards for meaningful service counts.
+- Booking vs walk-in chart, with legacy-unknown shown separately.
+- Service volume trend.
+- Status distribution.
+- Mechanic workload.
+- Financial metrics only where definitions and data quality support them.
+
+Every chart requires a title, labels/legend, accessible summary, loading/empty/error state, and readable values. Charts must work in light and dark themes and on narrow screens. Avoid dashboard clutter, misleading 3D charts, and unlabeled color-only legends.
+
+## 4. Theme interaction
+
+Provide a clear theme selector with `Light`, `Dark`, and `System` options. Make the active option visible and accessible. Update the current session promptly, persist the preference, and show a recoverable error if saving fails. Keep the motorsport identity in both themes through typography, hierarchy, status treatments, and restrained accent use.
+
+## 5. Google Stitch workflow
+
+Stitch is for design references and component/screen templates. Use `STITCH-UI-BRIEF.md` as the prompt source. First establish a design system and reusable component language, then generate a small coherent screen set. Do not ask Stitch to generate every screen in one prompt. Capture both dark and light variants for shared components and the highest-priority screens.
+
+The generated output is not a production React application. Greg should use it to implement equivalent Flutter layouts, tokens, reusable widgets, and interaction states in the existing repository. Avoid pixel-copying web-only interactions that do not translate well to mobile.
+
+## 6. Anti-Slop review
+
+Run the installed Anti-Slop core and UI guidance against proposed Stitch references and the Flutter implementation. Review:
+
+- Clear hierarchy and useful information density.
+- No generic dashboard/card grids without a task-based reason.
+- Consistent token use and semantic statuses.
+- Accessibility and contrast in both themes.
+- Responsive layouts, safe areas, and overflow.
+- Touch target size and semantic labels.
+- Useful copy, real empty/error/loading states, and non-deceptive success messages.
+- No placeholder buttons that imply a database mutation succeeded when no mutation occurred.
+
+Anti-Slop is a review aid, not permission to replace project requirements or blindly rewrite the architecture.

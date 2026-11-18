@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/router/route_paths.dart';
-import '../../../app/theme/app_colors.dart';
 import '../../../shared/widgets/role_shell_scaffold.dart';
-import '../../../shared/widgets/status_badge.dart';
 
 /// Navigation destinations available to workshop customers.
 const List<RoleShellDestination> customerDestinations = [
@@ -69,10 +67,6 @@ class CustomerShell extends StatelessWidget {
     return RoleShellScaffold(
       currentRoute: currentRoute,
       roleTitle: 'Customer Portal',
-      roleBadge: const StatusBadge(
-        label: 'ROLE: CUSTOMER',
-        color: AppColors.primaryAccent,
-      ),
       destinations: customerDestinations,
       actions: actions,
       body: child,

@@ -5,6 +5,28 @@ import 'customer.dart';
 import 'mechanic.dart';
 import 'vehicle.dart';
 
+enum ServiceIntakeOrigin {
+  booking('booking', 'Booking'),
+  walkIn('walk_in', 'Walk-In'),
+  legacyUnknown('legacy_unknown', 'Legacy / Unknown');
+
+  const ServiceIntakeOrigin(this.value, this.label);
+  final String value;
+  final String label;
+
+  static ServiceIntakeOrigin fromString(String? val) {
+    if (val == null) return ServiceIntakeOrigin.legacyUnknown;
+    final cleaned = val.trim().toLowerCase().replaceAll(' ', '_');
+    return ServiceIntakeOrigin.values.firstWhere(
+      (s) =>
+          s.value == cleaned ||
+          s.name.toLowerCase() == cleaned ||
+          s.label.toLowerCase() == val.trim().toLowerCase(),
+      orElse: () => ServiceIntakeOrigin.legacyUnknown,
+    );
+  }
+}
+
 enum ServiceStatus {
   requested('requested', 'Requested'),
   approved('approved', 'Approved'),
@@ -123,6 +145,8 @@ class ServiceOrder {
     required this.title,
     this.description,
     this.status = ServiceStatus.requested,
+    this.intakeOrigin = ServiceIntakeOrigin.legacyUnknown,
+    this.arrivedAt,
     this.scheduledStart,
     this.scheduledEnd,
     this.odometerKm,
@@ -146,6 +170,8 @@ class ServiceOrder {
   final String title;
   final String? description;
   final ServiceStatus status;
+  final ServiceIntakeOrigin intakeOrigin;
+  final DateTime? arrivedAt;
   final DateTime? scheduledStart;
   final DateTime? scheduledEnd;
   final int? odometerKm;
@@ -199,6 +225,12 @@ class ServiceOrder {
       status: ServiceStatus.fromString(
         json['status'] as String? ?? 'requested',
       ),
+      intakeOrigin: ServiceIntakeOrigin.fromString(
+        json['intake_origin'] as String?,
+      ),
+      arrivedAt: json['arrived_at'] != null
+          ? DateTime.tryParse(json['arrived_at'] as String)
+          : null,
       scheduledStart: json['scheduled_start'] != null
           ? DateTime.tryParse(json['scheduled_start'] as String)
           : null,
@@ -237,6 +269,8 @@ class ServiceOrder {
       'title': title,
       if (description != null) 'description': description,
       'status': status.value,
+      'intake_origin': intakeOrigin.value,
+      if (arrivedAt != null) 'arrived_at': arrivedAt!.toIso8601String(),
       if (scheduledStart != null)
         'scheduled_start': scheduledStart!.toIso8601String(),
       if (scheduledEnd != null)
@@ -257,6 +291,8 @@ class ServiceOrder {
     String? title,
     String? description,
     ServiceStatus? status,
+    ServiceIntakeOrigin? intakeOrigin,
+    DateTime? arrivedAt,
     DateTime? scheduledStart,
     DateTime? scheduledEnd,
     int? odometerKm,
@@ -280,6 +316,8 @@ class ServiceOrder {
       title: title ?? this.title,
       description: description ?? this.description,
       status: status ?? this.status,
+      intakeOrigin: intakeOrigin ?? this.intakeOrigin,
+      arrivedAt: arrivedAt ?? this.arrivedAt,
       scheduledStart: scheduledStart ?? this.scheduledStart,
       scheduledEnd: scheduledEnd ?? this.scheduledEnd,
       odometerKm: odometerKm ?? this.odometerKm,

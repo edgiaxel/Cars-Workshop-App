@@ -17,6 +17,17 @@ abstract class AuthRepository {
     String? phone,
   });
 
+  Future<AuthResponse> verifyOtp({
+    required String email,
+    required String token,
+    OtpType type = OtpType.signup,
+  });
+
+  Future<void> resendOtp({
+    required String email,
+    OtpType type = OtpType.signup,
+  });
+
   Future<void> signOut();
 
   Future<void> sendPasswordResetEmail(String email);
@@ -67,6 +78,30 @@ class SupabaseAuthRepository implements AuthRepository {
       password: password,
       fullName: fullName,
       phone: phone,
+    );
+  }
+
+  @override
+  Future<AuthResponse> verifyOtp({
+    required String email,
+    required String token,
+    OtpType type = OtpType.signup,
+  }) {
+    return _remoteDataSource.verifyOtp(
+      email: email,
+      token: token,
+      type: type,
+    );
+  }
+
+  @override
+  Future<void> resendOtp({
+    required String email,
+    OtpType type = OtpType.signup,
+  }) {
+    return _remoteDataSource.resendOtp(
+      email: email,
+      type: type,
     );
   }
 

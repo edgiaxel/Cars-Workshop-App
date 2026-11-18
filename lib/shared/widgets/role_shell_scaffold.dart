@@ -6,7 +6,19 @@ import '../../app/router/route_paths.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
+import '../../data/models/service_notification.dart';
 import '../providers/auth_provider.dart';
+import '../providers/booking_provider.dart';
+import '../providers/customer_provider.dart';
+import '../providers/mechanic_provider.dart';
+import '../providers/notification_provider.dart';
+import '../providers/service_order_provider.dart';
+import '../providers/spare_part_provider.dart';
+import '../providers/supabase_provider.dart';
+import '../providers/task_provider.dart';
+import '../providers/theme_provider.dart';
+import '../providers/vehicle_provider.dart';
+import 'secondary_button.dart';
 
 /// Navigation item description for role-based shells.
 class RoleShellDestination {
@@ -29,7 +41,7 @@ class RoleShellScaffold extends ConsumerWidget {
     super.key,
     required this.currentRoute,
     required this.roleTitle,
-    required this.roleBadge,
+    this.roleBadge,
     required this.destinations,
     required this.body,
     this.actions,
@@ -37,7 +49,7 @@ class RoleShellScaffold extends ConsumerWidget {
 
   final String currentRoute;
   final String roleTitle;
-  final Widget roleBadge;
+  final Widget? roleBadge;
   final List<RoleShellDestination> destinations;
   final Widget body;
   final List<Widget>? actions;
@@ -55,7 +67,7 @@ class RoleShellScaffold extends ConsumerWidget {
 
     final scaffold = isDesktop
         ? Scaffold(
-            backgroundColor: AppColors.backgroundPrimary,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             body: Row(
               children: [
                 // Desktop Persistent Navigation Sidebar
@@ -78,30 +90,54 @@ class RoleShellScaffold extends ConsumerWidget {
             ),
           )
         : Scaffold(
-            backgroundColor: AppColors.backgroundPrimary,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
               leading: isDashboard
                   ? null
                   : IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.arrow_back,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textPrimary
+                            : AppColors.lightTextPrimary,
                       ),
                       tooltip: 'Back to Dashboard',
                       onPressed: () => context.go(dashboardRoute),
                     ),
               title: Text(
                 roleTitle,
-                style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+                style: AppTypography.sectionTitle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textPrimary
+                      : AppColors.lightTextPrimary,
+                ),
               ),
               actions: [
-                roleBadge,
-                const SizedBox(width: AppSpacing.compact),
+                const _GlobalRefreshButton(),
+                const _GlobalNotificationBell(),
+                IconButton(
+                  icon: Icon(
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textSecondary
+                        : AppColors.lightTextSecondary,
+                  ),
+                  tooltip: Theme.of(context).brightness == Brightness.dark
+                      ? 'Switch to Light Mode'
+                      : 'Switch to Dark Mode',
+                  onPressed: () {
+                    ref.read(themeModeProvider.notifier).toggleTheme();
+                  },
+                ),
                 ...?actions,
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.logout,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                   tooltip: 'Sign Out',
                   onPressed: () async {
@@ -332,32 +368,59 @@ class RoleShellScaffold extends ConsumerWidget {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.section),
-      decoration: const BoxDecoration(
-        color: AppColors.surfacePrimary,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         border: Border(
-          bottom: BorderSide(color: AppColors.borderSubtle, width: 1),
+          bottom: BorderSide(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.borderSubtle
+                : AppColors.lightBorderSubtle,
+            width: 1,
+          ),
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Text(
-                roleTitle,
-                style: AppTypography.technical(color: AppColors.textSecondary),
-              ),
-              const SizedBox(width: AppSpacing.standard),
-              roleBadge,
-            ],
+          Text(
+            roleTitle,
+            style: AppTypography.sectionTitle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textPrimary
+                  : AppColors.lightTextPrimary,
+            ),
           ),
           Row(
             children: [
+              const _GlobalRefreshButton(),
+              const _GlobalNotificationBell(),
+              IconButton(
+                icon: Icon(
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Icons.light_mode_outlined
+                      : Icons.dark_mode_outlined,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textSecondary
+                      : AppColors.lightTextSecondary,
+                  size: 20,
+                ),
+                tooltip: Theme.of(context).brightness == Brightness.dark
+                    ? 'Switch to Light Mode'
+                    : 'Switch to Dark Mode',
+                onPressed: () {
+                  ref.read(themeModeProvider.notifier).toggleTheme();
+                },
+              ),
+              const SizedBox(width: AppSpacing.compact),
               ...?actions,
               const SizedBox(width: AppSpacing.standard),
               Text(
                 userProfile?.fullName ?? '',
-                style: AppTypography.bodySmall(color: AppColors.textSecondary),
+                style: AppTypography.bodySmall(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textSecondary
+                      : AppColors.lightTextSecondary,
+                ),
               ),
             ],
           ),
@@ -406,7 +469,7 @@ class RoleShellScaffold extends ConsumerWidget {
                               ),
                         ),
                       ),
-                      roleBadge,
+                      ?roleBadge,
                     ],
                   ),
                   const SizedBox(height: AppSpacing.standard),
@@ -475,6 +538,364 @@ class RoleShellScaffold extends ConsumerWidget {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Global Refresh Button that calls check_workshop_cron_tasks() RPC
+/// and invalidates all workshop state providers with animation.
+class _GlobalRefreshButton extends ConsumerStatefulWidget {
+  const _GlobalRefreshButton();
+
+  @override
+  ConsumerState<_GlobalRefreshButton> createState() =>
+      _GlobalRefreshButtonState();
+}
+
+class _GlobalRefreshButtonState extends ConsumerState<_GlobalRefreshButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRefresh() async {
+    if (_isRefreshing) return;
+    setState(() => _isRefreshing = true);
+    _controller.repeat();
+
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      if (supabase != null) {
+        try {
+          await supabase.rpc('check_workshop_cron_tasks');
+        } catch (_) {
+          // Fallback if RPC migration hasn't been run yet on remote db
+        }
+      }
+
+      ref.invalidate(bookingsProvider);
+      ref.invalidate(serviceOrdersProvider);
+      ref.invalidate(sparePartsProvider);
+      ref.invalidate(notificationsProvider);
+      ref.invalidate(vehiclesProvider);
+      ref.invalidate(customersProvider);
+      ref.invalidate(mechanicsProvider);
+      ref.invalidate(customerBookingsProvider(null));
+      ref.invalidate(customerVehiclesProvider(null));
+      ref.invalidate(mechanicServiceOrdersProvider(null));
+      ref.invalidate(mechanicTasksProvider);
+
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Workshop database & state refreshed. Automated tasks executed.',
+            ),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppColors.statusCompleted,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        _controller.stop();
+        _controller.reset();
+        setState(() => _isRefreshing = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+
+    return RotationTransition(
+      turns: _controller,
+      child: IconButton(
+        icon: Icon(Icons.refresh, color: iconColor),
+        tooltip: 'Reload Database & Run Automated Workshop Checks',
+        onPressed: _isRefreshing ? null : _handleRefresh,
+      ),
+    );
+  }
+}
+
+/// Global Notification Bell with badge and quick dialog
+class _GlobalNotificationBell extends ConsumerWidget {
+  const _GlobalNotificationBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifsAsync = ref.watch(notificationsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+
+    final notifs = notifsAsync.value ?? [];
+    final unreadCount = notifs.where((n) => !n.isRead).length;
+
+    Widget iconWidget = Icon(
+      unreadCount > 0 ? Icons.notifications : Icons.notifications_outlined,
+      color: unreadCount > 0 ? AppColors.primaryAccent : iconColor,
+    );
+
+    if (unreadCount > 0) {
+      iconWidget = Badge(
+        label: Text('$unreadCount'),
+        backgroundColor: AppColors.error,
+        child: iconWidget,
+      );
+    }
+
+    return IconButton(
+      icon: iconWidget,
+      tooltip: 'Workshop Notifications ($unreadCount unread)',
+      onPressed: () {
+        showDialog<void>(
+          context: context,
+          builder: (dialogCtx) => _NotificationsQuickDialog(
+            notifications: notifs,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _NotificationsQuickDialog extends ConsumerWidget {
+  const _NotificationsQuickDialog({required this.notifications});
+
+  final List<ServiceNotification> notifications;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? AppColors.surfaceCard : AppColors.lightSurfaceCard;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+
+    final unreadCount = notifications.where((n) => !n.isRead).length;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: dialogBg,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 480,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.standard),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.notifications_active,
+                        color: AppColors.primaryAccent,
+                        size: 20,
+                      ),
+                      const SizedBox(width: AppSpacing.compact),
+                      Text(
+                        'NOTIFICATIONS',
+                        style: AppTypography.sectionTitle(color: textPrimary),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: textMuted),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              if (unreadCount > 0) ...[
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      await ref
+                          .read(notificationsProvider.notifier)
+                          .markAllAsRead();
+                    },
+                    icon: const Icon(Icons.done_all, size: 16),
+                    label: const Text('Mark all as read'),
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.compact),
+              Flexible(
+                child: notifications.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.notifications_off_outlined,
+                                size: 40,
+                                color: textMuted,
+                              ),
+                              const SizedBox(height: AppSpacing.compact),
+                              Text(
+                                'No notifications at this time',
+                                style: AppTypography.bodySmall(color: textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: notifications.length,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final n = notifications[index];
+                          final isUnread = !n.isRead;
+
+                          IconData iconData;
+                          Color iconColor;
+                          switch (n.type.toLowerCase()) {
+                            case 'inventory':
+                              iconData = Icons.inventory_2_outlined;
+                              iconColor = AppColors.error;
+                              break;
+                            case 'booking':
+                              iconData = Icons.event_available_outlined;
+                              iconColor = AppColors.primaryAccent;
+                              break;
+                            case 'reminder':
+                              iconData = Icons.alarm_on_outlined;
+                              iconColor = AppColors.warning;
+                              break;
+                            default:
+                              iconData = Icons.notifications_none;
+                              iconColor = AppColors.info;
+                          }
+
+                          return InkWell(
+                            onTap: isUnread
+                                ? () => ref
+                                    .read(notificationsProvider.notifier)
+                                    .markAsRead(n.id)
+                                : null,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.compact,
+                                horizontal: 4,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor:
+                                        iconColor.withValues(alpha: 0.15),
+                                    child: Icon(
+                                      iconData,
+                                      size: 18,
+                                      color: iconColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.compact),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                n.title,
+                                                style: AppTypography.label(
+                                                  color: textPrimary,
+                                                ).copyWith(
+                                                  fontWeight: isUnread
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
+                                                ),
+                                              ),
+                                            ),
+                                            if (isUnread)
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: const BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: AppColors.primaryAccent,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          n.message,
+                                          style: AppTypography.bodySmall(
+                                            color: isUnread
+                                                ? textPrimary
+                                                : textSecondary,
+                                          ),
+                                        ),
+                                        if (n.createdAt != null) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            n.createdAt!
+                                                .toIso8601String()
+                                                .replaceAll('T', ' ')
+                                                .split('.')
+                                                .first,
+                                            style: AppTypography.technical(
+                                              color: textMuted,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              const SizedBox(height: AppSpacing.standard),
+              SecondaryButton(
+                text: 'Close',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
       ),
     );

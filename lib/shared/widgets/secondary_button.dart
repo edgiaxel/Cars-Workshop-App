@@ -20,14 +20,20 @@ class SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final bg = isDark ? AppColors.surfaceSecondary : AppColors.lightSurfaceSecondary;
+    final border = isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
+    final iconColor = isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+
     final button = SizedBox(
       height: 48,
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.textPrimary,
-          backgroundColor: AppColors.surfaceSecondary,
-          side: const BorderSide(color: AppColors.borderSubtle, width: 1),
+          foregroundColor: fg,
+          backgroundColor: bg,
+          side: BorderSide(color: border, width: 1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.control),
           ),
@@ -38,7 +44,7 @@ class SecondaryButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 18, color: AppColors.textSecondary),
+              Icon(icon, size: 18, color: iconColor),
               const SizedBox(width: AppSpacing.compact),
             ],
             Text(

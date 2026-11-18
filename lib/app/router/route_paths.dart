@@ -11,8 +11,9 @@ abstract class RoutePaths {
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
 
-  // Admin Destinations (8 routes)
+  // Admin Destinations (9 routes)
   static const String admin = '/admin';
+  static const String adminQueue = '/admin/queue';
   static const String adminCustomers = '/admin/customers';
   static const String adminMechanics = '/admin/mechanics';
   static const String adminVehicles = '/admin/vehicles';

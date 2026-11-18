@@ -33,74 +33,72 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
     ServiceStatus selected = order.status;
     final notesCtrl = TextEditingController(text: order.description ?? '');
 
+    // Ensure current order status is always present in dropdown to avoid assertion failure
+    final allowedStatuses = <ServiceStatus>{
+      order.status,
+      ServiceStatus.requested,
+      ServiceStatus.approved,
+      ServiceStatus.scheduled,
+      ServiceStatus.inspection,
+      ServiceStatus.diagnosis,
+      ServiceStatus.waitingForApproval,
+      ServiceStatus.waitingForParts,
+      ServiceStatus.inProgress,
+      ServiceStatus.completionReview,
+      ServiceStatus.completed,
+    }.toList();
+
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surfacePrimary,
           title: Text(
             'UPDATE WORK ORDER STATUS',
-            style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+            style: AppTypography.sectionTitle(),
           ),
-          content: SizedBox(
-            width: 420,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Order #${order.orderNumber} • ${order.vehicle?.displayName ?? 'Vehicle'}',
-                  style: AppTypography.label(color: AppColors.primaryAccent),
-                ),
-                const SizedBox(height: AppSpacing.standard),
-                DropdownButtonFormField<ServiceStatus>(
-                  initialValue: selected,
-                  dropdownColor: AppColors.surfaceSecondary,
-                  decoration: const InputDecoration(
-                    labelText: 'Service Status',
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Order #${order.orderNumber} • ${order.vehicle?.displayName ?? 'Vehicle'}',
+                    style: AppTypography.label(color: AppColors.primaryAccent),
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: ServiceStatus.inspection,
-                      child: Text('Inspection'),
+                  const SizedBox(height: AppSpacing.standard),
+                  DropdownButtonFormField<ServiceStatus>(
+                    initialValue: selected,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Service Status',
                     ),
-                    DropdownMenuItem(
-                      value: ServiceStatus.diagnosis,
-                      child: Text('Diagnosis'),
-                    ),
-                    DropdownMenuItem(
-                      value: ServiceStatus.inProgress,
-                      child: Text('In Progress'),
-                    ),
-                    DropdownMenuItem(
-                      value: ServiceStatus.waitingForParts,
-                      child: Text('Waiting for Parts'),
-                    ),
-                    DropdownMenuItem(
-                      value: ServiceStatus.completionReview,
-                      child: Text('Completion Review'),
-                    ),
-                    DropdownMenuItem(
-                      value: ServiceStatus.completed,
-                      child: Text('Completed'),
-                    ),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setDialogState(() => selected = val);
-                    }
-                  },
-                ),
-                const SizedBox(height: AppSpacing.standard),
-                TextField(
-                  controller: notesCtrl,
-                  maxLines: 2,
-                  style: AppTypography.bodyMedium(color: AppColors.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Diagnostic Notes & Work Performed',
+                    items: allowedStatuses.map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s.label),
+                      ),
+                    ).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => selected = val);
+                      }
+                    },
                   ),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.standard),
+                  TextField(
+                    controller: notesCtrl,
+                    maxLines: 2,
+                    style: AppTypography.bodyMedium(
+                      color: AppColors.textPrimary,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Diagnostic Notes & Work Performed',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -116,16 +114,33 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
                 backgroundColor: AppColors.primaryAccent,
                 foregroundColor: Colors.black,
               ),
-              onPressed: () {
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
                 Navigator.pop(dialogCtx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Work order #${order.orderNumber} status transitioned to ${selected.label}.',
+                try {
+                  await ref
+                      .read(serviceOrdersProvider.notifier)
+                      .updateServiceOrderStatus(
+                        id: order.id,
+                        status: selected,
+                      );
+                  ref.invalidate(mechanicServiceOrdersProvider(null));
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Work order #${order.orderNumber} status transitioned to ${selected.label}.',
+                      ),
+                      backgroundColor: AppColors.statusCompleted,
                     ),
-                    backgroundColor: AppColors.statusCompleted,
-                  ),
-                );
+                  );
+                } catch (e) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to update status: $e'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
               },
               child: const Text('Save Status'),
             ),
@@ -139,7 +154,6 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Row(
           children: [
             const Icon(
@@ -151,7 +165,7 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
             Expanded(
               child: Text(
                 'JOB TICKET SPECIFICATION',
-                style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+                style: AppTypography.sectionTitle(),
               ),
             ),
           ],
@@ -231,6 +245,14 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
   @override
   Widget build(BuildContext context) {
     final ordersAsync = ref.watch(mechanicServiceOrdersProvider(null));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final borderSubtle =
+        isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
 
     return MechanicShell(
       currentRoute: RoutePaths.mechanicServices,
@@ -337,7 +359,7 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
                                       Text(
                                         service.title,
                                         style: AppTypography.sectionTitle(
-                                          color: AppColors.textPrimary,
+                                          color: textPrimary,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -345,7 +367,7 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
                                       if (service.vehicle != null) ...[
                                         const SizedBox(height: 2),
                                         Text(
-                                          '${service.vehicle!.displayName} • ${service.vehicle!.licensePlate}',
+                                          '${service.vehicle!.displayName} \u2022 ${service.vehicle!.licensePlate}',
                                           style: AppTypography.technical(
                                             color: AppColors.primaryAccent,
                                           ),
@@ -360,11 +382,49 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
                                 ),
                               ],
                             ),
+                            if (service.status ==
+                                ServiceStatus.waitingForParts) ...[
+                              const SizedBox(height: AppSpacing.compact),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.standard,
+                                  vertical: AppSpacing.compact,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      AppColors.warning.withValues(alpha: 0.12),
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.control),
+                                  border: Border.all(
+                                    color:
+                                        AppColors.warning.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.pause_circle_outline,
+                                      color: AppColors.warning,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: AppSpacing.compact),
+                                    Expanded(
+                                      child: Text(
+                                        'HOLD BLOCKER: Waiting for parts before technician bay can advance ticket.',
+                                        style: AppTypography.bodySmall(
+                                          color: AppColors.warning,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: AppSpacing.compact),
                             Text(
-                              'Client: ${service.customer?.displayName ?? 'Workshop Client'} • Location: Bay 1',
+                              'Client: ${service.customer?.displayName ?? 'Workshop Client'} \u2022 Location: Bay 1',
                               style: AppTypography.bodySmall(
-                                color: AppColors.textSecondary,
+                                color: textSecondary,
                               ),
                             ),
                             if (service.description != null &&
@@ -373,13 +433,13 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
                               Text(
                                 service.description!,
                                 style: AppTypography.bodySmall(
-                                  color: AppColors.textMuted,
+                                  color: textMuted,
                                 ),
                               ),
                             ],
                             const SizedBox(height: AppSpacing.standard),
-                            const Divider(
-                              color: AppColors.borderSubtle,
+                            Divider(
+                              color: borderSubtle,
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
@@ -391,7 +451,7 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
                                       ? 'Date: ${service.scheduledStart!.toIso8601String().split('T').first}'
                                       : 'Date: 2026-10-14',
                                   style: AppTypography.technical(
-                                    color: AppColors.textMuted,
+                                    color: textMuted,
                                   ),
                                 ),
                                 const SizedBox(height: AppSpacing.compact),
@@ -404,9 +464,9 @@ class _MechanicServicesPageState extends ConsumerState<MechanicServicesPage> {
                                         service,
                                       ),
                                       style: OutlinedButton.styleFrom(
-                                        foregroundColor: AppColors.textPrimary,
-                                        side: const BorderSide(
-                                          color: AppColors.borderSubtle,
+                                        foregroundColor: textPrimary,
+                                        side: BorderSide(
+                                          color: borderSubtle,
                                         ),
                                       ),
                                       child: const Text('Details'),

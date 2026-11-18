@@ -55,13 +55,9 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
   }
 
   void _openPartDialog([SparePart? part]) {
-    showModalBottomSheet<void>(
+    showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfacePrimary,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      barrierDismissible: false,
       builder: (dialogCtx) => _PartFormDialog(
         part: part,
         onSave: (payload) async {
@@ -78,6 +74,7 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                   unitCost: payload['unit_cost'] as double,
                   sellingPrice: payload['selling_price'] as double,
                   minimumStock: payload['minimum_stock'] as int? ?? 0,
+                  initialStock: payload['initial_stock'] as int? ?? 0,
                 );
           } else {
             await ref
@@ -94,6 +91,19 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                   sellingPrice: payload['selling_price'] as double?,
                   minimumStock: payload['minimum_stock'] as int?,
                 );
+
+            final adjustQty = payload['adjust_quantity'] as int?;
+            if (adjustQty != null && adjustQty != 0) {
+              await ref
+                  .read(sparePartsProvider.notifier)
+                  .adjustStock(
+                    id: part.id,
+                    quantity: adjustQty,
+                    transactionType:
+                        payload['adjust_type'] as String? ?? 'adjustment',
+                    notes: payload['adjust_notes'] as String?,
+                  );
+            }
           }
         },
       ),
@@ -104,7 +114,6 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text('Delete Spare Part', style: AppTypography.sectionTitle()),
         content: Text(
           'Are you sure you want to delete ${part.name} (${part.sku}) from the catalog?',
@@ -155,6 +164,14 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
   @override
   Widget build(BuildContext context) {
     final partsAsync = ref.watch(sparePartsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final borderSubtle =
+        isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
 
     return AdminShell(
       currentRoute: RoutePaths.adminInventory,
@@ -216,7 +233,7 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                         final isLowStock = part.isLowStock;
 
                         return PitCard(
-                          technicalLabel: 'SKU • ${part.sku}',
+                          technicalLabel: 'SKU \u2022 ${part.sku}',
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -227,7 +244,7 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                                     child: Text(
                                       part.name,
                                       style: AppTypography.sectionTitle(
-                                        color: AppColors.textPrimary,
+                                        color: textPrimary,
                                       ),
                                     ),
                                   ),
@@ -244,9 +261,9 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                               ),
                               const SizedBox(height: AppSpacing.compact),
                               Text(
-                                'Brand: ${part.brand ?? 'Generic'} • Category: ${part.category} • Unit: ${part.unit}',
+                                'Brand: ${part.brand ?? 'Generic'} \u2022 Category: ${part.category} \u2022 Unit: ${part.unit}',
                                 style: AppTypography.bodySmall(
-                                  color: AppColors.textSecondary,
+                                  color: textSecondary,
                                 ),
                               ),
                               if (part.description != null &&
@@ -255,13 +272,13 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                                 Text(
                                   part.description!,
                                   style: AppTypography.bodySmall(
-                                    color: AppColors.textMuted,
+                                    color: textMuted,
                                   ),
                                 ),
                               ],
                               const SizedBox(height: AppSpacing.standard),
-                              const Divider(
-                                color: AppColors.borderSubtle,
+                              Divider(
+                                color: borderSubtle,
                                 height: 1,
                               ),
                               const SizedBox(height: AppSpacing.compact),
@@ -274,7 +291,7 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                                       Text(
                                         'Stock: ',
                                         style: AppTypography.technical(
-                                          color: AppColors.textMuted,
+                                          color: textMuted,
                                         ),
                                       ),
                                       Text(
@@ -282,7 +299,7 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                                         style: AppTypography.label(
                                           color: isLowStock
                                               ? AppColors.error
-                                              : AppColors.textPrimary,
+                                              : textPrimary,
                                         ),
                                       ),
                                       const SizedBox(
@@ -291,13 +308,13 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                                       Text(
                                         'Min: ',
                                         style: AppTypography.technical(
-                                          color: AppColors.textMuted,
+                                          color: textMuted,
                                         ),
                                       ),
                                       Text(
                                         '${part.minimumStock} ${part.unit}',
                                         style: AppTypography.label(
-                                          color: AppColors.textSecondary,
+                                          color: textSecondary,
                                         ),
                                       ),
                                     ],
@@ -311,8 +328,8 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                                 ],
                               ),
                               const SizedBox(height: AppSpacing.compact),
-                              const Divider(
-                                color: AppColors.borderSubtle,
+                              Divider(
+                                color: borderSubtle,
                                 height: 1,
                               ),
                               const SizedBox(height: AppSpacing.compact),
@@ -326,9 +343,9 @@ class _AdminInventoryPageState extends ConsumerState<AdminInventoryPage> {
                                     ),
                                     label: const Text('Edit'),
                                     style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppColors.textPrimary,
-                                      side: const BorderSide(
-                                        color: AppColors.borderSubtle,
+                                      foregroundColor: textPrimary,
+                                      side: BorderSide(
+                                        color: borderSubtle,
                                       ),
                                     ),
                                     onPressed: () => _openPartDialog(part),
@@ -386,9 +403,14 @@ class _PartFormDialogState extends State<_PartFormDialog> {
   late final TextEditingController _unitCostController;
   late final TextEditingController _sellingPriceController;
   late final TextEditingController _minimumStockController;
+  late final TextEditingController _initialStockController;
+  late final TextEditingController _adjustQuantityController;
+  late final TextEditingController _adjustNotesController;
   late final TextEditingController _descriptionController;
 
   String _selectedCategory = 'Fluids';
+  bool _enableStockAdjustment = false;
+  String _selectedAdjustType = 'purchase';
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -419,6 +441,9 @@ class _PartFormDialogState extends State<_PartFormDialog> {
     _minimumStockController = TextEditingController(
       text: p != null ? p.minimumStock.toString() : '5',
     );
+    _initialStockController = TextEditingController(text: '10');
+    _adjustQuantityController = TextEditingController(text: '10');
+    _adjustNotesController = TextEditingController();
     _descriptionController = TextEditingController(text: p?.description ?? '');
 
     if (p != null && _availableCategories.contains(p.category)) {
@@ -435,6 +460,9 @@ class _PartFormDialogState extends State<_PartFormDialog> {
     _unitCostController.dispose();
     _sellingPriceController.dispose();
     _minimumStockController.dispose();
+    _initialStockController.dispose();
+    _adjustQuantityController.dispose();
+    _adjustNotesController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -453,6 +481,13 @@ class _PartFormDialogState extends State<_PartFormDialog> {
           double.tryParse(_sellingPriceController.text.trim()) ?? 0.0;
       final minimumStock =
           int.tryParse(_minimumStockController.text.trim()) ?? 0;
+      final initialStock =
+          int.tryParse(_initialStockController.text.trim()) ?? 0;
+
+      int? adjustQty;
+      if (widget.part != null && _enableStockAdjustment) {
+        adjustQty = int.tryParse(_adjustQuantityController.text.trim());
+      }
 
       final payload = <String, dynamic>{
         'sku': _skuController.text.trim(),
@@ -470,6 +505,12 @@ class _PartFormDialogState extends State<_PartFormDialog> {
         'unit_cost': unitCost,
         'selling_price': sellingPrice,
         'minimum_stock': minimumStock,
+        'initial_stock': initialStock,
+        'adjust_quantity': adjustQty,
+        'adjust_type': _selectedAdjustType,
+        'adjust_notes': _adjustNotesController.text.trim().isEmpty
+            ? null
+            : _adjustNotesController.text.trim(),
       };
 
       await widget.onSave(payload);
@@ -487,236 +528,385 @@ class _PartFormDialogState extends State<_PartFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.part != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? AppColors.surfaceCard : AppColors.lightSurfaceCard;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final borderSubtle =
+        isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: AppSpacing.standard,
-        right: AppSpacing.standard,
-        top: AppSpacing.section,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.section,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: dialogBg,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 480,
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.standard),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     isEditing ? 'EDIT SPARE PART' : 'ADD NEW SPARE PART',
-                    style: AppTypography.sectionTitle(
-                      color: AppColors.textPrimary,
-                    ),
+                    style: AppTypography.sectionTitle(color: textPrimary),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textMuted),
-                    onPressed: _isLoading
-                        ? null
-                        : () => Navigator.pop(context),
+                    icon: Icon(Icons.close, color: textMuted),
+                    onPressed: _isLoading ? null : () => Navigator.pop(context),
                   ),
                 ],
               ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: AppSpacing.compact),
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.compact),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.error),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: AppSpacing.compact),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.compact),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.error),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: AppTypography.bodySmall(color: AppColors.error),
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.compact),
+
+              // Scrollable Form in a single vertical column
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextFormField(
+                          controller: _skuController,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'SKU *',
+                            hintText: 'e.g. OIL-5W40-001',
+                          ),
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? 'SKU is required'
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedCategory,
+                          decoration: const InputDecoration(
+                            labelText: 'Category *',
+                          ),
+                          items: _availableCategories
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(c),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedCategory = val);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        TextFormField(
+                          controller: _nameController,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Part Name *',
+                            hintText: 'e.g. Castrol EDGE 5W-40 Synthetic Oil',
+                          ),
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? 'Name is required'
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        TextFormField(
+                          controller: _brandController,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Brand',
+                            hintText: 'e.g. Castrol, Brembo',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        TextFormField(
+                          controller: _unitController,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Unit *',
+                            hintText: 'pcs, liter, set',
+                          ),
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? 'Unit is required'
+                              : null,
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        TextFormField(
+                          controller: _unitCostController,
+                          keyboardType: TextInputKeyData.number,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Unit Cost (IDR) *',
+                            hintText: 'Cost price',
+                          ),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Cost is required';
+                            }
+                            final num = double.tryParse(v.trim());
+                            if (num == null || num < 0) {
+                              return 'Invalid amount';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        TextFormField(
+                          controller: _sellingPriceController,
+                          keyboardType: TextInputKeyData.number,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Selling Price (IDR) *',
+                            hintText: 'Selling price',
+                          ),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Price is required';
+                            }
+                            final num = double.tryParse(v.trim());
+                            if (num == null || num < 0) {
+                              return 'Invalid amount';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        TextFormField(
+                          controller: _minimumStockController,
+                          keyboardType: TextInputKeyData.number,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Minimum Safety Stock *',
+                            hintText: 'Threshold for alerts',
+                          ),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return 'Required';
+                            final num = int.tryParse(v.trim());
+                            if (num == null || num < 0) return 'Invalid';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.standard),
+
+                        // Initial stock for new parts
+                        if (!isEditing) ...[
+                          TextFormField(
+                            controller: _initialStockController,
+                            keyboardType: TextInputKeyData.number,
+                            style: AppTypography.bodyMedium(color: textPrimary),
+                            decoration: const InputDecoration(
+                              labelText: 'Initial Inventory Stock (Quantity)',
+                              hintText: 'e.g. 20',
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return null;
+                              final num = int.tryParse(v.trim());
+                              if (num == null || num < 0) return 'Invalid quantity';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: AppSpacing.standard),
+                        ],
+
+                        // Stock adjustment for existing parts
+                        if (isEditing) ...[
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.compact),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.surfaceBackground
+                                  : AppColors.lightSurfaceBackground,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: borderSubtle),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'CURRENT STOCK',
+                                      style: AppTypography.technical(
+                                        color: textMuted,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${widget.part!.stock} ${widget.part!.unit}',
+                                      style: AppTypography.label(
+                                        color: widget.part!.isLowStock
+                                            ? AppColors.error
+                                            : AppColors.statusCompleted,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.compact),
+                                CheckboxListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    'Adjust / Add Stock',
+                                    style: AppTypography.bodyMedium(
+                                      color: textPrimary,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    'Restock inventory or adjust manual counts',
+                                    style: AppTypography.bodySmall(
+                                      color: textSecondary,
+                                    ),
+                                  ),
+                                  value: _enableStockAdjustment,
+                                  onChanged: (val) {
+                                    setState(() =>
+                                        _enableStockAdjustment = val ?? false);
+                                  },
+                                ),
+                                if (_enableStockAdjustment) ...[
+                                  const SizedBox(height: AppSpacing.compact),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: _selectedAdjustType,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Transaction Type',
+                                    ),
+                                    items: const [
+                                      DropdownMenuItem(
+                                        value: 'purchase',
+                                        child: Text('Purchase / Restock (+)'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'adjustment',
+                                        child: Text('Inventory Adjustment'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'damaged',
+                                        child: Text('Damaged / Write-off (-)'),
+                                      ),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        setState(
+                                            () => _selectedAdjustType = val);
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(height: AppSpacing.compact),
+                                  TextFormField(
+                                    controller: _adjustQuantityController,
+                                    keyboardType: TextInputKeyData.number,
+                                    style: AppTypography.bodyMedium(
+                                      color: textPrimary,
+                                    ),
+                                    decoration: const InputDecoration(
+                                      labelText: 'Quantity to Add / Adjust *',
+                                      hintText: 'e.g. 20 (or -5 if write-off)',
+                                    ),
+                                    validator: (v) {
+                                      if (!_enableStockAdjustment) return null;
+                                      if (v == null || v.trim().isEmpty) {
+                                        return 'Quantity is required';
+                                      }
+                                      final num = int.tryParse(v.trim());
+                                      if (num == null || num == 0) {
+                                        return 'Enter non-zero quantity';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: AppSpacing.compact),
+                                  TextFormField(
+                                    controller: _adjustNotesController,
+                                    style: AppTypography.bodyMedium(
+                                      color: textPrimary,
+                                    ),
+                                    decoration: const InputDecoration(
+                                      labelText: 'Adjustment Reason / Notes',
+                                      hintText:
+                                          'e.g. Supplier delivery PO-2026-11',
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.standard),
+                        ],
+
+                        TextFormField(
+                          controller: _descriptionController,
+                          maxLines: 2,
+                          style: AppTypography.bodyMedium(color: textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Description / Notes',
+                            hintText:
+                                'Specifications, compatible vehicle models, etc.',
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      _errorMessage!,
-                      style: AppTypography.bodySmall(color: AppColors.error),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.standard),
+              // Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: SecondaryButton(
+                      text: 'Cancel',
+                      onPressed:
+                          _isLoading ? null : () => Navigator.pop(context),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.standard),
+                  Expanded(
+                    child: PrimaryButton(
+                      text: isEditing ? 'Save Changes' : 'Create Part',
+                      isLoading: _isLoading,
+                      onPressed: _submit,
                     ),
                   ),
                 ],
-                const SizedBox(height: AppSpacing.standard),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: TextFormField(
-                        controller: _skuController,
-                        style: AppTypography.bodyMedium(),
-                        decoration: const InputDecoration(
-                          labelText: 'SKU *',
-                          hintText: 'e.g. OIL-5W40-001',
-                        ),
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? 'SKU is required'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.compact),
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _selectedCategory,
-                        dropdownColor: AppColors.surfacePrimary,
-                        decoration: const InputDecoration(
-                          labelText: 'Category *',
-                        ),
-                        items: _availableCategories
-                            .map(
-                              (c) => DropdownMenuItem(value: c, child: Text(c)),
-                            )
-                            .toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _selectedCategory = val);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.compact),
-                TextFormField(
-                  controller: _nameController,
-                  style: AppTypography.bodyMedium(),
-                  decoration: const InputDecoration(
-                    labelText: 'Part Name *',
-                    hintText: 'e.g. Castrol EDGE 5W-40 Synthetic Oil',
-                  ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Name is required' : null,
-                ),
-                const SizedBox(height: AppSpacing.compact),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _brandController,
-                        style: AppTypography.bodyMedium(),
-                        decoration: const InputDecoration(
-                          labelText: 'Brand',
-                          hintText: 'e.g. Castrol, Brembo',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.compact),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _unitController,
-                        style: AppTypography.bodyMedium(),
-                        decoration: const InputDecoration(
-                          labelText: 'Unit *',
-                          hintText: 'pcs, liter, set',
-                        ),
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? 'Unit is required'
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.compact),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _unitCostController,
-                        keyboardType: TextInputKeyData.number,
-                        style: AppTypography.bodyMedium(),
-                        decoration: const InputDecoration(
-                          labelText: 'Unit Cost (IDR) *',
-                          hintText: 'Cost price',
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Cost is required';
-                          }
-                          final num = double.tryParse(v.trim());
-                          if (num == null || num < 0) {
-                            return 'Invalid amount';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.compact),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _sellingPriceController,
-                        keyboardType: TextInputKeyData.number,
-                        style: AppTypography.bodyMedium(),
-                        decoration: const InputDecoration(
-                          labelText: 'Selling Price (IDR) *',
-                          hintText: 'Selling price',
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Price is required';
-                          }
-                          final num = double.tryParse(v.trim());
-                          if (num == null || num < 0) {
-                            return 'Invalid amount';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.compact),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _minimumStockController,
-                        keyboardType: TextInputKeyData.number,
-                        style: AppTypography.bodyMedium(),
-                        decoration: const InputDecoration(
-                          labelText: 'Min Stock *',
-                          hintText: 'Threshold',
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Required';
-                          final num = int.tryParse(v.trim());
-                          if (num == null || num < 0) return 'Invalid';
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.compact),
-                TextFormField(
-                  controller: _descriptionController,
-                  maxLines: 2,
-                  style: AppTypography.bodyMedium(),
-                  decoration: const InputDecoration(
-                    labelText: 'Description / Notes',
-                    hintText:
-                        'Specifications, application vehicle models, etc.',
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.section),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SecondaryButton(
-                        text: 'Cancel',
-                        onPressed: _isLoading
-                            ? null
-                            : () => Navigator.pop(context),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.standard),
-                    Expanded(
-                      child: PrimaryButton(
-                        text: isEditing ? 'Save Changes' : 'Create Part',
-                        isLoading: _isLoading,
-                        onPressed: _submit,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
   }
 }
 

@@ -25,7 +25,6 @@ class CustomerNotificationsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Row(
           children: [
             const Icon(
@@ -37,7 +36,7 @@ class CustomerNotificationsPage extends ConsumerWidget {
             Expanded(
               child: Text(
                 'NOTIFICATION TELEMETRY',
-                style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+                style: AppTypography.sectionTitle(),
               ),
             ),
           ],
@@ -55,18 +54,35 @@ class CustomerNotificationsPage extends ConsumerWidget {
               const SizedBox(height: AppSpacing.compact),
               Text(
                 notification.message,
-                style: AppTypography.bodyMedium(color: AppColors.textPrimary),
+                style: AppTypography.bodyMedium(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textPrimary
+                      : AppColors.lightTextPrimary,
+                ),
               ),
               const SizedBox(height: AppSpacing.standard),
-              const Divider(color: AppColors.borderSubtle, height: 1),
+              Divider(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.borderSubtle
+                    : AppColors.lightBorderSubtle,
+                height: 1,
+              ),
               const SizedBox(height: AppSpacing.compact),
               Text(
                 'Received: ${notification.createdAt != null ? notification.createdAt!.toIso8601String().replaceAll('T', ' ').split('.').first : '2026-10-14'} WIB',
-                style: AppTypography.technical(color: AppColors.textMuted),
+                style: AppTypography.technical(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMuted
+                      : AppColors.lightTextMuted,
+                ),
               ),
               Text(
                 'Event Type: ${notification.type.toUpperCase()}',
-                style: AppTypography.technical(color: AppColors.textMuted),
+                style: AppTypography.technical(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textMuted
+                      : AppColors.lightTextMuted,
+                ),
               ),
             ],
           ),
@@ -76,7 +92,11 @@ class CustomerNotificationsPage extends ConsumerWidget {
             onPressed: () => Navigator.pop(dialogCtx),
             child: Text(
               'Dismiss',
-              style: AppTypography.label(color: AppColors.textMuted),
+              style: AppTypography.label(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMuted
+                    : AppColors.lightTextMuted,
+              ),
             ),
           ),
           ElevatedButton(
@@ -104,10 +124,9 @@ class CustomerNotificationsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text(
           'Mark All as Read',
-          style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+          style: AppTypography.sectionTitle(),
         ),
         content: Text(
           'Acknowledge and mark all current notification telemetry as read?',
@@ -145,6 +164,12 @@ class CustomerNotificationsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsAsync = ref.watch(notificationsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary = isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final borderSubtle = isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
+    final surfaceSecondary = isDark ? AppColors.surfaceSecondary : AppColors.lightSurfaceSecondary;
 
     return CustomerShell(
       currentRoute: RoutePaths.customerNotifications,
@@ -208,7 +233,7 @@ class CustomerNotificationsPage extends ConsumerWidget {
                               'ALERT • ${n.type.toUpperCase()} • ${n.createdAt?.toIso8601String().split('T').first ?? '2026-10-14'}',
                           borderColor: isUnread
                               ? AppColors.primaryAccent
-                              : AppColors.borderSubtle,
+                              : borderSubtle,
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -221,7 +246,7 @@ class CustomerNotificationsPage extends ConsumerWidget {
                                       ? AppColors.primaryAccent.withValues(
                                           alpha: 0.15,
                                         )
-                                      : AppColors.surfaceSecondary,
+                                      : surfaceSecondary,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -232,7 +257,7 @@ class CustomerNotificationsPage extends ConsumerWidget {
                                       : Icons.alarm_outlined,
                                   color: isUnread
                                       ? AppColors.primaryAccent
-                                      : AppColors.textMuted,
+                                      : textMuted,
                                   size: 20,
                                 ),
                               ),
@@ -249,7 +274,7 @@ class CustomerNotificationsPage extends ConsumerWidget {
                                           child: Text(
                                             n.title,
                                             style: AppTypography.sectionTitle(
-                                              color: AppColors.textPrimary,
+                                              color: textPrimary,
                                             ),
                                           ),
                                         ),
@@ -279,7 +304,7 @@ class CustomerNotificationsPage extends ConsumerWidget {
                                     Text(
                                       n.message,
                                       style: AppTypography.bodySmall(
-                                        color: AppColors.textSecondary,
+                                        color: textSecondary,
                                       ),
                                     ),
                                   ],

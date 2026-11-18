@@ -1144,3 +1144,104 @@ Database migrations are the executable representation of this schema.
 The migration files implement it.
 
 `seed.sql` provides reproducible development data.
+
+---
+
+# UAS Schema Addendum — Intake Origin, Arrival, Theme Preference, Reports
+
+This addendum is the intended UAS database contract. Actual schema changes must be made in new migrations after inspecting the live migration history; do not edit or rerun an already-applied migration.
+
+## 1. Booking status addition
+
+Add `checked_in` to the existing `booking_status` enum using a forward migration. Its meaning is: the customer/vehicle arrived and the booking has been admitted into a service order. It is not equivalent to `completed`. A successful service-order completion may later transition the linked booking to `completed` according to the finalized lifecycle rules.
+
+The transition to `checked_in` and creation of the linked service order must occur atomically. Repeated check-in attempts must not create duplicate orders. The existing unique constraint on `service_orders.booking_id` helps, but the transaction/RPC must also validate the booking's eligibility and current state.
+
+## 2. `profiles.theme_mode`
+
+Add:
+
+| Column | Type | Constraints |
+|---|---|---|
+| theme_mode | text | NOT NULL, default `dark`, CHECK value in `dark`, `light`, `system` |
+
+Only the authenticated profile owner or an authorized Admin workflow may update this preference, subject to the intended product policy. It must not permit a user to modify another user's role or other protected profile fields. If current RLS makes column-level ownership difficult to isolate, use a narrowly scoped update path or policy rather than broadening profile writes.
+
+## 3. `service_orders.arrived_at`
+
+Add `arrived_at timestamptz NULL`. It records the time the vehicle physically arrived and was admitted. It must not be populated automatically for pre-arrival records. Booking check-in and walk-in creation set it explicitly as part of their database operation. The physical queue includes only records where `arrived_at IS NOT NULL` and status is active.
+
+## 4. `service_orders.intake_origin`
+
+Add a controlled origin field with allowed values:
+
+- `booking`
+- `walk_in`
+- `legacy_unknown`
+
+A text column with a CHECK constraint is acceptable if that matches the current migration style; a PostgreSQL enum is also possible, but avoid adding both an enum and a duplicate check. Choose one representation and document it consistently.
+
+Backfill existing rows as follows:
+
+- `booking` only when a valid existing `booking_id` proves the relationship.
+- `legacy_unknown` when `booking_id` is null or the origin cannot be established.
+
+Do **not** backfill null `booking_id` records as `walk_in`: current seed data has null booking IDs and the foreign key can null the relationship when a booking is deleted. New service orders must explicitly use `booking` or `walk_in`; `legacy_unknown` is reserved for historical/legacy records. Preserve the origin if a linked booking is later deleted.
+
+## 5. Check-in and walk-in database operations
+
+Implement transaction-safe database operations (prefer narrowly scoped RPC functions) that:
+
+- Verify the caller is an authorized Admin.
+- For booking check-in, verify the booking is in an eligible state, validate customer/vehicle consistency, create exactly one linked service order, set `intake_origin='booking'` and `arrived_at`, and update the booking to `checked_in`.
+- For walk-in admission, validate the customer/vehicle relationship, create the service order with `booking_id=NULL`, `intake_origin='walk_in'`, and `arrived_at`.
+- Record appropriate service status history if the existing status-history trigger/application contract requires it.
+- Return only the created/updated records necessary to update the UI.
+
+Review the current `service_orders_insert_customer_or_admin` policy. Customers should create bookings, not arbitrary service orders. Do not weaken RLS to make the UI work. Review service status transitions and prevent unauthorized or invalid jumps through the workflow.
+
+## 6. Queue indexes and ordering
+
+Evaluate an index suitable for queue reads, for example a partial index over `arrived_at`, `created_at`, and status for arrived non-terminal orders. Match the final index predicate to actual enum/status values and query plans. The logical order is `arrived_at ASC`, `created_at ASC`, then stable ID. Queue position should be derived from the ordered result rather than stored as a mutable number.
+
+## 7. Reporting contract
+
+Implement either reusable aggregate views or a parameterized RPC, selected after inspecting RLS and expected queries. Required aggregate data:
+
+- Service intake counts by `intake_origin` and selected arrival date range.
+- Service volume over time using a clearly specified timestamp and date boundary.
+- Service status distribution.
+- Mechanic workload from valid `service_assignments` relationships.
+- Optional financial aggregates only after defining the difference between estimated and final/settled totals.
+
+Use `arrived_at` for intake reports; legacy rows with no arrival timestamp should be excluded from arrival-period reporting or presented in a separate “date/origin unavailable” bucket. Define the report range as start-inclusive and end-exclusive (`timestamp >= start` and `timestamp < end`) so adjacent periods do not double-count records. For booking-versus-walk-in counts, report `legacy_unknown` separately and exclude it from both categories.
+
+Prefer RLS-respecting invoker views/functions. If `SECURITY DEFINER` is necessary, enforce `public.is_admin()` explicitly, set a safe `search_path`, revoke broad execute privileges, grant only to the intended role, and test access as Admin, Mechanic, Customer, and unauthenticated caller. Return aggregates rather than raw customer records wherever possible.
+
+## 8. Migration and testing requirements
+
+- Use a new timestamped migration; never rewrite an already-applied migration.
+- Verify enum alteration compatibility with the project's PostgreSQL/Supabase version and migration style.
+- Test origin backfill and preserve `legacy_unknown` semantics.
+- Test duplicate check-in prevention, booking state validation, customer/vehicle consistency, and transaction rollback on failure.
+- Test theme preference ownership and role isolation.
+- Test report date boundaries and RLS/authorization for each role.
+- Update model serialization, generated/manual enum mappings, repositories, and the app-side status catalog in the same milestone.
+
+## 9. Booking Expiration, Automated Reminders, and Inventory Management Addendum
+
+### 9.1 24-Hour Booking Expiration & Cron Notifications
+- Function `public.check_workshop_cron_tasks()` scheduled via `pg_cron` (`*/5 * * * *`) and invocable on-demand via RPC.
+- Cancels bookings unattended for > 24 hours past scheduled appointment; updates status to `cancelled` with audit note and preserves row in historical audit records.
+- Dispatches notifications at intervals: 1 hour before, 30 minutes before, exact appointment time, and 24-hour reschedule grace window.
+- Scans `spare_parts` against `inventory_transactions` aggregate sum and dispatches low-stock alerts to active admins.
+
+### 9.2 Stock Adjustment and Inventory Deduction
+- Safe RPC `public.adjust_spare_part_stock(p_spare_part_id, p_quantity, p_transaction_type, p_notes)` with security definer execution.
+- Transaction-safe inventory deduction `public.deduct_inventory_for_order(p_service_order_id, p_items)`.
+- RLS policies on `inventory_transactions` allowing `public.is_admin()` and `public.is_mechanic()` operations without recursive profile lookups.
+
+### 9.3 Service Reminder Automation
+- Trigger `trg_auto_generate_service_reminder` on `public.service_orders`: automatically creates a pending routine service reminder (+6 months / +10,000 KM) upon status transition to `completed` or `closed`.
+- Customer-facing creation allowed via `service_reminders` policy for authenticated profile owners.
+- Check-in RPC `public.check_in_booking` supports bookings in `requested`, `approved`, and `scheduled` states, transitioning to `checked_in`.

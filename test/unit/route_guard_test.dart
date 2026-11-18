@@ -274,6 +274,7 @@ void main() {
     group('Milestone 4 — All 20 Destinations Role Guard Matrix', () {
       const adminRoutes = [
         RoutePaths.admin,
+        RoutePaths.adminQueue,
         RoutePaths.adminCustomers,
         RoutePaths.adminMechanics,
         RoutePaths.adminVehicles,

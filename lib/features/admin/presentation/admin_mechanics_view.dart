@@ -54,32 +54,34 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
     bool isSaving = false;
     String? errorMessage;
 
-    await showModalBottomSheet<void>(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? AppColors.surfaceCard : AppColors.lightSurfaceCard;
+
+    await showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfacePrimary,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      barrierDismissible: false,
       builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: AppSpacing.standard,
-                right: AppSpacing.standard,
-                top: AppSpacing.section,
-                bottom:
-                    MediaQuery.of(sheetContext).viewInsets.bottom +
-                    AppSpacing.section,
-              ),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: dialogBg,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 480,
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            child: StatefulBuilder(
+              builder: (context, setModalState) {
+                return Padding(
+                  padding: const EdgeInsets.all(AppSpacing.standard),
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -282,19 +284,20 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
               ),
             );
           },
-        );
-      },
+        ),
+      ),
     );
+  },
+);
   }
 
   Future<void> _confirmDeleteMechanic(Mechanic mechanic) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text(
           'Remove Technician',
-          style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+          style: AppTypography.sectionTitle(),
         ),
         content: Text(
           'Are you sure you want to remove ${mechanic.displayName} (${mechanic.employeeCode})? This will restrict service assignments.',
@@ -341,6 +344,13 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
   @override
   Widget build(BuildContext context) {
     final mechanicsAsync = ref.watch(mechanicsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final borderSubtle =
+        isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
 
     return AdminShell(
       currentRoute: RoutePaths.adminMechanics,
@@ -399,7 +409,7 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
 
                       return PitCard(
                         technicalLabel:
-                            'ENGINEER-ID • ${mechanic.employeeCode}',
+                            'ENGINEER-ID \u2022 ${mechanic.employeeCode}',
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -415,7 +425,7 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
                                   child: Text(
                                     mechanic.displayName,
                                     style: AppTypography.sectionTitle(
-                                      color: AppColors.textPrimary,
+                                      color: textPrimary,
                                     ),
                                   ),
                                 ),
@@ -432,13 +442,13 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
                               Text(
                                 mechanic.specialization!,
                                 style: AppTypography.bodySmall(
-                                  color: AppColors.textSecondary,
+                                  color: textSecondary,
                                 ),
                               ),
                             ],
                             const SizedBox(height: AppSpacing.standard),
-                            const Divider(
-                              color: AppColors.borderSubtle,
+                            Divider(
+                              color: borderSubtle,
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
@@ -449,27 +459,31 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
                                 _buildMetricChip(
                                   'HOURLY RATE',
                                   'Rp ${mechanic.hourlyRate.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}/hr',
+                                  context,
                                 ),
                                 _buildMetricChip(
                                   'COMMISSION',
                                   '${mechanic.compensationPercentage.toInt()}%',
+                                  context,
                                 ),
                                 if (mechanic.hireDate != null)
                                   _buildMetricChip(
                                     'HIRED',
                                     "${mechanic.hireDate!.year}-${mechanic.hireDate!.month.toString().padLeft(2, '0')}-${mechanic.hireDate!.day.toString().padLeft(2, '0')}",
+                                    context,
                                   ),
                                 if (mechanic.profile?.phone != null &&
                                     mechanic.profile!.phone!.isNotEmpty)
                                   _buildMetricChip(
                                     'PHONE',
                                     mechanic.profile!.phone!,
+                                    context,
                                   ),
                               ],
                             ),
                             const SizedBox(height: AppSpacing.compact),
-                            const Divider(
-                              color: AppColors.borderSubtle,
+                            Divider(
+                              color: borderSubtle,
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
@@ -483,9 +497,9 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
                                   ),
                                   label: const Text('Edit'),
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppColors.textPrimary,
-                                    side: const BorderSide(
-                                      color: AppColors.borderSubtle,
+                                    foregroundColor: textPrimary,
+                                    side: BorderSide(
+                                      color: borderSubtle,
                                     ),
                                   ),
                                   onPressed: () =>
@@ -523,18 +537,23 @@ class _AdminMechanicsPageState extends ConsumerState<AdminMechanicsPage> {
     );
   }
 
-  Widget _buildMetricChip(String label, String value) {
+  Widget _buildMetricChip(String label, String value, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: AppTypography.technical(color: AppColors.textMuted)),
+        Text(label, style: AppTypography.technical(color: textMuted)),
         const SizedBox(height: 2),
         Text(
           value,
           style: AppTypography.metricValue(
             fontSize: 14,
-            color: AppColors.textPrimary,
+            color: textPrimary,
           ),
         ),
       ],

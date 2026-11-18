@@ -58,6 +58,13 @@ class MechanicDashboardView extends ConsumerWidget {
         )
         .length;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary = isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final borderSubtle = isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
+    final surfaceSecondary = isDark ? AppColors.surfaceSecondary : AppColors.lightSurfaceSecondary;
+
     return SingleChildScrollView(
       padding: AppSpacing.paddingSection,
       child: Column(
@@ -75,7 +82,7 @@ class MechanicDashboardView extends ConsumerWidget {
                     Text(
                       'TECHNICIAN WORKBENCH',
                       style: AppTypography.technical(
-                        color: AppColors.textMuted,
+                        color: textMuted,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -83,19 +90,21 @@ class MechanicDashboardView extends ConsumerWidget {
                       profile?.fullName ??
                           mechanic?.profile?.fullName ??
                           'Max Verstappen',
-                      style: AppTypography.pageTitle(),
+                      style: AppTypography.pageTitle(
+                        color: textPrimary,
+                      ),
                     ),
                     Text(
                       authState.email ?? 'verstappen@pitmate.co',
                       style: AppTypography.bodySmall(
-                        color: AppColors.textSecondary,
+                        color: textSecondary,
                       ),
                     ),
                     if (mechanic?.specialization != null)
                       Text(
                         mechanic!.specialization!,
                         style: AppTypography.technical(
-                          color: AppColors.textMuted,
+                          color: textMuted,
                         ),
                       ),
                   ],
@@ -214,7 +223,10 @@ class MechanicDashboardView extends ConsumerWidget {
                               activeOrder.vehicle?.displayName ??
                                   'Assigned Vehicle',
                               style: AppTypography.sectionTitle(
-                                color: AppColors.textPrimary,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? AppColors.textPrimary
+                                    : AppColors.lightTextPrimary,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -235,11 +247,45 @@ class MechanicDashboardView extends ConsumerWidget {
                       StatusBadge.forServiceStatus(activeOrder.status.value),
                     ],
                   ),
+                  if (activeOrder.status == ServiceStatus.waitingForParts) ...[
+                    const SizedBox(height: AppSpacing.compact),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.standard,
+                        vertical: AppSpacing.compact,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.control),
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.pause_circle_outline,
+                            color: AppColors.warning,
+                            size: 18,
+                          ),
+                          const SizedBox(width: AppSpacing.compact),
+                          Expanded(
+                            child: Text(
+                              'HOLD BLOCKER: Awaiting spare parts delivery before work can resume.',
+                              style: AppTypography.bodySmall(
+                                color: AppColors.warning,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.compact),
                   Text(
                     'Client: ${activeOrder.customer?.displayName ?? 'Workshop Client'} • Service: ${activeOrder.title}',
                     style: AppTypography.bodySmall(
-                      color: AppColors.textSecondary,
+                      color: textSecondary,
                     ),
                   ),
                   if (activeOrder.description != null &&
@@ -248,23 +294,25 @@ class MechanicDashboardView extends ConsumerWidget {
                     Text(
                       activeOrder.description!,
                       style: AppTypography.bodySmall(
-                        color: AppColors.textMuted,
+                        color: textMuted,
                       ),
                     ),
                   ],
                   const SizedBox(height: AppSpacing.standard),
-                  const Divider(color: AppColors.borderSubtle, height: 1),
+                  Divider(color: borderSubtle, height: 1),
                   const SizedBox(height: AppSpacing.compact),
                   Wrap(
                     spacing: AppSpacing.section,
                     runSpacing: AppSpacing.compact,
                     children: [
                       _buildMeta(
+                        context,
                         'Priority',
                         'HIGH (BAY 1)',
                         AppColors.statusInProgress,
                       ),
                       _buildMeta(
+                        context,
                         'Scheduled',
                         activeOrder.scheduledStart != null
                             ? activeOrder.scheduledStart!
@@ -272,9 +320,10 @@ class MechanicDashboardView extends ConsumerWidget {
                                   .split('T')
                                   .first
                             : 'Today',
-                        AppColors.textPrimary,
+                        textPrimary,
                       ),
                       _buildMeta(
+                        context,
                         'Diagnostics',
                         '$openTasksCount Checklist Items',
                         AppColors.info,
@@ -287,7 +336,7 @@ class MechanicDashboardView extends ConsumerWidget {
           const SizedBox(height: AppSpacing.section),
 
           // Quick Links
-          SectionHeader(
+          const SectionHeader(
             title: 'WORKBENCH CONTROLS',
             subtitle: 'Direct navigation to technician modules',
           ),
@@ -302,6 +351,9 @@ class MechanicDashboardView extends ConsumerWidget {
                 subtitle: 'Active & queued vehicles',
                 icon: Icons.car_repair_outlined,
                 route: RoutePaths.mechanicServices,
+                textPrimary: textPrimary,
+                textMuted: textMuted,
+                surfaceSecondary: surfaceSecondary,
               ),
               _buildQuickCard(
                 context,
@@ -309,6 +361,9 @@ class MechanicDashboardView extends ConsumerWidget {
                 subtitle: 'Diagnostic item checklists',
                 icon: Icons.checklist_outlined,
                 route: RoutePaths.mechanicTasks,
+                textPrimary: textPrimary,
+                textMuted: textMuted,
+                surfaceSecondary: surfaceSecondary,
               ),
               _buildQuickCard(
                 context,
@@ -316,6 +371,9 @@ class MechanicDashboardView extends ConsumerWidget {
                 subtitle: 'Base rates & commission splits',
                 icon: Icons.payments_outlined,
                 route: RoutePaths.mechanicEarnings,
+                textPrimary: textPrimary,
+                textMuted: textMuted,
+                surfaceSecondary: surfaceSecondary,
               ),
               _buildQuickCard(
                 context,
@@ -323,6 +381,9 @@ class MechanicDashboardView extends ConsumerWidget {
                 subtitle: 'Completed vehicle logs',
                 icon: Icons.history_outlined,
                 route: RoutePaths.mechanicHistory,
+                textPrimary: textPrimary,
+                textMuted: textMuted,
+                surfaceSecondary: surfaceSecondary,
               ),
             ],
           ),
@@ -331,13 +392,20 @@ class MechanicDashboardView extends ConsumerWidget {
     );
   }
 
-  Widget _buildMeta(String label, String value, Color color) {
+  Widget _buildMeta(
+    BuildContext context,
+    String label,
+    String value,
+    Color color,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label.toUpperCase(),
-          style: AppTypography.technical(color: AppColors.textMuted),
+          style: AppTypography.technical(color: textMuted),
         ),
         const SizedBox(height: 2),
         Text(value, style: AppTypography.label(color: color)),
@@ -351,6 +419,9 @@ class MechanicDashboardView extends ConsumerWidget {
     required String subtitle,
     required IconData icon,
     required String route,
+    required Color textPrimary,
+    required Color textMuted,
+    required Color surfaceSecondary,
   }) {
     return SizedBox(
       width: 220,
@@ -362,7 +433,7 @@ class MechanicDashboardView extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(AppSpacing.compact),
               decoration: BoxDecoration(
-                color: AppColors.surfaceSecondary,
+                color: surfaceSecondary,
                 borderRadius: BorderRadius.circular(AppRadius.control),
               ),
               child: Icon(icon, color: AppColors.primaryAccent, size: 20),
@@ -374,11 +445,11 @@ class MechanicDashboardView extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: AppTypography.label(color: AppColors.textPrimary),
+                    style: AppTypography.label(color: textPrimary),
                   ),
                   Text(
                     subtitle,
-                    style: AppTypography.bodySmall(color: AppColors.textMuted),
+                    style: AppTypography.bodySmall(color: textMuted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

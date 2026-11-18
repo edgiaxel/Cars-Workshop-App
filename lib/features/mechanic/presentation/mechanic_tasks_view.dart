@@ -5,7 +5,10 @@ import '../../../app/router/route_paths.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../data/models/service_order.dart';
 import '../../../data/models/service_task.dart';
+import '../../../shared/providers/mechanic_provider.dart';
+import '../../../shared/providers/service_order_provider.dart';
 import '../../../shared/providers/task_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
@@ -29,139 +32,121 @@ class _MechanicTasksPageState extends ConsumerState<MechanicTasksPage> {
   String _searchQuery = '';
   String _selectedFilter = 'All';
 
-  void _showAddTaskDialog(BuildContext context) {
+  void _showAddTaskDialog(BuildContext context) async {
     final titleCtrl = TextEditingController();
     final categoryCtrl = TextEditingController(text: 'Diagnostics');
     final descCtrl = TextEditingController();
 
-    showDialog<void>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
-        title: Text(
-          'CREATE CHECKLIST TASK',
-          style: AppTypography.sectionTitle(color: AppColors.textPrimary),
-        ),
-        content: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleCtrl,
-                style: AppTypography.bodyMedium(color: AppColors.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Task Description / Procedure',
-                  hintText: 'e.g. Compression test cylinders 1-8',
-                ),
-              ),
-              const SizedBox(height: AppSpacing.standard),
-              TextField(
-                controller: categoryCtrl,
-                style: AppTypography.bodyMedium(color: AppColors.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Inspection Category',
-                  hintText: 'e.g. Engine, Brakes, Hybrid',
-                ),
-              ),
-              const SizedBox(height: AppSpacing.standard),
-              TextField(
-                controller: descCtrl,
-                maxLines: 2,
-                style: AppTypography.bodyMedium(color: AppColors.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Procedure Notes / Expected Values',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: Text(
-              'Cancel',
-              style: AppTypography.label(color: AppColors.textMuted),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryAccent,
-              foregroundColor: Colors.black,
-            ),
-            onPressed: () {
-              Navigator.pop(dialogCtx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Task checklist procedure added to active service order.',
-                  ),
-                  backgroundColor: AppColors.statusCompleted,
-                ),
-              );
-            },
-            child: const Text('Add Task'),
-          ),
-        ],
-      ),
-    );
-  }
+    List<ServiceOrder> availableOrders = [];
+    try {
+      final mechOrders =
+          await ref.read(mechanicServiceOrdersProvider(null).future);
+      if (mechOrders.isNotEmpty) {
+        availableOrders = mechOrders;
+      } else {
+        final allOrders = await ref.read(serviceOrdersProvider.future);
+        availableOrders = allOrders
+            .where((o) =>
+                o.status != ServiceStatus.completed &&
+                o.status != ServiceStatus.cancelled)
+            .toList();
+      }
+    } catch (_) {
+      try {
+        final allOrders = await ref.read(serviceOrdersProvider.future);
+        availableOrders = allOrders
+            .where((o) =>
+                o.status != ServiceStatus.completed &&
+                o.status != ServiceStatus.cancelled)
+            .toList();
+      } catch (_) {}
+    }
 
-  void _showUpdateTaskDialog(BuildContext context, ServiceTask task) {
-    String currentStatus = task.status;
-    final notesCtrl = TextEditingController(text: task.notes ?? '');
+    if (!context.mounted) return;
+
+    if (availableOrders.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No active service orders found to attach tasks to.'),
+          backgroundColor: AppColors.statusCancelled,
+        ),
+      );
+      return;
+    }
+
+    String selectedOrderId = availableOrders.first.id;
+    bool isSubmitting = false;
 
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surfacePrimary,
           title: Text(
-            'UPDATE TASK PROGRESS',
-            style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+            'CREATE CHECKLIST TASK',
+            style: AppTypography.sectionTitle(),
           ),
           content: SizedBox(
-            width: 420,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  task.title,
-                  style: AppTypography.label(color: AppColors.primaryAccent),
-                ),
-                const SizedBox(height: AppSpacing.standard),
-                DropdownButtonFormField<String>(
-                  initialValue: currentStatus,
-                  dropdownColor: AppColors.surfaceSecondary,
-                  decoration: const InputDecoration(labelText: 'Task Status'),
-                  items: const [
-                    DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                    DropdownMenuItem(
-                      value: 'in_progress',
-                      child: Text('In Progress'),
+            width: 440,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedOrderId,
+                    decoration: const InputDecoration(
+                      labelText: 'Attach to Service Order',
                     ),
-                    DropdownMenuItem(
-                      value: 'completed',
-                      child: Text('Completed'),
-                    ),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setDialogState(() => currentStatus = val);
-                    }
-                  },
-                ),
-                const SizedBox(height: AppSpacing.standard),
-                TextField(
-                  controller: notesCtrl,
-                  maxLines: 2,
-                  style: AppTypography.bodyMedium(color: AppColors.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Diagnostic Findings & Observations',
+                    isExpanded: true,
+                    items: availableOrders.map((o) {
+                      final orderNum = o.id.length >= 8
+                          ? o.id.substring(0, 8).toUpperCase()
+                          : o.id;
+                      final label = '#$orderNum - ${o.title}';
+                      return DropdownMenuItem(
+                        value: o.id,
+                        child: Text(
+                          label,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.bodyMedium(),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => selectedOrderId = val);
+                      }
+                    },
                   ),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.standard),
+                  TextField(
+                    controller: titleCtrl,
+                    style: AppTypography.bodyMedium(),
+                    decoration: const InputDecoration(
+                      labelText: 'Task Description / Procedure',
+                      hintText: 'e.g. Compression test cylinders 1-8',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.standard),
+                  TextField(
+                    controller: categoryCtrl,
+                    style: AppTypography.bodyMedium(),
+                    decoration: const InputDecoration(
+                      labelText: 'Inspection Category',
+                      hintText: 'e.g. Engine, Brakes, Hybrid',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.standard),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 2,
+                    style: AppTypography.bodyMedium(),
+                    decoration: const InputDecoration(
+                      labelText: 'Procedure Notes / Expected Values',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -169,7 +154,7 @@ class _MechanicTasksPageState extends ConsumerState<MechanicTasksPage> {
               onPressed: () => Navigator.pop(dialogCtx),
               child: Text(
                 'Cancel',
-                style: AppTypography.label(color: AppColors.textMuted),
+                style: AppTypography.label(),
               ),
             ),
             ElevatedButton(
@@ -177,18 +162,211 @@ class _MechanicTasksPageState extends ConsumerState<MechanicTasksPage> {
                 backgroundColor: AppColors.primaryAccent,
                 foregroundColor: Colors.black,
               ),
-              onPressed: () {
-                Navigator.pop(dialogCtx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Task "${task.title}" updated to ${currentStatus.toUpperCase()}.',
-                    ),
-                    backgroundColor: AppColors.statusCompleted,
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      final title = titleCtrl.text.trim();
+                      if (title.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter a task title.'),
+                            backgroundColor: AppColors.statusCancelled,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isSubmitting = true);
+                      try {
+                        final currentMech =
+                            await ref.read(currentMechanicProvider.future);
+                        await ref
+                            .read(mechanicTasksProvider.notifier)
+                            .createTask(
+                              serviceOrderId: selectedOrderId,
+                              assignedMechanicId: currentMech?.id,
+                              title: title,
+                              description: descCtrl.text.trim().isEmpty
+                                  ? null
+                                  : descCtrl.text.trim(),
+                              notes: categoryCtrl.text.trim().isEmpty
+                                  ? null
+                                  : 'Category: ${categoryCtrl.text.trim()}',
+                              status: 'pending',
+                            );
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'Task checklist procedure added to service order.'),
+                              backgroundColor: AppColors.statusCompleted,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isSubmitting = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to add task: $e'),
+                              backgroundColor: AppColors.statusCancelled,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.black),
+                    )
+                  : const Text('Add Task'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUpdateTaskDialog(BuildContext context, ServiceTask task) {
+    String currentStatus = task.status;
+    final notesCtrl = TextEditingController(text: task.notes ?? '');
+    final durationCtrl = TextEditingController(
+      text: task.actualMinutes != null ? task.actualMinutes.toString() : '',
+    );
+    bool isSubmitting = false;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(
+            'UPDATE TASK PROGRESS',
+            style: AppTypography.sectionTitle(),
+          ),
+          content: SizedBox(
+            width: 440,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    task.title,
+                    style: AppTypography.label(color: AppColors.primaryAccent),
                   ),
-                );
-              },
-              child: const Text('Save Progress'),
+                  const SizedBox(height: AppSpacing.standard),
+                  DropdownButtonFormField<String>(
+                    initialValue: currentStatus,
+                    decoration: const InputDecoration(labelText: 'Task Status'),
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'pending', child: Text('Pending')),
+                      DropdownMenuItem(
+                        value: 'in_progress',
+                        child: Text('In Progress'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'completed',
+                        child: Text('Completed'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'blocked',
+                        child: Text('Blocked'),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => currentStatus = val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.standard),
+                  TextField(
+                    controller: durationCtrl,
+                    keyboardType: TextInputType.number,
+                    style: AppTypography.bodyMedium(),
+                    decoration: const InputDecoration(
+                      labelText: 'Actual Duration (Minutes)',
+                      hintText: 'e.g. 45',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.standard),
+                  TextField(
+                    controller: notesCtrl,
+                    maxLines: 2,
+                    style: AppTypography.bodyMedium(),
+                    decoration: const InputDecoration(
+                      labelText: 'Diagnostic Findings & Observations',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: Text(
+                'Cancel',
+                style: AppTypography.label(),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryAccent,
+                foregroundColor: Colors.black,
+              ),
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      setDialogState(() => isSubmitting = true);
+                      try {
+                        final duration =
+                            int.tryParse(durationCtrl.text.trim());
+                        await ref
+                            .read(mechanicTasksProvider.notifier)
+                            .updateTask(
+                              id: task.id,
+                              status: currentStatus,
+                              notes: notesCtrl.text.trim().isEmpty
+                                  ? null
+                                  : notesCtrl.text.trim(),
+                              actualMinutes: duration,
+                            );
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  'Task "${task.title}" updated to ${currentStatus.toUpperCase()}.'),
+                              backgroundColor: AppColors.statusCompleted,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isSubmitting = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to update task: $e'),
+                              backgroundColor: AppColors.statusCancelled,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.black),
+                    )
+                  : const Text('Save Progress'),
             ),
           ],
         ),
@@ -301,9 +479,7 @@ class _MechanicTasksPageState extends ConsumerState<MechanicTasksPage> {
                                     children: [
                                       Text(
                                         task.title,
-                                        style: AppTypography.sectionTitle(
-                                          color: AppColors.textPrimary,
-                                        ),
+                                        style: AppTypography.sectionTitle(),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -333,9 +509,7 @@ class _MechanicTasksPageState extends ConsumerState<MechanicTasksPage> {
                               const SizedBox(height: AppSpacing.compact),
                               Text(
                                 task.description!,
-                                style: AppTypography.bodySmall(
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: AppTypography.bodySmall(),
                               ),
                             ],
                             if (task.notes != null &&

@@ -57,32 +57,34 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
     bool isSaving = false;
     String? errorMessage;
 
-    await showModalBottomSheet<void>(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? AppColors.surfaceCard : AppColors.lightSurfaceCard;
+
+    await showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfacePrimary,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      barrierDismissible: false,
       builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: AppSpacing.standard,
-                right: AppSpacing.standard,
-                top: AppSpacing.section,
-                bottom:
-                    MediaQuery.of(sheetContext).viewInsets.bottom +
-                    AppSpacing.section,
-              ),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: dialogBg,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 480,
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            child: StatefulBuilder(
+              builder: (context, setModalState) {
+                return Padding(
+                  padding: const EdgeInsets.all(AppSpacing.standard),
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -260,19 +262,20 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
               ),
             );
           },
-        );
-      },
+        ),
+      ),
     );
+  },
+);
   }
 
   Future<void> _confirmDeleteCustomer(Customer customer) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text(
           'Delete Customer Account',
-          style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+          style: AppTypography.sectionTitle(),
         ),
         content: Text(
           'Are you sure you want to remove ${customer.displayName}? This action cannot be undone if linked records exist.',
@@ -319,6 +322,13 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
   @override
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customersProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final borderSubtle =
+        isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
 
     return AdminShell(
       currentRoute: RoutePaths.adminCustomers,
@@ -378,7 +388,7 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
 
                       return PitCard(
                         technicalLabel:
-                            'CLIENT-ID • ${(customer.id.length >= 8 ? customer.id.substring(0, 8) : customer.id).toUpperCase()}',
+                            'CLIENT-ID \u2022 ${(customer.id.length >= 8 ? customer.id.substring(0, 8) : customer.id).toUpperCase()}',
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -396,7 +406,7 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
                                   child: Text(
                                     customer.displayName,
                                     style: AppTypography.sectionTitle(
-                                      color: AppColors.textPrimary,
+                                      color: textPrimary,
                                     ),
                                   ),
                                 ),
@@ -406,7 +416,7 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
                                       .toUpperCase(),
                                   color: isCompany
                                       ? AppColors.info
-                                      : AppColors.textSecondary,
+                                      : textSecondary,
                                 ),
                               ],
                             ),
@@ -416,13 +426,13 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
                               Text(
                                 customer.notes!,
                                 style: AppTypography.bodySmall(
-                                  color: AppColors.textSecondary,
+                                  color: textSecondary,
                                 ),
                               ),
                             ],
                             const SizedBox(height: AppSpacing.standard),
-                            const Divider(
-                              color: AppColors.borderSubtle,
+                            Divider(
+                              color: borderSubtle,
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
@@ -435,24 +445,27 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
                                   _buildInfoChip(
                                     Icons.phone_outlined,
                                     customer.profile!.phone!,
+                                    context,
                                   ),
                                 if (customer.address != null &&
                                     customer.address!.isNotEmpty)
                                   _buildInfoChip(
                                     Icons.location_on_outlined,
                                     customer.address!,
+                                    context,
                                   ),
                                 if (customer.profile?.fullName != null &&
                                     isCompany)
                                   _buildInfoChip(
                                     Icons.person_pin_outlined,
                                     'Contact: ${customer.profile!.fullName}',
+                                    context,
                                   ),
                               ],
                             ),
                             const SizedBox(height: AppSpacing.compact),
-                            const Divider(
-                              color: AppColors.borderSubtle,
+                            Divider(
+                              color: borderSubtle,
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
@@ -466,9 +479,9 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
                                   ),
                                   label: const Text('Edit'),
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppColors.textPrimary,
-                                    side: const BorderSide(
-                                      color: AppColors.borderSubtle,
+                                    foregroundColor: textPrimary,
+                                    side: BorderSide(
+                                      color: borderSubtle,
                                     ),
                                   ),
                                   onPressed: () =>
@@ -506,15 +519,20 @@ class _AdminCustomersPageState extends ConsumerState<AdminCustomersPage> {
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label) {
+  Widget _buildInfoChip(IconData icon, String label, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppColors.textMuted),
+        Icon(icon, size: 14, color: textMuted),
         const SizedBox(width: 4),
         Text(
           label,
-          style: AppTypography.technical(color: AppColors.textSecondary),
+          style: AppTypography.technical(color: textSecondary),
         ),
       ],
     );

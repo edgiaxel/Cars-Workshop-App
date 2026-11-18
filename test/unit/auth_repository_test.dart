@@ -44,6 +44,21 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
   }
 
   @override
+  Future<AuthResponse> verifyOtp({
+    required String email,
+    required String token,
+    OtpType type = OtpType.signup,
+  }) async {
+    return AuthResponse();
+  }
+
+  @override
+  Future<void> resendOtp({
+    required String email,
+    OtpType type = OtpType.signup,
+  }) async {}
+
+  @override
   Future<void> signOut() async {
     signOutCalled = true;
   }

@@ -771,10 +771,10 @@ select
   v.id,
   '30,000 KM Annual Maintenance: Castrol 5W-40 & Filters',
   'Routine 30k maintenance, oil change, brake check, and overall inspection.',
-  current_date + interval '1 day',
+  current_date - interval '2 days',
   '13:00',
-  'approved',
-  'Technician Max Verstappen pre-allocated.'
+  'checked_in',
+  'Technician Max Verstappen allocated. Checked in and completed under SO-2026-003.'
 from public.customers c
 join public.profiles p on p.id = c.profile_id
 join public.vehicles v on v.customer_id = c.id
@@ -803,7 +803,7 @@ select
   'Routine 20,000 KM hybrid drive battery cooling duct inspection and tire rotation.',
   current_date + interval '11 days',
   '10:00',
-  'requested',
+  'scheduled',
   'Awaiting customer drop-off confirmation.'
 from public.customers c
 join public.profiles p on p.id = c.profile_id
@@ -816,17 +816,111 @@ where p.full_name = 'Axel Zeed'
       and b.requested_service like '%Hybrid Drive Battery%'
   );
 
+insert into public.bookings (
+  customer_id,
+  vehicle_id,
+  requested_service,
+  description,
+  preferred_date,
+  preferred_time,
+  status,
+  admin_notes
+)
+select
+  c.id,
+  v.id,
+  'Powertrain Diagnostics & Hybrid Battery Inspection',
+  'Full system diagnostic scan, error code clearance, and high voltage cell balancing.',
+  current_date,
+  '08:30',
+  'checked_in',
+  'Checked in and transitioned to active hoist service SO-2026-001.'
+from public.customers c
+join public.profiles p on p.id = c.profile_id
+join public.vehicles v on v.customer_id = c.id
+where p.full_name = 'BMW M Motorsport'
+  and v.vehicle_number = '#15'
+  and not exists (
+    select 1 from public.bookings b
+    where b.customer_id = c.id and b.vehicle_id = v.id
+      and b.requested_service like '%Powertrain Diagnostics%'
+  );
+
+insert into public.bookings (
+  customer_id,
+  vehicle_id,
+  requested_service,
+  description,
+  preferred_date,
+  preferred_time,
+  status,
+  admin_notes
+)
+select
+  c.id,
+  v.id,
+  'Pre-Race Inspection & High-Voltage Systems Verification',
+  'Perform competition vehicle inspection before track or endurance testing.',
+  current_date + interval '3 days',
+  '09:00',
+  'approved',
+  'Upcoming appointment; customer confirmed arrival date.'
+from public.customers c
+join public.profiles p on p.id = c.profile_id
+join public.vehicles v on v.customer_id = c.id
+where p.full_name = 'BMW M Motorsport'
+  and v.vehicle_number = '#20'
+  and not exists (
+    select 1 from public.bookings b
+    where b.customer_id = c.id and b.vehicle_id = v.id
+      and b.requested_service like '%Pre-Race Inspection%'
+  );
+
+insert into public.bookings (
+  customer_id,
+  vehicle_id,
+  requested_service,
+  description,
+  preferred_date,
+  preferred_time,
+  status,
+  admin_notes
+)
+select
+  c.id,
+  v.id,
+  'Heavy Duty Suspension & 4x4 Driveline Inspection',
+  'Comprehensive off-road damper and chassis inspection.',
+  current_date + interval '5 days',
+  '14:00',
+  'requested',
+  'Pending workshop schedule confirmation.'
+from public.customers c
+join public.profiles p on p.id = c.profile_id
+join public.vehicles v on v.customer_id = c.id
+where p.full_name = 'Axel Zeed'
+  and v.model = 'Raptor'
+  and not exists (
+    select 1 from public.bookings b
+    where b.customer_id = c.id and b.vehicle_id = v.id
+      and b.requested_service like '%Heavy Duty Suspension%'
+  );
+
 -- ============================================================
 -- SERVICE ORDERS
 -- ============================================================
 
+-- SO-2026-001: In Service (In Progress) - Pre-booked, Hoist Bay 1
 insert into public.service_orders (
   order_number,
   customer_id,
   vehicle_id,
+  booking_id,
   title,
   description,
   status,
+  intake_origin,
+  arrived_at,
   scheduled_start,
   scheduled_end,
   odometer_km,
@@ -837,9 +931,12 @@ select
   'SO-2026-001',
   c.id,
   v.id,
+  b.id,
   'Powertrain Diagnostics & Hybrid Battery Inspection',
   'Full system diagnostic scan, error code clearance, and high voltage cell balancing.',
   'in_progress',
+  'booking',
+  now() - interval '3 hours',
   current_date + interval '8 hours 30 minutes',
   current_date + interval '16 hours 30 minutes',
   18420,
@@ -848,11 +945,13 @@ select
 from public.customers c
 join public.profiles p on p.id = c.profile_id
 join public.vehicles v on v.customer_id = c.id
+left join public.bookings b on b.vehicle_id = v.id and b.requested_service like '%Powertrain Diagnostics%'
 where p.full_name = 'BMW M Motorsport' and v.vehicle_number = '#15'
 and not exists (
   select 1 from public.service_orders where order_number = 'SO-2026-001'
 );
 
+-- SO-2026-002: In Service (Diagnosis) - Walk-in Admission
 insert into public.service_orders (
   order_number,
   customer_id,
@@ -860,6 +959,45 @@ insert into public.service_orders (
   title,
   description,
   status,
+  intake_origin,
+  arrived_at,
+  scheduled_start,
+  odometer_km,
+  estimated_total,
+  customer_approved
+)
+select
+  'SO-2026-002',
+  c.id,
+  v.id,
+  'Track Dynamic Calibration & Suspension Diagnostics',
+  'Walk-in vehicle intake: damper telemetry analysis and corner balancing adjustment.',
+  'diagnosis',
+  'walk_in',
+  now() - interval '90 minutes',
+  now() - interval '60 minutes',
+  4820,
+  9500000.00,
+  true
+from public.customers c
+join public.profiles p on p.id = c.profile_id
+join public.vehicles v on v.customer_id = c.id
+where p.full_name = 'Aston Martin' and v.vehicle_number = '#007'
+and not exists (
+  select 1 from public.service_orders where order_number = 'SO-2026-002'
+);
+
+-- SO-2026-003: Completed & Closed - Pre-booked
+insert into public.service_orders (
+  order_number,
+  customer_id,
+  vehicle_id,
+  booking_id,
+  title,
+  description,
+  status,
+  intake_origin,
+  arrived_at,
   scheduled_start,
   scheduled_end,
   odometer_km,
@@ -873,9 +1011,12 @@ select
   'SO-2026-003',
   c.id,
   v.id,
+  b.id,
   '30,000 KM Annual Maintenance: Castrol 5W-40 & Filters',
   '30,000 KM Annual Maintenance: Castrol 5W-40 full synthetic oil service, oil filter replacement, air filter change, and full brake system inspection.',
   'completed',
+  'booking',
+  now() - interval '2 days 4 hours',
   current_date - interval '2 days',
   current_date - interval '2 days' + interval '3 hours',
   28650,
@@ -887,11 +1028,13 @@ select
 from public.customers c
 join public.profiles p on p.id = c.profile_id
 join public.vehicles v on v.customer_id = c.id
+left join public.bookings b on b.vehicle_id = v.id and b.requested_service like '%30,000 KM Annual Maintenance%'
 where p.full_name = 'Axel Zeed' and v.model = 'M3 Touring'
 and not exists (
   select 1 from public.service_orders where order_number = 'SO-2026-003'
 );
 
+-- SO-2026-004: Waiting Queue - Walk-in Admission (Arrived, waiting for bay allocation)
 insert into public.service_orders (
   order_number,
   customer_id,
@@ -899,6 +1042,45 @@ insert into public.service_orders (
   title,
   description,
   status,
+  intake_origin,
+  arrived_at,
+  scheduled_start,
+  odometer_km,
+  estimated_total,
+  customer_approved
+)
+select
+  'SO-2026-004',
+  c.id,
+  v.id,
+  'Heavy Duty Suspension & Alignment Check',
+  'Walk-in vehicle check-in: suspension inspection and multi-point alignment check.',
+  'scheduled',
+  'walk_in',
+  now() - interval '45 minutes',
+  now() + interval '30 minutes',
+  42100,
+  4200000.00,
+  true
+from public.customers c
+join public.profiles p on p.id = c.profile_id
+join public.vehicles v on v.customer_id = c.id
+where p.full_name = 'Axel Zeed' and v.model = 'Raptor'
+and not exists (
+  select 1 from public.service_orders where order_number = 'SO-2026-004'
+);
+
+-- SO-2026-005: Upcoming Queue - Pre-booked (Future scheduled start, vehicle not arrived yet)
+insert into public.service_orders (
+  order_number,
+  customer_id,
+  vehicle_id,
+  booking_id,
+  title,
+  description,
+  status,
+  intake_origin,
+  arrived_at,
   scheduled_start,
   odometer_km,
   estimated_total,
@@ -908,9 +1090,12 @@ select
   'SO-2026-005',
   c.id,
   v.id,
+  b.id,
   'Pre-Race Inspection & High-Voltage Systems Verification',
   'Perform competition vehicle inspection before track or endurance testing.',
   'scheduled',
+  'booking',
+  null,
   current_date + interval '3 days 9 hours',
   16780,
   8500000.00,
@@ -918,15 +1103,95 @@ select
 from public.customers c
 join public.profiles p on p.id = c.profile_id
 join public.vehicles v on v.customer_id = c.id
+left join public.bookings b on b.vehicle_id = v.id and b.requested_service like '%Pre-Race Inspection%'
 where p.full_name = 'BMW M Motorsport' and v.vehicle_number = '#20'
 and not exists (
   select 1 from public.service_orders where order_number = 'SO-2026-005'
+);
+
+-- SO-2026-006: Blocked Queue - Walk-in Admission (Awaiting parts delivery)
+insert into public.service_orders (
+  order_number,
+  customer_id,
+  vehicle_id,
+  title,
+  description,
+  status,
+  intake_origin,
+  arrived_at,
+  scheduled_start,
+  odometer_km,
+  estimated_total,
+  customer_approved
+)
+select
+  'SO-2026-006',
+  c.id,
+  v.id,
+  'Brembo Racing Brake Pad & Disc Replacement',
+  'Brembo racing hardware replacement. On hold awaiting shipment of Brembo brake disc set.',
+  'waiting_for_parts',
+  'walk_in',
+  now() - interval '5 hours',
+  now() - interval '4 hours',
+  12340,
+  7400000.00,
+  true
+from public.customers c
+join public.profiles p on p.id = c.profile_id
+join public.vehicles v on v.customer_id = c.id
+where p.full_name = 'BMW M Motorsport' and v.vehicle_number = '#32'
+and not exists (
+  select 1 from public.service_orders where order_number = 'SO-2026-006'
+);
+
+-- SO-2026-007: Recently Completed / Settlement (Payment pending)
+insert into public.service_orders (
+  order_number,
+  customer_id,
+  vehicle_id,
+  title,
+  description,
+  status,
+  intake_origin,
+  arrived_at,
+  scheduled_start,
+  scheduled_end,
+  odometer_km,
+  estimated_total,
+  final_total,
+  customer_approved,
+  completed_at
+)
+select
+  'SO-2026-007',
+  c.id,
+  v.id,
+  'Performance Brake Fluid Flush & High Temperature Inspection',
+  'Track preparation complete; final inspection passed. Ready for payment settlement.',
+  'payment',
+  'booking',
+  now() - interval '1 day',
+  now() - interval '1 day',
+  now() - interval '1 day' + interval '2 hours',
+  3910,
+  5200000.00,
+  5200000.00,
+  true,
+  now() - interval '3 hours'
+from public.customers c
+join public.profiles p on p.id = c.profile_id
+join public.vehicles v on v.customer_id = c.id
+where p.full_name = 'Aston Martin' and v.vehicle_number = '#009'
+and not exists (
+  select 1 from public.service_orders where order_number = 'SO-2026-007'
 );
 
 -- ============================================================
 -- SERVICE ASSIGNMENTS
 -- ============================================================
 
+-- SO-2026-001 -> Max Verstappen
 insert into public.service_assignments (
   service_order_id,
   mechanic_id,
@@ -937,7 +1202,7 @@ select
   so.id,
   m.id,
   'Lead Diagnostics & Powertrain Engineer',
-  now()
+  now() - interval '3 hours'
 from public.service_orders so
 cross join public.mechanics m
 join public.profiles p on p.id = m.profile_id
@@ -948,6 +1213,29 @@ where so.order_number = 'SO-2026-001'
     where a.service_order_id = so.id and a.mechanic_id = m.id
   );
 
+-- SO-2026-002 -> Sergio Perez
+insert into public.service_assignments (
+  service_order_id,
+  mechanic_id,
+  role_description,
+  assigned_at
+)
+select
+  so.id,
+  m.id,
+  'Chassis, Suspension & Vehicle Dynamics Specialist',
+  now() - interval '90 minutes'
+from public.service_orders so
+cross join public.mechanics m
+join public.profiles p on p.id = m.profile_id
+where so.order_number = 'SO-2026-002'
+  and p.full_name = 'Sergio Perez'
+  and not exists (
+    select 1 from public.service_assignments a
+    where a.service_order_id = so.id and a.mechanic_id = m.id
+  );
+
+-- SO-2026-003 -> Max Verstappen (Completed)
 insert into public.service_assignments (
   service_order_id,
   mechanic_id,
@@ -959,12 +1247,58 @@ select
   so.id,
   m.id,
   'Lead Master Technician',
-  now() - interval '2 days',
+  now() - interval '2 days 4 hours',
   now() - interval '2 days'
 from public.service_orders so
 cross join public.mechanics m
 join public.profiles p on p.id = m.profile_id
 where so.order_number = 'SO-2026-003'
+  and p.full_name = 'Max Verstappen'
+  and not exists (
+    select 1 from public.service_assignments a
+    where a.service_order_id = so.id and a.mechanic_id = m.id
+  );
+
+-- SO-2026-006 -> Sergio Perez
+insert into public.service_assignments (
+  service_order_id,
+  mechanic_id,
+  role_description,
+  assigned_at
+)
+select
+  so.id,
+  m.id,
+  'Race Support Brake Technician',
+  now() - interval '5 hours'
+from public.service_orders so
+cross join public.mechanics m
+join public.profiles p on p.id = m.profile_id
+where so.order_number = 'SO-2026-006'
+  and p.full_name = 'Sergio Perez'
+  and not exists (
+    select 1 from public.service_assignments a
+    where a.service_order_id = so.id and a.mechanic_id = m.id
+  );
+
+-- SO-2026-007 -> Max Verstappen
+insert into public.service_assignments (
+  service_order_id,
+  mechanic_id,
+  role_description,
+  assigned_at,
+  completed_at
+)
+select
+  so.id,
+  m.id,
+  'High Performance Calibrator',
+  now() - interval '1 day',
+  now() - interval '3 hours'
+from public.service_orders so
+cross join public.mechanics m
+join public.profiles p on p.id = m.profile_id
+where so.order_number = 'SO-2026-007'
   and p.full_name = 'Max Verstappen'
   and not exists (
     select 1 from public.service_assignments a
@@ -1081,6 +1415,126 @@ and not exists (
   where st.service_order_id = so.id and st.title = 'Cooling System Inspection'
 );
 
+insert into public.service_tasks (
+  service_order_id,
+  assigned_mechanic_id,
+  title,
+  description,
+  status,
+  estimated_minutes,
+  actual_minutes,
+  started_at
+)
+select
+  so.id,
+  m.id,
+  'Suspension Inspection',
+  'Inspect active dampers, sway bars, and ride height sensors.',
+  'in_progress',
+  60,
+  30,
+  now() - interval '30 minutes'
+from public.service_orders so
+cross join public.mechanics m
+join public.profiles p on p.id = m.profile_id
+where so.order_number = 'SO-2026-002' and p.full_name = 'Sergio Perez'
+and not exists (
+  select 1 from public.service_tasks st
+  where st.service_order_id = so.id and st.title = 'Suspension Inspection'
+);
+
+insert into public.service_tasks (
+  service_order_id,
+  assigned_mechanic_id,
+  title,
+  description,
+  status,
+  estimated_minutes
+)
+select
+  so.id,
+  m.id,
+  'Wheel Alignment Check',
+  'Laser wheel alignment check according to high-downforce circuit spec.',
+  'pending',
+  90
+from public.service_orders so
+cross join public.mechanics m
+join public.profiles p on p.id = m.profile_id
+where so.order_number = 'SO-2026-002' and p.full_name = 'Sergio Perez'
+and not exists (
+  select 1 from public.service_tasks st
+  where st.service_order_id = so.id and st.title = 'Wheel Alignment Check'
+);
+
+insert into public.service_tasks (
+  service_order_id,
+  assigned_mechanic_id,
+  title,
+  description,
+  status,
+  estimated_minutes
+)
+select
+  so.id,
+  m.id,
+  'Brake Pad Replacement',
+  'Awaiting delivery of replacement Brembo ventilated brake disc set.',
+  'pending',
+  75
+from public.service_orders so
+cross join public.mechanics m
+join public.profiles p on p.id = m.profile_id
+where so.order_number = 'SO-2026-006' and p.full_name = 'Sergio Perez'
+and not exists (
+  select 1 from public.service_tasks st
+  where st.service_order_id = so.id and st.title = 'Brake Pad Replacement'
+);
+
+-- ============================================================
+-- SERVICE STATUS HISTORY
+-- ============================================================
+
+insert into public.service_status_history (
+  service_order_id,
+  previous_status,
+  new_status,
+  notes,
+  created_at
+)
+select
+  so.id,
+  null,
+  'scheduled'::public.service_status,
+  'Service order initialized.',
+  so.arrived_at - interval '30 minutes'
+from public.service_orders so
+where so.arrived_at is not null
+and not exists (
+  select 1 from public.service_status_history ssh
+  where ssh.service_order_id = so.id and ssh.new_status = 'scheduled'
+);
+
+insert into public.service_status_history (
+  service_order_id,
+  previous_status,
+  new_status,
+  notes,
+  created_at
+)
+select
+  so.id,
+  'scheduled'::public.service_status,
+  so.status,
+  'Service order transitioned to ' || so.status::text || ' state.',
+  so.arrived_at
+from public.service_orders so
+where so.status in ('in_progress', 'diagnosis', 'waiting_for_parts', 'completed', 'payment')
+and not exists (
+  select 1 from public.service_status_history ssh
+  where ssh.service_order_id = so.id and ssh.new_status = so.status
+);
+
 -- ============================================================
 -- NOTIFICATIONS
 -- ============================================================
@@ -1171,4 +1625,26 @@ where p.full_name = 'Max Verstappen'
 and not exists (
   select 1 from public.notifications n
   where n.recipient_id = p.id and n.title = 'New Job Assignment'
+);
+
+insert into public.notifications (
+  recipient_id,
+  type,
+  priority,
+  title,
+  message,
+  is_read
+)
+select
+  p.id,
+  'service',
+  'high',
+  'New Job Assignment: SO-2026-002',
+  'Assigned as lead chassis technician for SO-2026-002 (Aston Martin Valkyrie #007).',
+  false
+from public.profiles p
+where p.full_name = 'Sergio Perez'
+and not exists (
+  select 1 from public.notifications n
+  where n.recipient_id = p.id and n.title = 'New Job Assignment: SO-2026-002'
 );

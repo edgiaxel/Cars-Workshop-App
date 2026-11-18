@@ -4,6 +4,7 @@ import 'package:pitmate/data/models/customer.dart';
 import 'package:pitmate/data/models/mechanic.dart';
 import 'package:pitmate/data/models/service_order.dart';
 import 'package:pitmate/data/models/spare_part.dart';
+import 'package:pitmate/data/models/user_profile.dart';
 import 'package:pitmate/data/models/vehicle.dart';
 
 void main() {
@@ -312,5 +313,60 @@ void main() {
         expect(unassigned.mechanicDisplayName, 'Unassigned');
       },
     );
+
+    test('ServiceIntakeOrigin parsing and ServiceOrder intakeOrigin & arrivedAt roundtrip', () {
+      expect(ServiceIntakeOrigin.fromString('booking'), ServiceIntakeOrigin.booking);
+      expect(ServiceIntakeOrigin.fromString('walk_in'), ServiceIntakeOrigin.walkIn);
+      expect(ServiceIntakeOrigin.fromString('legacy_unknown'), ServiceIntakeOrigin.legacyUnknown);
+      expect(ServiceIntakeOrigin.fromString('unknown_val'), ServiceIntakeOrigin.legacyUnknown);
+
+      final arrival = DateTime.utc(2026, 10, 30, 8, 30);
+      final json = {
+        'id': 'order-phase2',
+        'order_number': 'SO-2026-099',
+        'customer_id': 'cust-1',
+        'vehicle_id': 'veh-1',
+        'booking_id': 'book-100',
+        'title': 'Track Day Preparation',
+        'status': 'requested',
+        'intake_origin': 'booking',
+        'arrived_at': arrival.toIso8601String(),
+      };
+
+      final order = ServiceOrder.fromJson(json);
+      expect(order.intakeOrigin, ServiceIntakeOrigin.booking);
+      expect(order.arrivedAt, arrival);
+      expect(order.bookingId, 'book-100');
+
+      final serialized = order.toJson();
+      expect(serialized['intake_origin'], 'booking');
+      expect(serialized['booking_id'], 'book-100');
+      expect(serialized['arrived_at'], arrival.toIso8601String());
+    });
+  });
+
+  group('UserProfile model tests', () {
+    test('UserProfile handles themeMode serialization and defaults', () {
+      final json = {
+        'id': 'prof-theme-test',
+        'role': 'admin',
+        'full_name': 'Toto Wolff',
+        'theme_mode': 'dark',
+      };
+
+      final profile = UserProfile.fromJson(json);
+      expect(profile.themeMode, 'dark');
+
+      final updated = profile.copyWith(themeMode: 'light');
+      expect(updated.themeMode, 'light');
+      expect(updated.toJson()['theme_mode'], 'light');
+
+      final defaultProfile = UserProfile.fromJson({
+        'id': 'prof-theme-def',
+        'role': 'customer',
+        'full_name': 'Lewis Hamilton',
+      });
+      expect(defaultProfile.themeMode, 'dark');
+    });
   });
 }

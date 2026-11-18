@@ -12,8 +12,8 @@ class PitCard extends StatelessWidget {
     this.technicalLabel,
     this.padding = AppSpacing.paddingStandard,
     this.margin,
-    this.backgroundColor = AppColors.surfacePrimary,
-    this.borderColor = AppColors.borderSubtle,
+    this.backgroundColor,
+    this.borderColor,
     this.onTap,
   });
 
@@ -21,18 +21,26 @@ class PitCard extends StatelessWidget {
   final String? technicalLabel;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
-  final Color backgroundColor;
-  final Color borderColor;
+  final Color? backgroundColor;
+  final Color? borderColor;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveBg = backgroundColor ??
+        (isDark ? AppColors.surfacePrimary : AppColors.lightSurfacePrimary);
+    final effectiveBorder = borderColor ??
+        (isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle);
+    final technicalColor =
+        isDark ? AppColors.textMuted : AppColors.lightTextSecondary;
+
     Widget cardContent = Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: effectiveBg,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: borderColor, width: 1),
+        border: Border.all(color: effectiveBorder, width: 1),
       ),
       child: Padding(
         padding: padding,
@@ -43,7 +51,7 @@ class PitCard extends StatelessWidget {
             if (technicalLabel != null) ...[
               Text(
                 technicalLabel!.toUpperCase(),
-                style: AppTypography.technical(color: AppColors.textMuted),
+                style: AppTypography.technical(color: technicalColor),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

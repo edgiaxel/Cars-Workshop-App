@@ -9,6 +9,7 @@ enum BookingStatus {
   approved('approved', 'Approved'),
   rejected('rejected', 'Rejected'),
   scheduled('scheduled', 'Scheduled'),
+  checkedIn('checked_in', 'Checked In'),
   cancelled('cancelled', 'Cancelled'),
   completed('completed', 'Completed');
 
@@ -35,6 +36,8 @@ enum BookingStatus {
         return AppColors.info;
       case BookingStatus.scheduled:
         return AppColors.statusInProgress;
+      case BookingStatus.checkedIn:
+        return AppColors.statusWaitingApproval;
       case BookingStatus.completed:
         return AppColors.statusCompleted;
       case BookingStatus.rejected:

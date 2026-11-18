@@ -27,7 +27,6 @@ class CustomerHistoryPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Row(
           children: [
             const Icon(
@@ -39,7 +38,7 @@ class CustomerHistoryPage extends ConsumerWidget {
             Expanded(
               child: Text(
                 'INVOICE RECEIPT',
-                style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+                style: AppTypography.sectionTitle(),
               ),
             ),
           ],
@@ -67,39 +66,62 @@ class CustomerHistoryPage extends ConsumerWidget {
                           color: AppColors.primaryAccent,
                         ),
                       ),
-                      StatusBadge.forServiceStatus(order.status.value),
+                      Wrap(
+                        spacing: 4,
+                        children: [
+                          StatusBadge.forIntakeOrigin(order.intakeOrigin),
+                          StatusBadge.forServiceStatus(order.status.value),
+                        ],
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.standard),
                 _buildReceiptLine(
+                  context,
+                  'Intake Origin',
+                  order.intakeOrigin.label,
+                ),
+                _buildReceiptLine(
+                  context,
                   'Vehicle',
                   order.vehicle?.displayName ?? 'Registered Vehicle',
                 ),
                 if (order.vehicle?.licensePlate != null)
                   _buildReceiptLine(
+                    context,
                     'License Plate',
                     order.vehicle!.licensePlate!,
                   ),
-                _buildReceiptLine('Service Performed', order.title),
-                _buildReceiptLine('Technician', order.mechanicDisplayName),
+                _buildReceiptLine(context, 'Service Performed', order.title),
+                _buildReceiptLine(context, 'Technician', order.mechanicDisplayName),
                 _buildReceiptLine(
+                  context,
                   'Date Completed',
                   order.completedAt?.toIso8601String().split('T').first ??
                       order.createdAt?.toIso8601String().split('T').first ??
                       '2026-10-14',
                 ),
                 if (order.description != null && order.description!.isNotEmpty)
-                  _buildReceiptLine('Notes', order.description!),
+                  _buildReceiptLine(context, 'Notes', order.description!),
                 const SizedBox(height: AppSpacing.standard),
-                const Divider(color: AppColors.borderSubtle, height: 1),
+                Divider(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.borderSubtle
+                      : AppColors.lightBorderSubtle,
+                  height: 1,
+                ),
                 const SizedBox(height: AppSpacing.standard),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'TOTAL SETTLED',
-                      style: AppTypography.label(color: AppColors.textPrimary),
+                      style: AppTypography.label(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textPrimary
+                            : AppColors.lightTextPrimary,
+                      ),
                     ),
                     Text(
                       formattedAmount,
@@ -113,7 +135,11 @@ class CustomerHistoryPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.compact),
                 Text(
                   'Payment method: Direct Workshop Settlement • Electronic Invoice Verified',
-                  style: AppTypography.bodySmall(color: AppColors.textMuted),
+                  style: AppTypography.bodySmall(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textMuted
+                        : AppColors.lightTextMuted,
+                  ),
                 ),
               ],
             ),
@@ -124,7 +150,11 @@ class CustomerHistoryPage extends ConsumerWidget {
             onPressed: () => Navigator.pop(dialogCtx),
             child: Text(
               'Close',
-              style: AppTypography.label(color: AppColors.textMuted),
+              style: AppTypography.label(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMuted
+                    : AppColors.lightTextMuted,
+              ),
             ),
           ),
           ElevatedButton.icon(
@@ -151,7 +181,11 @@ class CustomerHistoryPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildReceiptLine(String label, String value) {
+  Widget _buildReceiptLine(BuildContext context, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final textPrimary = isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -161,13 +195,13 @@ class CustomerHistoryPage extends ConsumerWidget {
             width: 130,
             child: Text(
               label,
-              style: AppTypography.technical(color: AppColors.textMuted),
+              style: AppTypography.technical(color: textMuted),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: AppTypography.bodySmall(color: AppColors.textPrimary),
+              style: AppTypography.bodySmall(color: textPrimary),
             ),
           ),
         ],
@@ -178,6 +212,11 @@ class CustomerHistoryPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ordersAsync = ref.watch(customerServiceOrdersProvider(null));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary = isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final borderSubtle = isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
 
     return CustomerShell(
       currentRoute: RoutePaths.customerHistory,
@@ -260,7 +299,7 @@ class CustomerHistoryPage extends ConsumerWidget {
                                         item.vehicle?.displayName ??
                                             'Registered Vehicle',
                                         style: AppTypography.sectionTitle(
-                                          color: AppColors.textPrimary,
+                                          color: textPrimary,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -279,14 +318,21 @@ class CustomerHistoryPage extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.compact),
-                                StatusBadge.forServiceStatus(item.status.value),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    StatusBadge.forServiceStatus(item.status.value),
+                                    const SizedBox(height: 4),
+                                    StatusBadge.forIntakeOrigin(item.intakeOrigin),
+                                  ],
+                                ),
                               ],
                             ),
                             const SizedBox(height: AppSpacing.compact),
                             Text(
                               'Service: ${item.title} • Technician: ${item.mechanicDisplayName}',
                               style: AppTypography.bodySmall(
-                                color: AppColors.textSecondary,
+                                color: textSecondary,
                               ),
                             ),
                             if (item.description != null &&
@@ -295,13 +341,13 @@ class CustomerHistoryPage extends ConsumerWidget {
                               Text(
                                 item.description!,
                                 style: AppTypography.bodySmall(
-                                  color: AppColors.textMuted,
+                                  color: textMuted,
                                 ),
                               ),
                             ],
                             const SizedBox(height: AppSpacing.standard),
-                            const Divider(
-                              color: AppColors.borderSubtle,
+                            Divider(
+                              color: borderSubtle,
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
@@ -311,7 +357,7 @@ class CustomerHistoryPage extends ConsumerWidget {
                                 Text(
                                   'TOTAL BILLED',
                                   style: AppTypography.technical(
-                                    color: AppColors.textMuted,
+                                    color: textMuted,
                                   ),
                                 ),
                                 Text(

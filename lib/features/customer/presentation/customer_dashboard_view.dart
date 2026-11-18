@@ -11,6 +11,7 @@ import '../../../data/models/service_order.dart';
 import '../../../data/models/vehicle.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/providers/booking_provider.dart';
+import '../../../shared/providers/customer_provider.dart';
 import '../../../shared/providers/reminder_provider.dart';
 import '../../../shared/providers/service_order_provider.dart';
 import '../../../shared/providers/vehicle_provider.dart';
@@ -27,6 +28,8 @@ class CustomerDashboardView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authSessionProvider);
     final profile = authState.profile;
+    final customerAsync = ref.watch(currentCustomerProvider);
+    final customer = customerAsync.asData?.value;
 
     final vehiclesAsync = ref.watch(customerVehiclesProvider(null));
     final bookingsAsync = ref.watch(customerBookingsProvider(null));
@@ -58,6 +61,13 @@ class CustomerDashboardView extends ConsumerWidget {
         ? activeBookings.first
         : null;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary = isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final borderSubtle = isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
+    final surfaceSecondary = isDark ? AppColors.surfaceSecondary : AppColors.lightSurfaceSecondary;
+
     return SingleChildScrollView(
       padding: AppSpacing.paddingSection,
       child: Column(
@@ -75,18 +85,20 @@ class CustomerDashboardView extends ConsumerWidget {
                     Text(
                       'GARAGE PORTAL',
                       style: AppTypography.technical(
-                        color: AppColors.textMuted,
+                        color: textMuted,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      profile?.fullName ?? 'Axel Zeed',
-                      style: AppTypography.pageTitle(),
+                      customer?.displayName ?? profile?.fullName ?? 'Workshop Client',
+                      style: AppTypography.pageTitle(
+                        color: textPrimary,
+                      ),
                     ),
                     Text(
-                      authState.email ?? 'lexazeed@gmail.com',
+                      authState.email ?? '',
                       style: AppTypography.bodySmall(
-                        color: AppColors.textSecondary,
+                        color: textSecondary,
                       ),
                     ),
                   ],
@@ -206,7 +218,7 @@ class CustomerDashboardView extends ConsumerWidget {
                             child: Text(
                               primaryVehicle.displayName,
                               style: AppTypography.sectionTitle(
-                                color: AppColors.textPrimary,
+                                color: textPrimary,
                               ),
                               maxLines: 2,
                             ),
@@ -228,36 +240,38 @@ class CustomerDashboardView extends ConsumerWidget {
                             Text(
                               'Color: ${primaryVehicle.color}',
                               style: AppTypography.bodySmall(
-                                color: AppColors.textSecondary,
+                                color: textSecondary,
                               ),
                             ),
                           Text(
                             '•  Odometer: ${primaryVehicle.mileageKm.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} KM',
                             style: AppTypography.bodySmall(
-                              color: AppColors.textSecondary,
+                              color: textSecondary,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.standard),
-                      const Divider(color: AppColors.borderSubtle, height: 1),
+                      Divider(color: borderSubtle, height: 1),
                       const SizedBox(height: AppSpacing.compact),
                       Wrap(
                         spacing: AppSpacing.section,
                         runSpacing: AppSpacing.compact,
                         children: [
                           _buildMeta(
+                            context,
                             'Upcoming Service',
                             upcomingBooking?.requestedService ??
                                 'Annual Inspection & Fluids',
                           ),
                           _buildMeta(
+                            context,
                             'Status',
                             upcomingBooking != null
                                 ? 'Appointment ${upcomingBooking.status.label} (${upcomingBooking.preferredDate ?? 'Pending'})'
                                 : 'No appointment pending',
                           ),
-                          _buildMeta('Assigned Bay', 'Bay 1 (Master Tech)'),
+                          _buildMeta(context, 'Assigned Bay', 'Bay 1 (Master Tech)'),
                         ],
                       ),
                     ],
@@ -266,7 +280,7 @@ class CustomerDashboardView extends ConsumerWidget {
           const SizedBox(height: AppSpacing.section),
 
           // Quick Navigation Shortcuts
-          SectionHeader(
+          const SectionHeader(
             title: 'CUSTOMER ACTIONS',
             subtitle: 'Direct links to appointments, records, and reminders',
           ),
@@ -280,6 +294,9 @@ class CustomerDashboardView extends ConsumerWidget {
                 subtitle: 'Manage garage fleet',
                 icon: Icons.directions_car_outlined,
                 route: RoutePaths.customerVehicles,
+                textPrimary: textPrimary,
+                textMuted: textMuted,
+                surfaceSecondary: surfaceSecondary,
               ),
               _buildQuickCard(
                 context,
@@ -287,6 +304,9 @@ class CustomerDashboardView extends ConsumerWidget {
                 subtitle: 'View booking status',
                 icon: Icons.calendar_today_outlined,
                 route: RoutePaths.customerBookings,
+                textPrimary: textPrimary,
+                textMuted: textMuted,
+                surfaceSecondary: surfaceSecondary,
               ),
               _buildQuickCard(
                 context,
@@ -294,6 +314,9 @@ class CustomerDashboardView extends ConsumerWidget {
                 subtitle: 'Invoices & records',
                 icon: Icons.receipt_long_outlined,
                 route: RoutePaths.customerHistory,
+                textPrimary: textPrimary,
+                textMuted: textMuted,
+                surfaceSecondary: surfaceSecondary,
               ),
               _buildQuickCard(
                 context,
@@ -301,6 +324,9 @@ class CustomerDashboardView extends ConsumerWidget {
                 subtitle: 'Track scheduled upkeep',
                 icon: Icons.alarm_outlined,
                 route: RoutePaths.customerReminders,
+                textPrimary: textPrimary,
+                textMuted: textMuted,
+                surfaceSecondary: surfaceSecondary,
               ),
             ],
           ),
@@ -309,18 +335,22 @@ class CustomerDashboardView extends ConsumerWidget {
     );
   }
 
-  Widget _buildMeta(String label, String value) {
+  Widget _buildMeta(BuildContext context, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final textPrimary = isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           '$label: ',
-          style: AppTypography.technical(color: AppColors.textMuted),
+          style: AppTypography.technical(color: textMuted),
         ),
         Flexible(
           child: Text(
             value,
-            style: AppTypography.bodySmall(color: AppColors.textPrimary),
+            style: AppTypography.bodySmall(color: textPrimary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -335,6 +365,9 @@ class CustomerDashboardView extends ConsumerWidget {
     required String subtitle,
     required IconData icon,
     required String route,
+    required Color textPrimary,
+    required Color textMuted,
+    required Color surfaceSecondary,
   }) {
     return SizedBox(
       width: 220,
@@ -346,7 +379,7 @@ class CustomerDashboardView extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(AppSpacing.compact),
               decoration: BoxDecoration(
-                color: AppColors.surfaceSecondary,
+                color: surfaceSecondary,
                 borderRadius: BorderRadius.circular(AppRadius.control),
               ),
               child: Icon(icon, color: AppColors.primaryAccent, size: 20),
@@ -358,11 +391,11 @@ class CustomerDashboardView extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: AppTypography.label(color: AppColors.textPrimary),
+                    style: AppTypography.label(color: textPrimary),
                   ),
                   Text(
                     subtitle,
-                    style: AppTypography.bodySmall(color: AppColors.textMuted),
+                    style: AppTypography.bodySmall(color: textMuted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

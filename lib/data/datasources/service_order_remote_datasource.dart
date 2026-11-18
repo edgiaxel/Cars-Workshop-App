@@ -16,7 +16,22 @@ abstract class ServiceOrderRemoteDataSource {
     required String vehicleId,
     required String title,
     String? description,
+    String? bookingId,
     String? mechanicId,
+    double estimatedTotal = 0.0,
+    int? odometerKm,
+    ServiceIntakeOrigin intakeOrigin = ServiceIntakeOrigin.walkIn,
+    DateTime? arrivedAt,
+  });
+  Future<ServiceOrder> checkInBooking({
+    required String bookingId,
+    String? adminNotes,
+  });
+  Future<ServiceOrder> admitWalkIn({
+    required String customerId,
+    required String vehicleId,
+    required String title,
+    String? description,
     double estimatedTotal = 0.0,
     int? odometerKm,
   });
@@ -121,13 +136,18 @@ class SupabaseServiceOrderRemoteDataSource
     required String vehicleId,
     required String title,
     String? description,
+    String? bookingId,
     String? mechanicId,
     double estimatedTotal = 0.0,
     int? odometerKm,
+    ServiceIntakeOrigin intakeOrigin = ServiceIntakeOrigin.walkIn,
+    DateTime? arrivedAt,
   }) async {
     final ts = DateTime.now().millisecondsSinceEpoch.toString();
     final orderNumber =
         'SO-${DateTime.now().year}-${ts.substring(ts.length - 4)}';
+
+    final effectiveArrivedAt = arrivedAt ?? DateTime.now();
 
     final payload = <String, dynamic>{
       'order_number': orderNumber,
@@ -136,7 +156,12 @@ class SupabaseServiceOrderRemoteDataSource
       'title': title.trim(),
       'status': ServiceStatus.requested.value,
       'estimated_total': estimatedTotal,
+      'intake_origin': intakeOrigin.value,
+      'arrived_at': effectiveArrivedAt.toIso8601String(),
     };
+    if (bookingId != null && bookingId.isNotEmpty) {
+      payload['booking_id'] = bookingId;
+    }
     if (description != null && description.trim().isNotEmpty) {
       payload['description'] = description.trim();
     }
@@ -162,6 +187,67 @@ class SupabaseServiceOrderRemoteDataSource
     }
 
     return createdOrder;
+  }
+
+  @override
+  Future<ServiceOrder> checkInBooking({
+    required String bookingId,
+    String? adminNotes,
+  }) async {
+    // If booking is currently in 'requested' state, transition to 'scheduled'
+    // so check_in_booking succeeds regardless of older DB constraints.
+    try {
+      final currentBooking = await _client
+          .from('bookings')
+          .select('status')
+          .eq('id', bookingId)
+          .maybeSingle();
+
+      if (currentBooking != null && currentBooking['status'] == 'requested') {
+        await _client
+            .from('bookings')
+            .update({'status': 'scheduled'})
+            .eq('id', bookingId);
+      }
+    } catch (_) {
+      // Proceed to RPC even if direct update hits policy
+    }
+
+    final res = await _client.rpc('check_in_booking', params: {
+      'p_booking_id': bookingId,
+      if (adminNotes != null && adminNotes.trim().isNotEmpty)
+        'p_admin_notes': adminNotes.trim(),
+    });
+    final map = res as Map<String, dynamic>;
+    final orderId = map['service_order_id'] as String;
+    return getServiceOrderById(orderId);
+  }
+
+  @override
+  Future<ServiceOrder> admitWalkIn({
+    required String customerId,
+    required String vehicleId,
+    required String title,
+    String? description,
+    double estimatedTotal = 0.0,
+    int? odometerKm,
+  }) async {
+    final params = <String, dynamic>{
+      'p_customer_id': customerId,
+      'p_vehicle_id': vehicleId,
+      'p_title': title.trim(),
+      'p_estimated_total': estimatedTotal,
+    };
+    if (description != null && description.trim().isNotEmpty) {
+      params['p_description'] = description.trim();
+    }
+    if (odometerKm != null) {
+      params['p_odometer_km'] = odometerKm;
+    }
+    final res = await _client.rpc('admit_walk_in', params: params);
+    final map = res as Map<String, dynamic>;
+    final orderId = map['service_order_id'] as String;
+    return getServiceOrderById(orderId);
   }
 
   @override

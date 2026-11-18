@@ -7,6 +7,7 @@ import '../../features/admin/presentation/admin_bookings_view.dart';
 import '../../features/admin/presentation/admin_customers_view.dart';
 import '../../features/admin/presentation/admin_inventory_view.dart';
 import '../../features/admin/presentation/admin_mechanics_view.dart';
+import '../../features/admin/presentation/admin_queue_view.dart';
 import '../../features/admin/presentation/admin_reports_view.dart';
 import '../../features/admin/presentation/admin_services_view.dart';
 import '../../features/admin/presentation/admin_shell_page.dart';
@@ -154,6 +155,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.admin,
         builder: (context, state) => const AdminShellPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.adminQueue,
+        builder: (context, state) => const AdminQueuePage(),
       ),
       GoRoute(
         path: RoutePaths.adminCustomers,

@@ -1,6 +1,7 @@
 import 'package:pitmate/data/models/booking.dart';
 import 'package:pitmate/data/models/customer.dart';
 import 'package:pitmate/data/models/mechanic.dart';
+import 'package:pitmate/data/models/report_telemetry.dart';
 import 'package:pitmate/data/models/service_notification.dart';
 import 'package:pitmate/data/models/service_order.dart';
 import 'package:pitmate/data/models/service_reminder.dart';
@@ -14,6 +15,7 @@ import 'package:pitmate/data/repositories/customer_repository.dart';
 import 'package:pitmate/data/repositories/mechanic_repository.dart';
 import 'package:pitmate/data/repositories/notification_repository.dart';
 import 'package:pitmate/data/repositories/reminder_repository.dart';
+import 'package:pitmate/data/repositories/report_repository.dart';
 import 'package:pitmate/data/repositories/service_order_repository.dart';
 import 'package:pitmate/data/repositories/spare_part_repository.dart';
 import 'package:pitmate/data/repositories/task_repository.dart';
@@ -506,6 +508,7 @@ class FakeSparePartRepository implements SparePartRepository {
     required double unitCost,
     required double sellingPrice,
     int minimumStock = 0,
+    int initialStock = 0,
     bool isActive = true,
   }) async {
     final part = SparePart(
@@ -519,10 +522,41 @@ class FakeSparePartRepository implements SparePartRepository {
       unitCost: unitCost,
       sellingPrice: sellingPrice,
       minimumStock: minimumStock,
+      stock: initialStock,
       isActive: isActive,
     );
     _parts.add(part);
     return part;
+  }
+
+  @override
+  Future<void> adjustStock({
+    required String id,
+    required int quantity,
+    String? notes,
+    String transactionType = 'adjustment',
+  }) async {
+    final index = _parts.indexWhere((p) => p.id == id);
+    if (index != -1) {
+      final old = _parts[index];
+      _parts[index] = old.copyWith(stock: old.stock + quantity);
+    }
+  }
+
+  @override
+  Future<void> deductPartsForServiceOrder({
+    required String serviceOrderId,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    for (final item in items) {
+      final partId = item['spare_part_id'] as String;
+      final qty = (item['quantity'] as num).toInt();
+      final index = _parts.indexWhere((p) => p.id == partId);
+      if (index != -1) {
+        final old = _parts[index];
+        _parts[index] = old.copyWith(stock: (old.stock - qty).clamp(0, 999999));
+      }
+    }
   }
 
   @override
@@ -755,16 +789,69 @@ class FakeServiceOrderRepository implements ServiceOrderRepository {
     String? mechanicId,
     double estimatedTotal = 0.0,
     int? odometerKm,
+    String? bookingId,
+    ServiceIntakeOrigin intakeOrigin = ServiceIntakeOrigin.walkIn,
+    DateTime? arrivedAt,
   }) async {
     final order = ServiceOrder(
       id: 'so-${_orders.length + 1}',
       orderNumber: 'SO-2026-00${_orders.length + 1}',
       customerId: customerId,
       vehicleId: vehicleId,
+      bookingId: bookingId,
+      intakeOrigin: intakeOrigin,
+      arrivedAt: arrivedAt ?? DateTime.now(),
       title: title,
       description: description,
       estimatedTotal: estimatedTotal,
       odometerKm: odometerKm,
+      status: ServiceStatus.requested,
+    );
+    _orders.add(order);
+    return order;
+  }
+
+  @override
+  Future<ServiceOrder> checkInBooking({
+    required String bookingId,
+    String? adminNotes,
+  }) async {
+    final order = ServiceOrder(
+      id: 'so-${_orders.length + 1}',
+      orderNumber: 'SO-2026-00${_orders.length + 1}',
+      customerId: 'c1',
+      vehicleId: 'v1',
+      bookingId: bookingId,
+      intakeOrigin: ServiceIntakeOrigin.booking,
+      arrivedAt: DateTime.now(),
+      title: 'Checked-in Booking Order',
+      description: adminNotes,
+      status: ServiceStatus.requested,
+    );
+    _orders.add(order);
+    return order;
+  }
+
+  @override
+  Future<ServiceOrder> admitWalkIn({
+    required String customerId,
+    required String vehicleId,
+    required String title,
+    String? description,
+    int? odometerKm,
+    double estimatedTotal = 0.0,
+  }) async {
+    final order = ServiceOrder(
+      id: 'so-${_orders.length + 1}',
+      orderNumber: 'SO-2026-00${_orders.length + 1}',
+      customerId: customerId,
+      vehicleId: vehicleId,
+      intakeOrigin: ServiceIntakeOrigin.walkIn,
+      arrivedAt: DateTime.now(),
+      title: title,
+      description: description,
+      odometerKm: odometerKm,
+      estimatedTotal: estimatedTotal,
       status: ServiceStatus.requested,
     );
     _orders.add(order);
@@ -1009,4 +1096,117 @@ class FakeTaskRepository implements TaskRepository {
       _tasks[index] = _tasks[index].copyWith(status: status);
     }
   }
+
+  @override
+  Future<ServiceTask> createTask({
+    required String serviceOrderId,
+    String? assignedMechanicId,
+    required String title,
+    String? description,
+    String? notes,
+    String status = 'pending',
+  }) async {
+    final newTask = ServiceTask(
+      id: 'task_${DateTime.now().millisecondsSinceEpoch}',
+      serviceOrderId: serviceOrderId,
+      assignedMechanicId: assignedMechanicId,
+      title: title,
+      description: description,
+      notes: notes,
+      status: status,
+    );
+    _tasks.add(newTask);
+    return newTask;
+  }
+
+  @override
+  Future<ServiceTask> updateTask({
+    required String id,
+    String? status,
+    String? notes,
+    int? actualMinutes,
+  }) async {
+    final index = _tasks.indexWhere((t) => t.id == id);
+    if (index == -1) {
+      throw Exception('Task not found: $id');
+    }
+    final existing = _tasks[index];
+    final updated = existing.copyWith(
+      status: status ?? existing.status,
+      notes: notes ?? existing.notes,
+      actualMinutes: actualMinutes ?? existing.actualMinutes,
+    );
+    _tasks[index] = updated;
+    return updated;
+  }
+
+  @override
+  Future<void> deleteTask(String id) async {
+    _tasks.removeWhere((t) => t.id == id);
+  }
 }
+
+/// In-memory fake implementation of [ReportRepository] for testing.
+class FakeReportRepository implements ReportRepository {
+  ReportTelemetryData? customTelemetry;
+
+  FakeReportRepository([this.customTelemetry]);
+
+  @override
+  Future<ReportTelemetryData> getTelemetry({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (customTelemetry != null) {
+      return customTelemetry!;
+    }
+    return ReportTelemetryData(
+      startDate: startDate,
+      endDate: endDate,
+      intakeBreakdown: const IntakeBreakdown(
+        totalOrders: 25,
+        bookingCount: 15,
+        walkInCount: 8,
+        legacyUnknownCount: 2,
+      ),
+      financialSummary: const FinancialSummary(
+        estimatedTotal: 45000000,
+        settledTotal: 32500000,
+        settledOrdersCount: 18,
+        pendingSettlementCount: 7,
+      ),
+      statusDistribution: const [
+        StatusDistributionItem(status: 'completed', count: 18),
+        StatusDistributionItem(status: 'in_progress', count: 4),
+        StatusDistributionItem(status: 'diagnosing', count: 2),
+        StatusDistributionItem(status: 'blocked', count: 1),
+      ],
+      volumeTimeline: const [
+        VolumeTimelineItem(date: '2026-10-01', totalCount: 5, completedCount: 4),
+        VolumeTimelineItem(date: '2026-10-02', totalCount: 8, completedCount: 6),
+        VolumeTimelineItem(date: '2026-10-03', totalCount: 12, completedCount: 8),
+      ],
+      mechanicWorkload: const [
+        MechanicWorkloadItem(
+          mechanicId: 'm1',
+          mechanicName: 'Alex Pratama',
+          employeeCode: 'TECH-01',
+          specialization: 'Master Powertrain',
+          assignedCount: 14,
+          activeCount: 3,
+          completedCount: 11,
+        ),
+        MechanicWorkloadItem(
+          mechanicId: 'm2',
+          mechanicName: 'Budi Santoso',
+          employeeCode: 'TECH-02',
+          specialization: 'Chassis & Suspension',
+          assignedCount: 11,
+          activeCount: 2,
+          completedCount: 9,
+        ),
+      ],
+    );
+  }
+}
+

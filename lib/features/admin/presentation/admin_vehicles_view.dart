@@ -72,68 +72,82 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
     bool isSaving = false;
     String? errorMessage;
 
-    await showModalBottomSheet<void>(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? AppColors.surfaceCard : AppColors.lightSurfaceCard;
+
+    await showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfacePrimary,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      barrierDismissible: false,
       builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: dialogBg,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 480,
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            child: StatefulBuilder(
+              builder: (context, setModalState) {
             return Padding(
-              padding: EdgeInsets.only(
-                left: AppSpacing.standard,
-                right: AppSpacing.standard,
-                top: AppSpacing.section,
-                bottom:
-                    MediaQuery.of(sheetContext).viewInsets.bottom +
-                    AppSpacing.section,
-              ),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+              padding: const EdgeInsets.all(AppSpacing.standard),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            isEditing
-                                ? 'EDIT FLEET VEHICLE'
-                                : 'REGISTER VEHICLE',
-                            style: AppTypography.sectionTitle(
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.close,
-                              color: AppColors.textMuted,
-                            ),
-                            onPressed: () => Navigator.of(sheetContext).pop(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.standard),
-                      if (errorMessage != null) ...[
-                        Text(
-                          errorMessage!,
-                          style: AppTypography.bodySmall(
-                            color: AppColors.error,
-                          ),
+                      Text(
+                        isEditing
+                            ? 'EDIT FLEET VEHICLE'
+                            : 'REGISTER VEHICLE',
+                        style: AppTypography.sectionTitle(
+                          color: AppColors.textPrimary,
                         ),
-                        const SizedBox(height: AppSpacing.compact),
-                      ],
-                      if (!isEditing) ...[
-                        DropdownButtonFormField<String>(
-                          initialValue: selectedCustomerId.isNotEmpty
-                              ? selectedCustomerId
-                              : null,
-                          decoration: const InputDecoration(
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.textMuted,
+                        ),
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                      ),
+                    ],
+                  ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: AppSpacing.compact),
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.compact),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.error),
+                      ),
+                      child: Text(
+                        errorMessage!,
+                        style: AppTypography.bodySmall(
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.compact),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (!isEditing) ...[
+                              DropdownButtonFormField<String>(
+                                initialValue: selectedCustomerId.isNotEmpty
+                                    ? selectedCustomerId
+                                    : null,
+                                decoration: const InputDecoration(
                             labelText: 'Vehicle Owner / Client Account *',
                             prefixIcon: Icon(Icons.person_pin_outlined),
                           ),
@@ -288,140 +302,127 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
                           labelText: 'Vehicle Specification & Notes',
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.section),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SecondaryButton(
-                              text: 'Cancel',
-                              onPressed: () => Navigator.of(sheetContext).pop(),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.standard),
-                          Expanded(
-                            child: PrimaryButton(
-                              text: isSaving ? 'Saving...' : 'Save Vehicle',
-                              isLoading: isSaving,
-                              onPressed: isSaving
-                                  ? null
-                                  : () async {
-                                      if (!formKey.currentState!.validate()) {
-                                        return;
-                                      }
-                                      setModalState(() {
-                                        isSaving = true;
-                                        errorMessage = null;
-                                      });
-                                      try {
-                                        if (isEditing) {
-                                          await ref
-                                              .read(vehiclesProvider.notifier)
-                                              .updateVehicle(
-                                                id: vehicle.id,
-                                                make: makeController.text
-                                                    .trim(),
-                                                model: modelController.text
-                                                    .trim(),
-                                                variant: variantController.text
-                                                    .trim(),
-                                                modelYear: int.tryParse(
-                                                  yearController.text.trim(),
-                                                ),
-                                                licensePlate: plateController
-                                                    .text
-                                                    .trim(),
-                                                vehicleNumber: numberController
-                                                    .text
-                                                    .trim(),
-                                                vin: vinController.text.trim(),
-                                                mileageKm:
-                                                    int.tryParse(
-                                                      mileageController.text
-                                                          .trim(),
-                                                    ) ??
-                                                    0,
-                                                color: colorController.text
-                                                    .trim(),
-                                                notes: notesController.text
-                                                    .trim(),
-                                              );
-                                        } else {
-                                          await ref
-                                              .read(vehiclesProvider.notifier)
-                                              .createVehicle(
-                                                customerId: selectedCustomerId,
-                                                make: makeController.text
-                                                    .trim(),
-                                                model: modelController.text
-                                                    .trim(),
-                                                variant: variantController.text
-                                                    .trim(),
-                                                modelYear: int.tryParse(
-                                                  yearController.text.trim(),
-                                                ),
-                                                licensePlate: plateController
-                                                    .text
-                                                    .trim(),
-                                                vehicleNumber: numberController
-                                                    .text
-                                                    .trim(),
-                                                vin: vinController.text.trim(),
-                                                mileageKm:
-                                                    int.tryParse(
-                                                      mileageController.text
-                                                          .trim(),
-                                                    ) ??
-                                                    0,
-                                                color: colorController.text
-                                                    .trim(),
-                                                notes: notesController.text
-                                                    .trim(),
-                                              );
-                                        }
-
-                                        if (context.mounted) {
-                                          Navigator.of(sheetContext).pop();
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    isEditing
-                                                        ? 'Vehicle updated successfully.'
-                                                        : 'Vehicle added to garage fleet.',
-                                                  ),
-                                                ),
-                                              );
-                                        }
-                                      } catch (err) {
-                                        setModalState(() {
-                                          isSaving = false;
-                                          errorMessage = err.toString();
-                                        });
-                                      }
-                                    },
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
+            ),
+            const SizedBox(height: AppSpacing.standard),
+            Row(
+              children: [
+                Expanded(
+                  child: SecondaryButton(
+                    text: 'Cancel',
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.standard),
+                Expanded(
+                  child: PrimaryButton(
+                    text: isSaving ? 'Saving...' : 'Save Vehicle',
+                    isLoading: isSaving,
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            if (!formKey.currentState!.validate()) {
+                              return;
+                            }
+                            setModalState(() {
+                              isSaving = true;
+                              errorMessage = null;
+                            });
+                            try {
+                              if (isEditing) {
+                                await ref
+                                    .read(vehiclesProvider.notifier)
+                                    .updateVehicle(
+                                      id: vehicle.id,
+                                      make: makeController.text.trim(),
+                                      model: modelController.text.trim(),
+                                      variant: variantController.text.trim(),
+                                      modelYear: int.tryParse(
+                                        yearController.text.trim(),
+                                      ),
+                                      licensePlate:
+                                          plateController.text.trim(),
+                                      vehicleNumber:
+                                          numberController.text.trim(),
+                                      vin: vinController.text.trim(),
+                                      mileageKm:
+                                          int.tryParse(
+                                            mileageController.text.trim(),
+                                          ) ??
+                                          0,
+                                      color: colorController.text.trim(),
+                                      notes: notesController.text.trim(),
+                                    );
+                              } else {
+                                await ref
+                                    .read(vehiclesProvider.notifier)
+                                    .createVehicle(
+                                      customerId: selectedCustomerId,
+                                      make: makeController.text.trim(),
+                                      model: modelController.text.trim(),
+                                      variant: variantController.text.trim(),
+                                      modelYear: int.tryParse(
+                                        yearController.text.trim(),
+                                      ),
+                                      licensePlate:
+                                          plateController.text.trim(),
+                                      vehicleNumber:
+                                          numberController.text.trim(),
+                                      vin: vinController.text.trim(),
+                                      mileageKm:
+                                          int.tryParse(
+                                            mileageController.text.trim(),
+                                          ) ??
+                                          0,
+                                      color: colorController.text.trim(),
+                                      notes: notesController.text.trim(),
+                                    );
+                              }
+
+                              if (context.mounted) {
+                                Navigator.of(sheetContext).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      isEditing
+                                          ? 'Vehicle updated successfully.'
+                                          : 'Vehicle added to garage fleet.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (err) {
+                              setModalState(() {
+                                isSaving = false;
+                                errorMessage = err.toString();
+                              });
+                            }
+                          },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  ),
+),
+);
+  },
+);
   }
 
   Future<void> _confirmDeleteVehicle(Vehicle vehicle) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text(
           'Remove Vehicle',
-          style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+          style: AppTypography.sectionTitle(),
         ),
         content: Text(
           'Are you sure you want to remove ${vehicle.displayName} (${vehicle.identifierLabel}) from the registry?',
@@ -468,6 +469,14 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
   @override
   Widget build(BuildContext context) {
     final vehiclesAsync = ref.watch(vehiclesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+    final borderSubtle =
+        isDark ? AppColors.borderSubtle : AppColors.lightBorderSubtle;
 
     return AdminShell(
       currentRoute: RoutePaths.adminVehicles,
@@ -547,7 +556,7 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
 
                       return PitCard(
                         technicalLabel:
-                            'TELEMETRY-ID • ${(vehicle.id.length >= 8 ? vehicle.id.substring(0, 8) : vehicle.id).toUpperCase()}',
+                            'TELEMETRY-ID \u2022 ${(vehicle.id.length >= 8 ? vehicle.id.substring(0, 8) : vehicle.id).toUpperCase()}',
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -563,7 +572,7 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
                                   child: Text(
                                     vehicle.displayName,
                                     style: AppTypography.sectionTitle(
-                                      color: AppColors.textPrimary,
+                                      color: textPrimary,
                                     ),
                                   ),
                                 ),
@@ -578,16 +587,16 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.person_pin_outlined,
                                     size: 14,
-                                    color: AppColors.textMuted,
+                                    color: textMuted,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Owner: ${vehicle.customer!.displayName}',
                                     style: AppTypography.technical(
-                                      color: AppColors.textSecondary,
+                                      color: textSecondary,
                                     ),
                                   ),
                                 ],
@@ -599,13 +608,13 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
                               Text(
                                 vehicle.notes!,
                                 style: AppTypography.bodySmall(
-                                  color: AppColors.textSecondary,
+                                  color: textSecondary,
                                 ),
                               ),
                             ],
                             const SizedBox(height: AppSpacing.standard),
-                            const Divider(
-                              color: AppColors.borderSubtle,
+                            Divider(
+                              color: borderSubtle,
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
@@ -617,28 +626,32 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
                                   _buildInfoChip(
                                     Icons.calendar_today_outlined,
                                     'Year: ${vehicle.modelYear}',
+                                    context,
                                   ),
                                 _buildInfoChip(
                                   Icons.speed_outlined,
                                   '${vehicle.mileageKm.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} KM',
+                                  context,
                                 ),
                                 if (vehicle.color != null &&
                                     vehicle.color!.isNotEmpty)
                                   _buildInfoChip(
                                     Icons.palette_outlined,
                                     vehicle.color!,
+                                    context,
                                   ),
                                 if (vehicle.vin != null &&
                                     vehicle.vin!.isNotEmpty)
                                   _buildInfoChip(
                                     Icons.confirmation_number_outlined,
                                     'VIN: ${vehicle.vin!}',
+                                    context,
                                   ),
                               ],
                             ),
                             const SizedBox(height: AppSpacing.compact),
-                            const Divider(
-                              color: AppColors.borderSubtle,
+                            Divider(
+                              color: borderSubtle,
                               height: 1,
                             ),
                             const SizedBox(height: AppSpacing.compact),
@@ -652,9 +665,9 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
                                   ),
                                   label: const Text('Edit'),
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppColors.textPrimary,
-                                    side: const BorderSide(
-                                      color: AppColors.borderSubtle,
+                                    foregroundColor: textPrimary,
+                                    side: BorderSide(
+                                      color: borderSubtle,
                                     ),
                                   ),
                                   onPressed: () =>
@@ -692,15 +705,20 @@ class _AdminVehiclesPageState extends ConsumerState<AdminVehiclesPage> {
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label) {
+  Widget _buildInfoChip(IconData icon, String label, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppColors.textMuted),
+        Icon(icon, size: 14, color: textMuted),
         const SizedBox(width: 4),
         Text(
           label,
-          style: AppTypography.technical(color: AppColors.textSecondary),
+          style: AppTypography.technical(color: textSecondary),
         ),
       ],
     );

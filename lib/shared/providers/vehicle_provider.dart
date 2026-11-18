@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasources/vehicle_remote_datasource.dart';
 import '../../data/models/vehicle.dart';
 import '../../data/repositories/vehicle_repository.dart';
+import 'customer_provider.dart';
 import 'supabase_provider.dart';
 
 /// Provider for [VehicleRemoteDataSource].
@@ -153,5 +154,12 @@ final customerVehiclesProvider = FutureProvider.family<List<Vehicle>, String?>((
 ) async {
   final repository = ref.watch(vehicleRepositoryProvider);
   if (repository == null) return const [];
-  return repository.getVehicles(customerId: customerId);
+  var targetId = customerId;
+  if (targetId == null) {
+    try {
+      final cust = await ref.watch(currentCustomerProvider.future);
+      targetId = cust?.id;
+    } catch (_) {}
+  }
+  return repository.getVehicles(customerId: targetId);
 });

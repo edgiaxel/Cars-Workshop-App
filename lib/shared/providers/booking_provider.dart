@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasources/booking_remote_datasource.dart';
 import '../../data/models/booking.dart';
 import '../../data/repositories/booking_repository.dart';
+import 'customer_provider.dart';
 import 'supabase_provider.dart';
 
 /// Provider for [BookingRemoteDataSource].
@@ -164,5 +165,12 @@ final customerBookingsProvider = FutureProvider.family<List<Booking>, String?>((
 ) async {
   final repository = ref.watch(bookingRepositoryProvider);
   if (repository == null) return const [];
-  return repository.getBookings(customerId: customerId);
+  var targetId = customerId;
+  if (targetId == null) {
+    try {
+      final cust = await ref.watch(currentCustomerProvider.future);
+      targetId = cust?.id;
+    } catch (_) {}
+  }
+  return repository.getBookings(customerId: targetId);
 });

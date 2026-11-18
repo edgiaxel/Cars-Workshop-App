@@ -10,6 +10,7 @@ import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/pit_card.dart';
 import '../../../shared/widgets/primary_button.dart';
+import '../../../shared/widgets/secondary_button.dart';
 
 /// Public registration page for /register route adhering to ARCHITECTURE.md & SPEC.md.
 class RegisterPage extends ConsumerStatefulWidget {
@@ -25,11 +26,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _otpController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   bool _isLoading = false;
+  bool _isVerifyingOtp = false;
   bool _confirmationPending = false;
   String? _errorMessage;
+  String? _infoMessage;
 
   @override
   void dispose() {
@@ -38,7 +42,82 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _otpController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleVerifyOtp() async {
+    final token = _otpController.text.trim();
+    if (token.isEmpty || token.length < 6) {
+      setState(() {
+        _errorMessage = 'Please enter the 6-digit verification code from your email.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isVerifyingOtp = true;
+      _errorMessage = null;
+      _infoMessage = null;
+    });
+
+    try {
+      await ref.read(authSessionProvider.notifier).verifyOtp(
+        email: _emailController.text.trim(),
+        token: token,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account verified and activated successfully!'),
+            backgroundColor: AppColors.statusCompleted,
+          ),
+        );
+        context.go(RoutePaths.customer);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isVerifyingOtp = false;
+          _errorMessage = e.toString().contains('expired') || e.toString().contains('invalid')
+              ? 'The verification code is invalid or has expired. Please check your email or click Resend.'
+              : 'Verification failed: $e';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isVerifyingOtp = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleResendOtp() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _infoMessage = null;
+    });
+
+    try {
+      await ref.read(authSessionProvider.notifier).resendOtp(
+        email: _emailController.text.trim(),
+      );
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _infoMessage = 'A fresh 6-digit verification code has been dispatched to your email.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to resend code: $e';
+        });
+      }
+    }
   }
 
   Future<void> _handleRegister() async {
@@ -149,9 +228,39 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     const SizedBox(height: AppSpacing.standard),
                   ],
 
+                  if (_infoMessage != null) ...[
+                    Container(
+                      padding: AppSpacing.paddingStandard,
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.15),
+                        border: Border.all(color: AppColors.success),
+                        borderRadius: AppRadius.cardRadius,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline,
+                            color: AppColors.success,
+                            size: 20,
+                          ),
+                          const SizedBox(width: AppSpacing.compact),
+                          Expanded(
+                            child: Text(
+                              _infoMessage!,
+                              style: AppTypography.bodySmall(
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.standard),
+                  ],
+
                   if (_confirmationPending) ...[
                     PitCard(
-                      technicalLabel: 'CONFIRMATION PENDING',
+                      technicalLabel: 'ENTER VERIFICATION CODE',
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -162,24 +271,68 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           ),
                           const SizedBox(height: AppSpacing.standard),
                           Text(
-                            'Verification link sent to ${_emailController.text.trim()}.',
-                            style: AppTypography.bodyMedium(
+                            'Confirmation Code Sent!',
+                            style: AppTypography.sectionTitle(
                               color: AppColors.textPrimary,
                             ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: AppSpacing.compact),
                           Text(
-                            'Please verify your email address to activate your customer telemetry portal.',
+                            'We sent a 6-digit verification code to ${_emailController.text.trim()}. Enter the code below or click the email link.',
                             style: AppTypography.bodySmall(
                               color: AppColors.textSecondary,
                             ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: AppSpacing.section),
+                          TextFormField(
+                            controller: _otpController,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            maxLength: 6,
+                            style: AppTypography.sectionTitle(
+                              color: AppColors.primaryAccent,
+                            ).copyWith(letterSpacing: 8, fontSize: 24),
+                            decoration: const InputDecoration(
+                              labelText: '6-Digit Verification Code',
+                              hintText: '123456',
+                              counterText: '',
+                              prefixIcon: Icon(Icons.pin, size: 20),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.standard),
                           PrimaryButton(
+                            text: 'Verify Code & Activate',
+                            icon: Icons.check_circle_outline,
+                            isLoading: _isVerifyingOtp,
+                            onPressed: _isVerifyingOtp ? null : _handleVerifyOtp,
+                          ),
+                          const SizedBox(height: AppSpacing.standard),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextButton.icon(
+                                onPressed: _isLoading ? null : _handleResendOtp,
+                                icon: const Icon(Icons.refresh, size: 16),
+                                label: const Text('Resend Code'),
+                              ),
+                              TextButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _confirmationPending = false;
+                                    _errorMessage = null;
+                                    _infoMessage = null;
+                                  });
+                                },
+                                icon: const Icon(Icons.edit, size: 16),
+                                label: const Text('Edit Details'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.compact),
+                          SecondaryButton(
                             text: 'Back to Sign In',
-                            icon: Icons.arrow_back,
                             onPressed: () => context.go(RoutePaths.login),
                           ),
                         ],

@@ -15,7 +15,22 @@ abstract class ServiceOrderRepository {
     required String vehicleId,
     required String title,
     String? description,
+    String? bookingId,
     String? mechanicId,
+    double estimatedTotal = 0.0,
+    int? odometerKm,
+    ServiceIntakeOrigin intakeOrigin = ServiceIntakeOrigin.walkIn,
+    DateTime? arrivedAt,
+  });
+  Future<ServiceOrder> checkInBooking({
+    required String bookingId,
+    String? adminNotes,
+  });
+  Future<ServiceOrder> admitWalkIn({
+    required String customerId,
+    required String vehicleId,
+    required String title,
+    String? description,
     double estimatedTotal = 0.0,
     int? odometerKm,
   });
@@ -68,16 +83,52 @@ class SupabaseServiceOrderRepository implements ServiceOrderRepository {
     required String vehicleId,
     required String title,
     String? description,
+    String? bookingId,
     String? mechanicId,
     double estimatedTotal = 0.0,
     int? odometerKm,
+    ServiceIntakeOrigin intakeOrigin = ServiceIntakeOrigin.walkIn,
+    DateTime? arrivedAt,
   }) {
     return _remoteDataSource.createServiceOrder(
       customerId: customerId,
       vehicleId: vehicleId,
       title: title,
       description: description,
+      bookingId: bookingId,
       mechanicId: mechanicId,
+      estimatedTotal: estimatedTotal,
+      odometerKm: odometerKm,
+      intakeOrigin: intakeOrigin,
+      arrivedAt: arrivedAt,
+    );
+  }
+
+  @override
+  Future<ServiceOrder> checkInBooking({
+    required String bookingId,
+    String? adminNotes,
+  }) {
+    return _remoteDataSource.checkInBooking(
+      bookingId: bookingId,
+      adminNotes: adminNotes,
+    );
+  }
+
+  @override
+  Future<ServiceOrder> admitWalkIn({
+    required String customerId,
+    required String vehicleId,
+    required String title,
+    String? description,
+    double estimatedTotal = 0.0,
+    int? odometerKm,
+  }) {
+    return _remoteDataSource.admitWalkIn(
+      customerId: customerId,
+      vehicleId: vehicleId,
+      title: title,
+      description: description,
       estimatedTotal: estimatedTotal,
       odometerKm: odometerKm,
     );

@@ -19,6 +19,7 @@ abstract class SparePartRepository {
     required double unitCost,
     required double sellingPrice,
     int minimumStock = 0,
+    int initialStock = 0,
     bool isActive = true,
   });
   Future<SparePart> updateSparePart({
@@ -33,6 +34,16 @@ abstract class SparePartRepository {
     double? sellingPrice,
     int? minimumStock,
     bool? isActive,
+  });
+  Future<void> adjustStock({
+    required String id,
+    required int quantity,
+    String? notes,
+    String transactionType = 'adjustment',
+  });
+  Future<void> deductPartsForServiceOrder({
+    required String serviceOrderId,
+    required List<Map<String, dynamic>> items,
   });
   Future<void> deleteSparePart(String id);
 }
@@ -72,6 +83,7 @@ class SupabaseSparePartRepository implements SparePartRepository {
     required double unitCost,
     required double sellingPrice,
     int minimumStock = 0,
+    int initialStock = 0,
     bool isActive = true,
   }) {
     return _remoteDataSource.createSparePart(
@@ -84,7 +96,34 @@ class SupabaseSparePartRepository implements SparePartRepository {
       unitCost: unitCost,
       sellingPrice: sellingPrice,
       minimumStock: minimumStock,
+      initialStock: initialStock,
       isActive: isActive,
+    );
+  }
+
+  @override
+  Future<void> adjustStock({
+    required String id,
+    required int quantity,
+    String? notes,
+    String transactionType = 'adjustment',
+  }) {
+    return _remoteDataSource.adjustStock(
+      id: id,
+      quantity: quantity,
+      notes: notes,
+      transactionType: transactionType,
+    );
+  }
+
+  @override
+  Future<void> deductPartsForServiceOrder({
+    required String serviceOrderId,
+    required List<Map<String, dynamic>> items,
+  }) {
+    return _remoteDataSource.deductPartsForServiceOrder(
+      serviceOrderId: serviceOrderId,
+      items: items,
     );
   }
 

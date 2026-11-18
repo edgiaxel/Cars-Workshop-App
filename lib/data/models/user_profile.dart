@@ -9,6 +9,7 @@ class UserProfile {
     this.phone,
     this.avatarUrl,
     this.isActive = true,
+    this.themeMode = 'dark',
     this.createdAt,
     this.updatedAt,
   });
@@ -19,6 +20,7 @@ class UserProfile {
   final String? phone;
   final String? avatarUrl;
   final bool isActive;
+  final String themeMode;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -30,6 +32,7 @@ class UserProfile {
       phone: json['phone'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       isActive: json['is_active'] as bool? ?? true,
+      themeMode: json['theme_mode'] as String? ?? 'dark',
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
@@ -47,6 +50,31 @@ class UserProfile {
       if (phone != null) 'phone': phone,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
       'is_active': isActive,
+      'theme_mode': themeMode,
     };
+  }
+
+  UserProfile copyWith({
+    String? id,
+    UserRole? role,
+    String? fullName,
+    String? phone,
+    String? avatarUrl,
+    bool? isActive,
+    String? themeMode,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserProfile(
+      id: id ?? this.id,
+      role: role ?? this.role,
+      fullName: fullName ?? this.fullName,
+      phone: phone ?? this.phone,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      isActive: isActive ?? this.isActive,
+      themeMode: themeMode ?? this.themeMode,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

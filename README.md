@@ -30,7 +30,7 @@ Multi-branch workshop management is outside the current project scope.
 
 ## Authentication
 
-- User registration
+- User registration with direct 6-digit OTP verification across web, desktop, and mobile
 - User login
 - User logout
 - Role-based access
@@ -78,6 +78,29 @@ Customers can submit service requests and bookings.
 Administrators can review and manage bookings.
 
 Bookings may progress through the workshop service workflow.
+
+---
+
+## Workshop Queue & Intake Management
+
+Administrators can manage physical intake and floor dispatch via the dedicated Workshop Queue:
+
+- **5 Physical Queue Sections**: Upcoming Bookings, Waiting in Workshop, In Service, Blocked / Awaiting Action, and Recently Completed.
+- **Deterministic FIFO Ordering**: Arrived vehicles are ordered strictly by arrival time (`arrived_at ASC`) with deterministic tie-breakers (`created_at ASC`, `id ASC`).
+- **Booking Check-In**: Atomic arrival check-in converting pending bookings to arrived queue orders via `check_in_booking` RPC.
+- **Walk-In Admission**: Direct vehicle admission modal creating service orders with explicit `walk_in` intake origin via `admit_walk_in` RPC.
+- **Intake Origin Preservation**: `booking`, `walk_in`, and `legacy_unknown` origins are preserved through mechanic workflows, customer service history, and billing receipts.
+- **Hold Blocker Telemetry**: Prominent hold callout banners for blocked orders (waiting for parts, customer approval, completion review).
+
+---
+
+## Dual-Theme Support
+
+Motorsport-clean dual theme system with instant per-user toggle:
+
+- **Dark Theme (Default)**: Motorsport-inspired obsidian surfaces (`#0B0D10`, `#171C22`) with bold racing red accents (`#E10600`) and high-contrast typography.
+- **Light Theme**: Technical off-white palette (`#F7F9FC`, `#FFFFFF`) with deep slate typography (`#0F172A`) meeting WCAG AA contrast standards.
+- **Persistence**: Saved per-user in Supabase profile (`theme_mode`) and reactive across mobile and desktop app headers.
 
 ---
 
@@ -174,42 +197,37 @@ History may include:
 
 ## Notifications
 
-The application can provide notifications for relevant operational events.
+The application provides automated notifications for relevant operational events:
 
-Examples include:
-
-- Booking updates
-- Service status changes
-- Approval updates
-- Inventory warnings
-- Other relevant workshop events
+- Booking updates and multi-interval countdowns (1h, 30m, exact time)
+- 24-hour missed booking grace window notifications with one-click reschedule
+- Low stock and critical inventory alerts for administrators
+- Service status changes and assignment notifications for mechanics
+- Real-time notification drawer with unread counter across all roles
 
 ---
 
 ## Reminders
 
-Customers can receive service-related reminders.
+Customers receive service-related reminders with automated sync:
 
-Examples include:
-
-- Upcoming maintenance
-- Recommended service
-- Vehicle-related reminders
+- Automated follow-up maintenance reminders generated from completed service orders (+6 months / +10,000 KM)
+- Custom user-created interval and mileage alerts
+- Target mileage and milestone specification tracking
+- One-click "Sync History" to backfill vehicle maintenance schedules
 
 ---
 
-## Reports
+## Reports & Workshop Telemetry
 
-Administrators can access operational summaries and reports.
+The reporting engine provides real-time, secured operational telemetry powered by Supabase aggregation RPCs (`get_admin_reports_telemetry`) and resilient RLS fallback:
 
-Possible report information includes:
-
-- Service activity
-- Revenue
-- Inventory status
-- Mechanic workload
-- Service history
-- Other relevant workshop metrics
+- **Date Boundary Filtering**: Normalized inclusive date windows with quick presets (`7 Days`, `30 Days`, `Month to Date`, `All Time`) and custom date range picker.
+- **Intake Origin Comparison**: Compares scheduled bookings vs direct walk-in admissions, keeping `legacy_unknown` strictly isolated (never conflated with walk-ins) with screen reader accessibility summaries and stacked visual ratio bars.
+- **Financial Telemetry**: Strictly distinguishes between **Settled Realized Revenue** (finalized invoices on completed/closed orders) and **Estimated Pipeline Total** (work in progress).
+- **Service Status Distribution & Daily Activity**: Visual breakdown of orders across lifecycle states and daily volume ingestion timeline.
+- **Mechanic Workload Allocation**: Detailed table tracking assigned, active, and completed jobs per technician.
+- **Telemetry Export**: Auditable export modal generating operational telemetry summaries.
 
 ---
 
@@ -309,6 +327,7 @@ lib/
 ├── app/
 │   ├── app.dart
 │   ├── router/
+│   ├── customization/
 │   ├── theme/
 │   └── config/
 ├── core/
@@ -346,29 +365,29 @@ For a detailed explanation, see:
 - `DESIGN.md`
 - `SPEC.md`
 - `AGENTS.md`
+- `CUSTOMIZATION.md`
 
 ---
 
 # 6. Design
 
-PitMate uses a dark, motorsport-inspired interface.
+PitMate features a motorsport-inspired interface designed for high legibility, performance, and accessibility.
 
 The design emphasizes:
 
-- Technical information
-- Strong information hierarchy
-- Clear service status
-- Operational dashboards
-- Compact data presentation
-- Professional workshop aesthetics
-- Mobile usability
-
-The primary visual foundation uses dark surfaces with controlled accent and semantic colors.
+- Technical telemetry & clean workshop hierarchy
+- Dual-theme system (Motorsport Dark by default, with accessible Motorsport Light switch)
+- Central customization layer in `lib/app/customization/` (`PitmatePalette`, `PitmateTypography`, `PitmateLayout`, `PitmateTheme`)
+- Per-profile theme persistence across sessions stored in `profiles.theme_mode`
+- Clear, distinct status communication (`StatusBadge`, `PitCard`, `StatCard`)
+- High contrast WCAG AA ratios across both light (`#F7F9FC` background / `#0F172A` text) and dark (`#0B0D10` background / `#F5F7FA` text)
+- Minimum 44px tap targets for mobile technicians and workshop service desks
 
 Detailed design rules are defined in:
 
 ```text
 DESIGN.md
+CUSTOMIZATION.md
 ```
 
 ---
@@ -476,27 +495,22 @@ Primary objectives include:
 
 ## UAS
 
-The UAS milestone extends the existing foundation with complete operational workflows.
+**Status: Phase 1 (Docs & Stitch Assets), Phase 2 (Database & Domain Foundations), Phase 3 (Workshop Queue & Intake UI), and Phase 7 (Stitch-Informed UI Refinement & Anti-Slop Review) Complete.** Workshop Queue with 5 physical sections, deterministic FIFO arrival sorting, booking check-in, walk-in admission, mechanic blocker telemetry, customer origin retention, dual-theme persistence, and WCAG AA contrast compliance verified with 73/73 tests passing. Follow `UAS-PLAN.md` for dependency order and acceptance criteria.
+
 
 Primary objectives include:
 
-- Complete service lifecycle
-- Mechanic assignments
-- Service tasks
-- Checklists
-- Parts requests
-- Inventory transactions
-- Service parts
-- Cost calculations
-- Final costs
-- Mechanic earnings
-- Service history
-- Notifications
-- Reminders
-- Reports
-- RLS policies
-- Testing
-- Final integration
+- Explicit workshop queue and vehicle check-in
+- Booking-to-service-order conversion with a persistent intake origin
+- Walk-in service-order creation and FIFO queue ordering
+- Complete service lifecycle, assignments, tasks, and checklists
+- Real Supabase writes for actions currently represented by SnackBars
+- Persistent per-user light/dark theme selection for all roles
+- PostgreSQL-backed report aggregation and real Flutter charts
+- Booking-versus-walk-in history and reporting
+- RLS, valid status transitions, and workflow integration tests
+- Anti-Slop review and Stitch-informed UI refinement
+- Final analysis, tests, and build validation
 
 ---
 
@@ -529,6 +543,8 @@ AGENTS.md
 
 # 11. Documentation
 
+UAS planning references: `UAS-PLAN.md`, `CUSTOMIZATION.md`, and `STITCH-UI-BRIEF.md`.
+
 The project uses the following primary documentation:
 
 | Document | Purpose |
@@ -536,7 +552,11 @@ The project uses the following primary documentation:
 | `SPEC.md` | Functional requirements and project scope |
 | `ARCHITECTURE.md` | Application architecture and technical structure |
 | `DESIGN.md` | Visual identity and UI/UX system |
+| `DB-SCHEMA.md` | Database schema, constraints, and RLS contract |
 | `AGENTS.md` | AI-assisted development rules |
+| `CUSTOMIZATION.md` | Canonical app customization source-of-truth rules |
+| `UAS-PLAN.md` | UAS milestones, dependencies, and acceptance criteria |
+| `STITCH-UI-BRIEF.md` | Google Stitch reference-generation and handoff brief |
 | `README.md` | Project overview and setup reference |
 
 These documents should remain consistent with the implementation.
@@ -807,3 +827,11 @@ How the project is understood, configured, and run
 ```
 
 Together, these documents define the initial foundation of PitMate.
+
+---
+
+# UAS Scope Clarification — Phase 0 Audit
+
+The Phase 0 audit found `admin_reports_view.dart` is currently a placeholder with simulated export feedback, and mechanic task actions include UI-only stubs. The booking approval flow does not yet create a linked service order. These are known gaps, not completed capabilities.
+
+The UAS work is tracked in `UAS-PLAN.md`. Read `CUSTOMIZATION.md` for the central app customization layer and `STITCH-UI-BRIEF.md` for the UI-reference workflow. Keep the technology stack Flutter + Riverpod + GoRouter + Supabase unless an explicit course requirement changes it.

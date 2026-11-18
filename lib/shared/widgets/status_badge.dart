@@ -57,6 +57,30 @@ class StatusBadge extends StatelessWidget {
     );
   }
 
+  /// Factory mapping service intake origin to semantic status badges.
+  factory StatusBadge.forIntakeOrigin(ServiceIntakeOrigin origin) {
+    switch (origin) {
+      case ServiceIntakeOrigin.booking:
+        return const StatusBadge(
+          label: 'BOOKING',
+          color: AppColors.info,
+          icon: Icons.calendar_today,
+        );
+      case ServiceIntakeOrigin.walkIn:
+        return const StatusBadge(
+          label: 'WALK-IN',
+          color: AppColors.success,
+          icon: Icons.directions_car,
+        );
+      case ServiceIntakeOrigin.legacyUnknown:
+        return const StatusBadge(
+          label: 'WALK-IN',
+          color: AppColors.success,
+          icon: Icons.directions_car,
+        );
+    }
+  }
+
   /// Factory mapping task status strings to semantic status badges.
   factory StatusBadge.forTaskStatus(String status) {
     switch (status.trim().toLowerCase()) {

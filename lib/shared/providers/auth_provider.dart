@@ -190,6 +190,53 @@ class AuthSessionNotifier extends Notifier<AuthSessionState> {
     }
   }
 
+  /// Verify OTP code sent via email for signup or recovery.
+  Future<AuthResponse> verifyOtp({
+    required String email,
+    required String token,
+    OtpType type = OtpType.signup,
+  }) async {
+    final repository = ref.read(authRepositoryProvider);
+    if (repository == null) {
+      state = AuthSessionState.error(
+        'Supabase client is unconfigured or unavailable.',
+      );
+      throw Exception('Supabase client is unconfigured');
+    }
+
+    state = AuthSessionState.loading(email: email);
+
+    try {
+      final response = await repository.verifyOtp(
+        email: email,
+        token: token,
+        type: type,
+      );
+
+      if (response.session != null && response.user != null) {
+        await _loadProfileForUser(response.user!, repository);
+      } else {
+        state = AuthSessionState.unauthenticated();
+      }
+
+      return response;
+    } catch (e) {
+      state = AuthSessionState.error(_formatErrorMessage(e));
+      rethrow;
+    }
+  }
+
+  /// Resend confirmation OTP to email.
+  Future<void> resendOtp({
+    required String email,
+    OtpType type = OtpType.signup,
+  }) async {
+    final repository = ref.read(authRepositoryProvider);
+    if (repository != null) {
+      await repository.resendOtp(email: email, type: type);
+    }
+  }
+
   /// Sign out current session.
   Future<void> signOut() async {
     final repository = ref.read(authRepositoryProvider);
@@ -228,6 +275,27 @@ class AuthSessionNotifier extends Notifier<AuthSessionState> {
       await repository.updatePassword(newPassword);
     } catch (e) {
       throw Exception(_formatErrorMessage(e));
+    }
+  }
+
+  /// Update active user's theme preference.
+  Future<void> updateThemeMode(String newMode) async {
+    final client = ref.read(supabaseClientProvider);
+    final currentProfile = state.profile;
+    if (currentProfile != null) {
+      final updatedProfile = currentProfile.copyWith(themeMode: newMode);
+      state = state.copyWith(profile: updatedProfile);
+
+      if (client != null) {
+        try {
+          await client
+              .from('profiles')
+              .update({'theme_mode': newMode})
+              .eq('id', currentProfile.id);
+        } catch (_) {
+          // Keep local state update active even if offline
+        }
+      }
     }
   }
 

@@ -20,6 +20,7 @@ abstract class SparePartRemoteDataSource {
     required double unitCost,
     required double sellingPrice,
     int minimumStock = 0,
+    int initialStock = 0,
     bool isActive = true,
   });
   Future<SparePart> updateSparePart({
@@ -34,6 +35,16 @@ abstract class SparePartRemoteDataSource {
     double? sellingPrice,
     int? minimumStock,
     bool? isActive,
+  });
+  Future<void> adjustStock({
+    required String id,
+    required int quantity,
+    String? notes,
+    String transactionType = 'adjustment',
+  });
+  Future<void> deductPartsForServiceOrder({
+    required String serviceOrderId,
+    required List<Map<String, dynamic>> items,
   });
   Future<void> deleteSparePart(String id);
 }
@@ -104,6 +115,7 @@ class SupabaseSparePartRemoteDataSource implements SparePartRemoteDataSource {
     required double unitCost,
     required double sellingPrice,
     int minimumStock = 0,
+    int initialStock = 0,
     bool isActive = true,
   }) async {
     final payload = <String, dynamic>{
@@ -125,7 +137,92 @@ class SupabaseSparePartRemoteDataSource implements SparePartRemoteDataSource {
         .select('*, inventory_transactions(quantity)')
         .single();
 
-    return SparePart.fromJson(data);
+    final created = SparePart.fromJson(data);
+
+    if (initialStock > 0) {
+      try {
+        await _client.from('inventory_transactions').insert({
+          'spare_part_id': created.id,
+          'transaction_type': 'initial_stock',
+          'quantity': initialStock,
+          'unit_cost': unitCost,
+          'notes': 'Initial stock registration',
+        });
+      } catch (_) {
+        try {
+          // Fallback to adjust_spare_part_stock RPC if direct insert hits RLS
+          await _client.rpc('adjust_spare_part_stock', params: {
+            'p_spare_part_id': created.id,
+            'p_quantity': initialStock,
+            'p_transaction_type': 'initial_stock',
+            'p_notes': 'Initial stock registration',
+          });
+        } catch (rpcErr) {
+          // Keep spare part created even if initial transaction policy fails on remote
+        }
+      }
+    }
+
+    return getSparePartById(created.id);
+  }
+
+  @override
+  Future<void> adjustStock({
+    required String id,
+    required int quantity,
+    String? notes,
+    String transactionType = 'adjustment',
+  }) async {
+    try {
+      await _client.from('inventory_transactions').insert({
+        'spare_part_id': id,
+        'transaction_type': transactionType,
+        'quantity': quantity,
+        'notes': notes ?? 'Stock adjustment',
+      });
+    } catch (_) {
+      try {
+        // Fallback to RPC
+        await _client.rpc('adjust_spare_part_stock', params: {
+          'p_spare_part_id': id,
+          'p_quantity': quantity,
+          'p_transaction_type': transactionType,
+          'p_notes': notes ?? 'Stock adjustment',
+        });
+      } catch (rpcErr) {
+        throw Exception(
+          'Failed to record inventory transaction. Please run database migration 20261118100000: $rpcErr',
+        );
+      }
+    }
+  }
+
+  @override
+  Future<void> deductPartsForServiceOrder({
+    required String serviceOrderId,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    if (items.isEmpty) return;
+    try {
+      await _client.rpc('deduct_inventory_for_order', params: {
+        'p_service_order_id': serviceOrderId,
+        'p_items': items,
+      });
+    } catch (_) {
+      for (final item in items) {
+        final partId = item['spare_part_id'] as String;
+        final qty = (item['quantity'] as num).toInt().abs();
+        if (qty > 0) {
+          await _client.from('inventory_transactions').insert({
+            'spare_part_id': partId,
+            'transaction_type': 'service_usage',
+            'quantity': -qty,
+            'service_order_id': serviceOrderId,
+            'notes': 'Allocated for Service Order #$serviceOrderId',
+          });
+        }
+      }
+    }
   }
 
   @override

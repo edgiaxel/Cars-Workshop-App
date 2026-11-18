@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasources/customer_remote_datasource.dart';
 import '../../data/models/customer.dart';
 import '../../data/repositories/customer_repository.dart';
+import 'auth_provider.dart';
 import 'supabase_provider.dart';
 
 /// Provider for [CustomerRemoteDataSource].
@@ -136,6 +137,10 @@ final customersProvider =
 
 /// Provider resolving the currently authenticated customer profile.
 final currentCustomerProvider = FutureProvider<Customer?>((ref) async {
+  final authState = ref.watch(authSessionProvider);
+  if (!authState.isAuthenticated || authState.userId == null) {
+    return null;
+  }
   final repository = ref.watch(customerRepositoryProvider);
   if (repository == null) return null;
   return repository.getCurrentCustomer();

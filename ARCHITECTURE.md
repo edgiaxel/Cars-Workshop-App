@@ -1424,3 +1424,117 @@ Flexible enough to complete the final workflow
 The architecture exists to support the requirements defined in `SPEC.md`.
 
 It should not become a larger engineering project than PitMate itself.
+
+---
+
+# UAS Architecture Addendum — Operational Queue, Themes, Reports, Customization
+
+## A. Canonical customization layer
+
+The application-wide customization definitions belong under `lib/app/customization/`. This is the only intended code location for frequently adjusted visual/catalog values:
+
+```text
+lib/app/customization/
+├── pitmate_palette.dart          # semantic light/dark and status colors
+├── pitmate_typography.dart       # fonts, type scale, text styles
+├── pitmate_layout.dart           # spacing, radii, dimensions
+├── pitmate_status_catalog.dart   # status labels, display groups, colors, icons
+├── pitmate_service_catalog.dart  # controlled service categories and labels
+└── pitmate_theme.dart            # ThemeData and component theme assembly
+```
+
+Do not create a second parallel token system in `shared/`, feature folders, or individual screens. Existing files such as `lib/app/theme/app_colors.dart` and `app_theme.dart` must be inspected before implementation; migrate or wrap them deliberately rather than leaving two competing sources. The exact filenames may be adapted to existing naming conventions, but there must be one canonical customization layer and no duplicate definitions.
+
+Database status values are a persistent domain contract and remain defined in `DB-SCHEMA.md`/migrations. `pitmate_status_catalog.dart` is the single Flutter presentation mapping for those values. A status change is incomplete until migration/schema, model validation, status catalog, transition rules, and tests are synchronized.
+
+## B. Queue and check-in data flow
+
+```text
+Admin checks in booking ─┐
+                         ├─> transaction-safe repository operation
+Admin registers walk-in ─┘             │
+                                       ├─ create/link service order
+                                       ├─ set intake_origin and arrived_at
+                                       ├─ update booking to checked_in when applicable
+                                       └─ preserve one-to-one booking association
+                                                │
+                                                ▼
+                                    Riverpod queue provider
+                                                │
+                                                ▼
+                                      Admin / Mechanic UI
+```
+
+Do not perform check-in as several unrelated client mutations if a partial failure could leave the booking and service order inconsistent. Prefer one PostgreSQL RPC/transaction-backed operation for check-in. The walk-in operation must also set origin and arrival in the same database write/transaction.
+
+Recommended fields:
+
+- `service_orders.intake_origin`: controlled value `booking`, `walk_in`, or `legacy_unknown`.
+- `service_orders.arrived_at`: nullable `timestamptz`; set only when the vehicle physically arrives. Do not default this to `now()` for records that might represent pre-arrival work.
+- `profiles.theme_mode`: controlled `dark`, `light`, or `system` preference.
+- `booking_status.checked_in`: state for the booking after successful admission, before service completion.
+
+`booking_id` alone is not a reliable origin audit field because it is nullable and uses `ON DELETE SET NULL`. Add an origin field and backfill current rows with `legacy_unknown` unless a booking association proves the origin. Never infer historical walk-ins from null `booking_id`.
+
+## C. Queue projection and state derivation
+
+The queue is a view/projection over bookings and service orders, not a new competing lifecycle. Upcoming bookings remain in the booking workflow until check-in. The physical queue includes only service orders with non-null `arrived_at` and an active service status. Sort by `arrived_at ASC`, then `created_at ASC`, then stable ID. Group cards by the existing service status catalog; do not invent extra persisted service statuses just for UI sections.
+
+Admin may see all workshop queue entries permitted by RLS. Mechanics see their assigned work only. Customer views remain restricted to their own vehicles/orders. “Waiting for parts” and “waiting for approval” must remain visibly blocked, not visually conflated with “in progress.”
+
+## D. Theme state and persistence
+
+`MaterialApp.router` reads the current `ThemeMode` from one Riverpod provider. The provider initializes from the authenticated profile, updates local state immediately after a successful preference mutation, and persists `theme_mode` to Supabase. Define explicit behavior for loading/auth transitions and failed writes; a failed persistence operation must not silently imply that a preference was saved. `system` mode follows the platform theme, while `dark` remains the default for existing profiles until changed.
+
+The provider manages preference state, not palette values. `pitmate_theme.dart` composes both themes from the customization layer. Shared widgets must use `Theme.of(context)` / `ColorScheme` and token-backed component themes rather than hardcoding the old dark colors.
+
+## E. Reporting flow
+
+```text
+Admin Reports UI
+  -> reportsProvider(date range / grouping)
+  -> reportsRepository
+  -> Supabase RPC or aggregate views
+  -> PostgreSQL with explicit authorization and aggregation
+  -> typed report DTOs
+  -> charts + accessible textual/table summaries
+```
+
+Use a date-scoped aggregate contract and return only fields required for the report. Use a PostgreSQL view when the query is reusable and naturally compatible with RLS. Use an RPC for parameterized date ranges or coordinated aggregates. Prefer invoker security; any definer function needs explicit Admin authorization, safe `search_path`, restricted grants, and security tests. Avoid loading all service orders into Flutter and computing aggregate business reports in memory.
+
+Mandatory intake metric uses `intake_origin`; `legacy_unknown` is its own bucket and is excluded from booking/walk-in comparison. Define each financial metric and its qualifying statuses before coding. Do not combine estimated and final totals into one figure.
+
+## F. UAS dependency order
+
+1. Audit existing schema, migrations, models, providers, routes, and current theme/token files.
+2. Finalize docs and UI references; agree on the customization layer.
+3. Add migration and transaction-safe check-in/origin/theme/report foundations with RLS tests.
+4. Implement queue and check-in.
+5. Complete real service-task mutations and status-transition validation.
+6. Implement persistent dual themes.
+7. Implement report RPC/views and chart presentation.
+8. Apply Stitch-informed UI refinement and Anti-Slop checks.
+9. Run workflow integration tests, `flutter analyze`, `flutter test`, and the target build; report any manual checks separately.
+
+## G. Authentication OTP, Automated Reminders & Cron Architecture
+
+### 1. Cross-Platform OTP Verification
+Supabase Auth email confirmation links rely on PKCE redirect tokens targeting localhost or specific app schemes, which fail when links are opened on a different device or email scanners consume the single-use token.
+PitMate provides a direct 6-digit OTP verification flow (`verifyOtp`, `resendOtp` in `AuthRemoteDataSource` and `AuthSessionNotifier`). Users on web, desktop, and mobile can enter the verification token received in their email directly inside the client to activate their account and establish an authenticated session.
+
+### 2. Automated Service Reminders Lifecycle
+```text
+Service Order completed / closed
+       │
+       ▼ (DB Trigger: trg_auto_generate_service_reminder)
+Create pending service reminder (+6 months / +10,000 KM)
+       │
+       ▼ (Client sync: customerServiceRemindersProvider.syncFromServiceHistory)
+Customer Reminders View & Dashboard alert
+```
+Customers can also author custom specification reminders through `createReminder`, which persist to `public.service_reminders` with vehicle-level associations.
+
+### 3. Background Cron & On-Demand Refresh
+- Function `public.check_workshop_cron_tasks()` handles 24-hour expired booking cancellations, multi-interval notification dispatches, and inventory threshold monitoring.
+- Scheduled automatically in PostgreSQL via `pg_cron` (`*/5 * * * *`).
+- Exposed via safe RPC and triggered interactively by the Global Refresh button in `RoleShellScaffold`.

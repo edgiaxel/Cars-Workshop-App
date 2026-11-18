@@ -33,6 +33,58 @@ class TasksNotifier extends AsyncNotifier<List<ServiceTask>> {
       ref.invalidateSelf();
     }
   }
+
+  Future<ServiceTask> createTask({
+    required String serviceOrderId,
+    String? assignedMechanicId,
+    required String title,
+    String? description,
+    String? notes,
+    String status = 'pending',
+  }) async {
+    final repository = ref.read(taskRepositoryProvider);
+    if (repository == null) {
+      throw Exception('Task repository unavailable');
+    }
+    final task = await repository.createTask(
+      serviceOrderId: serviceOrderId,
+      assignedMechanicId: assignedMechanicId,
+      title: title,
+      description: description,
+      notes: notes,
+      status: status,
+    );
+    ref.invalidateSelf();
+    return task;
+  }
+
+  Future<ServiceTask> updateTask({
+    required String id,
+    String? status,
+    String? notes,
+    int? actualMinutes,
+  }) async {
+    final repository = ref.read(taskRepositoryProvider);
+    if (repository == null) {
+      throw Exception('Task repository unavailable');
+    }
+    final task = await repository.updateTask(
+      id: id,
+      status: status,
+      notes: notes,
+      actualMinutes: actualMinutes,
+    );
+    ref.invalidateSelf();
+    return task;
+  }
+
+  Future<void> deleteTask(String id) async {
+    final repository = ref.read(taskRepositoryProvider);
+    if (repository != null) {
+      await repository.deleteTask(id);
+      ref.invalidateSelf();
+    }
+  }
 }
 
 final tasksProvider = AsyncNotifierProvider<TasksNotifier, List<ServiceTask>>(
@@ -56,6 +108,58 @@ class MechanicTasksNotifier extends AsyncNotifier<List<ServiceTask>> {
     final repository = ref.read(taskRepositoryProvider);
     if (repository != null) {
       await repository.updateTaskStatus(id, status);
+      ref.invalidateSelf();
+    }
+  }
+
+  Future<ServiceTask> createTask({
+    required String serviceOrderId,
+    String? assignedMechanicId,
+    required String title,
+    String? description,
+    String? notes,
+    String status = 'pending',
+  }) async {
+    final repository = ref.read(taskRepositoryProvider);
+    if (repository == null) {
+      throw Exception('Task repository unavailable');
+    }
+    final task = await repository.createTask(
+      serviceOrderId: serviceOrderId,
+      assignedMechanicId: assignedMechanicId,
+      title: title,
+      description: description,
+      notes: notes,
+      status: status,
+    );
+    ref.invalidateSelf();
+    return task;
+  }
+
+  Future<ServiceTask> updateTask({
+    required String id,
+    String? status,
+    String? notes,
+    int? actualMinutes,
+  }) async {
+    final repository = ref.read(taskRepositoryProvider);
+    if (repository == null) {
+      throw Exception('Task repository unavailable');
+    }
+    final task = await repository.updateTask(
+      id: id,
+      status: status,
+      notes: notes,
+      actualMinutes: actualMinutes,
+    );
+    ref.invalidateSelf();
+    return task;
+  }
+
+  Future<void> deleteTask(String id) async {
+    final repository = ref.read(taskRepositoryProvider);
+    if (repository != null) {
+      await repository.deleteTask(id);
       ref.invalidateSelf();
     }
   }

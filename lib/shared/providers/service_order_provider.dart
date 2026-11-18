@@ -98,6 +98,50 @@ class ServiceOrdersNotifier extends AsyncNotifier<List<ServiceOrder>> {
     return created;
   }
 
+  Future<ServiceOrder> checkInBooking({
+    required String bookingId,
+    String? adminNotes,
+  }) async {
+    final repository = ref.read(serviceOrderRepositoryProvider);
+    if (repository == null) {
+      throw Exception('Supabase service order repository is unconfigured.');
+    }
+
+    final created = await repository.checkInBooking(
+      bookingId: bookingId,
+      adminNotes: adminNotes,
+    );
+
+    ref.invalidateSelf();
+    return created;
+  }
+
+  Future<ServiceOrder> admitWalkIn({
+    required String customerId,
+    required String vehicleId,
+    required String title,
+    String? description,
+    double estimatedTotal = 0.0,
+    int? odometerKm,
+  }) async {
+    final repository = ref.read(serviceOrderRepositoryProvider);
+    if (repository == null) {
+      throw Exception('Supabase service order repository is unconfigured.');
+    }
+
+    final created = await repository.admitWalkIn(
+      customerId: customerId,
+      vehicleId: vehicleId,
+      title: title,
+      description: description,
+      estimatedTotal: estimatedTotal,
+      odometerKm: odometerKm,
+    );
+
+    ref.invalidateSelf();
+    return created;
+  }
+
   Future<ServiceOrder> updateServiceOrderStatus({
     required String id,
     required ServiceStatus status,

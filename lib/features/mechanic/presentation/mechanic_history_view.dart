@@ -32,7 +32,6 @@ class _MechanicHistoryPageState extends ConsumerState<MechanicHistoryPage> {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Row(
           children: [
             const Icon(Icons.history, color: AppColors.primaryAccent, size: 24),
@@ -40,7 +39,7 @@ class _MechanicHistoryPageState extends ConsumerState<MechanicHistoryPage> {
             Expanded(
               child: Text(
                 'ARCHIVED SERVICE LOG',
-                style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+                style: AppTypography.sectionTitle(),
               ),
             ),
           ],

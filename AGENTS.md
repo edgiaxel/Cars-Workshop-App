@@ -974,3 +974,47 @@ The goal is to produce the **right code, in the right place, for the right requi
 > **Build incrementally.  
 > Keep the architecture stable.  
 > Make every change intentional.**
+
+---
+
+# UAS Agent Rules — Queue, Themes, Reporting, Customization, Stitch
+
+These rules supplement the existing agent guidelines and are binding for UAS work.
+
+## A. Documentation and audit first
+
+Before implementation, read `SPEC.md`, `ARCHITECTURE.md`, `DESIGN.md`, `DB-SCHEMA.md`, `README.md`, `CUSTOMIZATION.md`, and `UAS-PLAN.md`. Inspect actual source, migrations, policies, package constraints, and tests. Report conflicts between docs and code before making broad changes. Do not assume a previous audit remains perfectly current.
+
+## B. Central customization is mandatory
+
+All app-side color palettes, typography, spacing/radii/dimensions, status display mappings, and service-category catalog definitions belong in `lib/app/customization/` as described in `CUSTOMIZATION.md`. Before adding a token or label, search for an existing canonical definition. Do not hardcode status labels/colors or duplicate service-category definitions inside screens. If an existing token file already serves this role, migrate it intentionally and remove competing definitions only after references are updated and tests pass.
+
+Database-persisted status values remain governed by migrations and `DB-SCHEMA.md`. Any status change must update the database contract, app model/mapping, transition validation, display catalog, tests, and relevant documentation together.
+
+## C. Queue and origin integrity
+
+- Do not use `booking_id IS NULL` as proof that an order is a walk-in.
+- Use the explicit intake-origin schema contract and preserve `legacy_unknown` for ambiguous historical data.
+- Do not set arrival time before physical check-in.
+- Booking check-in must be transaction-safe and idempotent; duplicate clicks or retries must not create duplicate service orders.
+- Do not mark a booking `completed` merely because the vehicle checked in.
+- Upcoming bookings and physically arrived queue items must be separate.
+- Queue order is FIFO by arrival timestamp with deterministic tie-breakers; no hidden priority rules.
+- Mechanics see assigned work only; customers see only their own records.
+
+## D. Theme and reporting integrity
+
+- Dark remains default; light/dark/system preferences persist per profile.
+- Shared widgets use `Theme.of(context)` and canonical tokens; test both themes.
+- Reports must use secure PostgreSQL aggregation/views/RPCs and real data. Do not compute executive metrics by fetching every raw row into Flutter.
+- Financial values must distinguish estimated from final/settled amounts.
+- Never use a service-role key in client code.
+- A `SECURITY DEFINER` function needs an explicit authorization check, safe `search_path`, restricted grants, and role-based tests.
+
+## E. UI design and Anti-Slop
+
+Use Stitch output as a visual reference only. Keep the existing Flutter/Riverpod/GoRouter/Supabase architecture; do not introduce React/Express or create a parallel app without an approved scope change. Use Anti-Slop core/UI rules and check accessibility, responsive layouts, contrast, touch targets, semantic labels, and real UI states. Do not report success from a SnackBar unless the intended operation actually succeeded.
+
+## F. Validation claims
+
+For each milestone, report the exact commands run and their results. Distinguish automated checks from manual visual testing. Run `flutter analyze`, `flutter test`, and the appropriate build after meaningful changes; add focused tests for queue/check-in, theme persistence, reporting authorization, and real mutations. Do not claim integration coverage unless the integration tests were actually executed.

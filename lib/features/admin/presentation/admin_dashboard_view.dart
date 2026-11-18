@@ -172,6 +172,14 @@ class AdminDashboardView extends ConsumerWidget {
             children: [
               _buildQuickAction(
                 context,
+                title: 'Workshop Queue',
+                subtitle: 'Active intake & bay dispatch',
+                icon: Icons.alt_route,
+                route: RoutePaths.adminQueue,
+                isPrimary: true,
+              ),
+              _buildQuickAction(
+                context,
                 title: 'Customer Roster',
                 subtitle: 'Manage client accounts',
                 icon: Icons.people_outline,
@@ -231,13 +239,21 @@ class AdminDashboardView extends ConsumerWidget {
                     const Divider(color: AppColors.borderSubtle, height: 16),
                 itemBuilder: (context, index) {
                   final order = recentOrders[index];
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final textPrimary =
+                      isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+                  final textSecondary =
+                      isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.compact),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceSecondary,
+                          color: isDark
+                              ? AppColors.surfaceSecondary
+                              : AppColors.lightSurfaceSecondary,
                           borderRadius: BorderRadius.circular(
                             AppRadius.control,
                           ),
@@ -262,9 +278,9 @@ class AdminDashboardView extends ConsumerWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${order.orderNumber} • ${order.vehicle?.displayName ?? 'Vehicle'}',
+                                        '${order.orderNumber} \u2022 ${order.vehicle?.displayName ?? 'Vehicle'}',
                                         style: AppTypography.label(
-                                          color: AppColors.textPrimary,
+                                          color: textPrimary,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -283,16 +299,25 @@ class AdminDashboardView extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.compact),
-                                StatusBadge.forServiceStatus(
-                                  order.status.value,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    StatusBadge.forServiceStatus(
+                                      order.status.value,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    StatusBadge.forIntakeOrigin(
+                                      order.intakeOrigin,
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Technician: ${order.mechanicDisplayName} • Client: ${order.customer?.displayName ?? 'Workshop Client'}',
+                              'Technician: ${order.mechanicDisplayName} \u2022 Client: ${order.customer?.displayName ?? 'Workshop Client'}',
                               style: AppTypography.bodySmall(
-                                color: AppColors.textSecondary,
+                                color: textSecondary,
                               ),
                             ),
                           ],
@@ -308,8 +333,12 @@ class AdminDashboardView extends ConsumerWidget {
           // Workshop Telemetry Footnote
           Center(
             child: Text(
-              'PitMate Control Center • Connected live to Supabase PostgreSQL database',
-              style: AppTypography.technical(color: AppColors.textMuted),
+              'PitMate Control Center \u2022 Connected live to Supabase PostgreSQL database',
+              style: AppTypography.technical(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textMuted
+                    : AppColors.lightTextMuted,
+              ),
             ),
           ),
         ],
@@ -323,21 +352,39 @@ class AdminDashboardView extends ConsumerWidget {
     required String subtitle,
     required IconData icon,
     required String route,
+    bool isPrimary = false,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textMuted = isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+
     return SizedBox(
       width: 220,
       child: PitCard(
         onTap: () => context.go(route),
+        borderColor: isPrimary ? AppColors.primaryAccent : null,
         padding: const EdgeInsets.all(AppSpacing.standard),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(AppSpacing.compact),
               decoration: BoxDecoration(
-                color: AppColors.surfaceSecondary,
+                color: isPrimary
+                    ? AppColors.primaryAccent.withValues(alpha: 0.15)
+                    : (isDark
+                        ? AppColors.surfaceSecondary
+                        : const Color(0xFFF1F5F9)),
                 borderRadius: BorderRadius.circular(AppRadius.control),
               ),
-              child: Icon(icon, color: AppColors.primaryAccent, size: 20),
+              child: Icon(
+                icon,
+                color: isPrimary
+                    ? AppColors.primaryAccent
+                    : (isDark
+                        ? AppColors.textPrimary
+                        : const Color(0xFF0F172A)),
+                size: 20,
+              ),
             ),
             const SizedBox(width: AppSpacing.standard),
             Expanded(
@@ -346,11 +393,17 @@ class AdminDashboardView extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: AppTypography.label(color: AppColors.textPrimary),
+                    style: AppTypography.label(
+                      color: isPrimary
+                          ? AppColors.primaryAccent
+                          : (isDark
+                              ? AppColors.textPrimary
+                              : const Color(0xFF0F172A)),
+                    ),
                   ),
                   Text(
                     subtitle,
-                    style: AppTypography.bodySmall(color: AppColors.textMuted),
+                    style: AppTypography.bodySmall(color: textMuted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

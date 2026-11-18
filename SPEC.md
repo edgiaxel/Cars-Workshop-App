@@ -331,15 +331,21 @@ A booking may contain:
 
 ---
 
-## 7.3 Booking Status
+## 7.3 Booking Status & Expiration Rules
 
-Initial booking states:
+Booking states:
 
 - Requested
 - Approved
+- Scheduled
+- Checked In (Admitted to workshop queue)
 - Rejected
-- Cancelled
-- Converted to Service
+- Cancelled (including auto-cancellation after 24h expiration)
+- Completed
+
+### Expiration and Reschedule Policy
+- If a customer misses their appointment time, the booking enters a 24-hour grace window where they can reschedule directly from their app.
+- If no check-in or reschedule occurs within 24 hours of the scheduled time, the booking is automatically marked `cancelled` with an audit note, preserved in history, and an alert is dispatched to the user.
 
 ---
 
@@ -859,23 +865,24 @@ Admins can view all workshop service history.
 
 # 26. Service Reminders
 
-PitMate should support maintenance reminders for customer vehicles.
-
-Examples:
+PitMate supports maintenance reminders for customer vehicles with automated synchronization:
 
 - Oil change
 - Brake inspection
 - Tire service
 - Periodic maintenance
-- Other scheduled maintenance
+- Custom interval alerts
 
 A reminder may be based on:
 
-- Date
-- Mileage
-- Service type
+- Date (e.g. 6 months follow-up)
+- Mileage (e.g. +10,000 KM threshold)
+- Service type (service, maintenance, inspection, custom)
 
-Customers should receive reminders when their vehicle approaches the configured maintenance requirement.
+### Automated Generation
+- Upon completing or closing a service order, a follow-up service reminder (+6 months or +10,000 KM) is automatically generated.
+- Customers can create custom service reminders for any registered vehicle with customized specification notes.
+- One-click "Sync History" action generates missing reminders from completed historical service records.
 
 ---
 
@@ -1652,3 +1659,118 @@ The system connects:
 ```
 
 The core objective is to provide a complete, maintainable, database-backed workshop workflow while maintaining a distinctive motorsport-oriented user experience.
+
+---
+
+# UAS Addendum — Queue, Themes, Reports, and Customization (2026-10-28)
+
+This addendum extends the existing specification after the Phase 0 code audit. It does not claim these items are already implemented. If older sections conflict with this addendum, this addendum governs the UAS scope.
+
+## UAS-QUEUE — Workshop Queue and Check-In
+
+### Goals
+
+The application must distinguish **a future booking**, **a vehicle that has physically arrived**, **a vehicle waiting for work**, **work currently underway**, and **work blocked by approval or parts**. A service status alone must not be used as proof that a vehicle is physically at the workshop.
+
+### Admin queue
+
+Provide a dedicated `Workshop Queue` destination in the Admin navigation. It must contain clearly labelled, filterable groups:
+
+1. **Upcoming bookings** — approved/scheduled bookings that have not been checked in.
+2. **Waiting in workshop** — checked-in service orders not yet being actively worked on.
+3. **In service** — orders in inspection, diagnosis, or in-progress work.
+4. **Blocked / awaiting action** — waiting for customer approval, waiting for parts, or completion review; show the exact existing service status.
+5. **Recently completed** — completed/payment/closed orders, available as a secondary view rather than mixed into the active FIFO queue.
+
+Each queue item must show vehicle, customer, service/order reference, intake origin, arrival time when applicable, elapsed wait where meaningful, current status, and next permitted action. Provide filters for queue group, service status, mechanic assignment, and intake origin. Do not invent a manual-priority system or persist a queue position unless a later requirement approves it.
+
+### Mechanic queue
+
+Mechanics must see their own assigned active work in a queue-like view with the same status and waiting/blocker clarity. Mechanics must not receive unrestricted access to the full workshop's customer data merely because the Admin queue exists. Follow RLS and assignment-scoped access.
+
+### Check-in and walk-ins
+
+- Admin can check in an eligible approved/scheduled booking.
+- Check-in must atomically create/link exactly one service order, set its arrival timestamp, and move the booking to `checked_in`.
+- A checked-in booking must not be marked `completed`; that state is reserved for the booking/service lifecycle's actual completion semantics.
+- Admin can register a walk-in without a prior booking. The created service order must have an arrival timestamp and explicit `walk_in` intake origin.
+- Duplicate check-in must be prevented by a database constraint and/or transaction-safe server operation, not just a disabled button.
+- A service order created from a booking must retain its booking association and `booking` intake origin.
+- Existing historical service orders whose origin cannot be proven must be labelled `legacy_unknown`, not silently counted as walk-ins.
+
+### Queue ordering
+
+The default queue is FIFO by `arrived_at ASC`, with a deterministic tie-breaker such as `created_at ASC` and then ID. Only orders with a recorded arrival and an active queue status belong in the physical workshop queue. Upcoming bookings without check-in belong in the separate upcoming section. Blocked work remains visible but must not be represented as actively being worked on.
+
+## UAS-INTAKE — Origin and History
+
+Each service order must preserve one explicit intake origin:
+
+- `booking`: admitted from an existing booking.
+- `walk_in`: arrived without a booking.
+- `legacy_unknown`: historical data whose origin cannot be reliably inferred.
+
+`booking_id` is a relationship, not a sufficient long-term origin audit field by itself. It can be nullified by the existing `ON DELETE SET NULL` behavior and is null for current seeded orders. The intake-origin field must survive this relationship becoming null. New records may not use `legacy_unknown` unless created by a migration/backfill or a specifically authorized legacy-import flow.
+
+Show origin and relevant timestamps in Admin history and customer-facing service history where appropriate. Reports must exclude `legacy_unknown` from the booking-versus-walk-in comparison or show it as a separate category; never include it in either count.
+
+## UAS-THEME — Per-User Light and Dark Themes
+
+- Support `dark`, `light`, and `system` theme modes; default existing and new users to `dark` unless an explicit product decision changes this later.
+- Theme preference is per authenticated profile and persists across app restarts and devices by storing `profiles.theme_mode`; local state may be used for responsive UI updates/cache but must not become a conflicting source of truth.
+- Admin, Mechanic, and Customer users can change the preference from an accessible settings/profile entry point.
+- Both themes must cover scaffold/backgrounds, surfaces, text, borders, icons, form fields, dialogs, bottom sheets, navigation, status badges, charts, empty/loading/error states, and overlays.
+- Do not implement light mode by changing only the scaffold background. No screen should contain hardcoded theme-specific colors outside the central customization/design-token layer without a documented exception.
+
+## UAS-REPORTS — Real Operational Reporting
+
+The Admin Reports screen must use live, server-side aggregate data rather than mock SnackBars or downloading all raw rows to calculate totals in the Flutter client.
+
+Required report capabilities:
+
+- Date-range selection with clearly defined inclusive/exclusive boundary behavior.
+- Service intake comparison: booking, walk-in, and legacy-unknown (the latter clearly separated and not merged into the first two).
+- Service volume over time (day/week/month grouping where appropriate).
+- Service status distribution.
+- Mechanic workload based on valid service assignments.
+- Financial totals only where the underlying data supports a defensible definition; keep estimated totals separate from final/settled totals and label them explicitly.
+- Loading, empty, error, and partial-data states; charts must have accessible labels/legends and a readable tabular or textual summary.
+
+Use PostgreSQL views and/or a narrowly scoped RPC for aggregation. Prefer RLS-respecting invoker permissions. If a `SECURITY DEFINER` function is necessary, it must explicitly authorize Admin access, set a safe `search_path`, restrict execute grants, and return only aggregate fields needed by the UI. Never expose the Supabase service-role key in the client. Supabase's infrastructure/observability dashboards are not a substitute for PitMate's business reports.
+
+The existing app is Flutter + Riverpod + Supabase. Do not add React or Express just to create charts. Use a Flutter chart library only after checking the actual `pubspec.yaml`, SDK constraints, and package compatibility; select a compatible version rather than assuming a version number from a report.
+
+## UAS-CUSTOMIZATION — Central Customization Layer
+
+All frequently customized product presentation options must be centralized under `lib/app/customization/`. Screens and feature widgets must consume these definitions rather than duplicating literal strings, colors, fonts, status labels, or service-category metadata.
+
+Required planned files:
+
+- `pitmate_palette.dart` — semantic light/dark color tokens and semantic status colors.
+- `pitmate_typography.dart` — font families, text styles, and typography scale.
+- `pitmate_layout.dart` — spacing, radii, dimensions, and common component sizing tokens.
+- `pitmate_status_catalog.dart` — canonical app-side mapping from persisted status values to labels, groups, colors, icons, and allowed display semantics.
+- `pitmate_service_catalog.dart` — supported service categories/types and their user-facing labels/icons where a controlled catalog is appropriate.
+- `pitmate_theme.dart` — constructs light/dark `ThemeData` and component themes from the tokens above.
+
+The actual theme-preference state/persistence provider remains in the shared state-management layer; it must not redefine theme colors. `DESIGN.md` describes intended design, while the customization files become the code-level presentation source of truth. Persisted status values remain a database/domain contract documented in `DB-SCHEMA.md`; any database enum change must be coordinated with the status catalog and migration. Do not create competing status strings in screens.
+
+## UAS UI Design Workflow
+
+Use Google Stitch to create **reference templates**, not a parallel production application. Generate a coherent design system and a focused initial set of screens/components: login, Admin dashboard, Workshop Queue, report dashboard, role dashboard variants, reusable cards, status badges, form fields, dialogs/bottom sheets, empty/error/loading states, and light/dark variants. Greg must translate approved references into the existing Flutter architecture and reusable components. Generated HTML/CSS is reference material only; do not introduce a React/Next.js app unless the project scope is formally changed.
+
+Apply the installed Anti-Slop core and UI rules during design review and Flutter implementation. Also check accessibility, responsive behavior, readable density, semantic status communication, and consistency with the central customization layer.
+
+## UAS Acceptance Criteria
+
+- Upcoming bookings are visibly separate from physically arrived vehicles.
+- Booking check-in creates one linked service order and records arrival/origin safely.
+- Walk-ins can be admitted without creating a fake booking.
+- Queue order is deterministic FIFO and only arrived active orders appear in the physical queue.
+- Service history preserves booking/walk-in/legacy-unknown origin accurately.
+- Reports compare booking and walk-in counts over the selected range without misclassifying legacy data.
+- Theme preference persists per user and both themes are legible across all three roles.
+- Report data is aggregated securely on the backend and charts display real data.
+- Existing authentication, role permissions, CRUD, inventory rules, and RLS remain intact.
+- Real mutations replace the identified UI-only stubs within the agreed UAS scope.
+- Automated validation and manual verification are reported separately and truthfully.

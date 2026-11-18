@@ -32,6 +32,14 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryTextColor =
+        isDark ? AppColors.textPrimary : AppColors.lightTextPrimary;
+    final secondaryTextColor =
+        isDark ? AppColors.textSecondary : AppColors.lightTextSecondary;
+    final mutedTextColor =
+        isDark ? AppColors.textMuted : AppColors.lightTextMuted;
+
     return PitCard(
       technicalLabel: technicalCode,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -46,7 +54,7 @@ class StatCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title.toUpperCase(),
-                  style: AppTypography.technical(color: AppColors.textMuted),
+                  style: AppTypography.technical(color: mutedTextColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -67,7 +75,7 @@ class StatCard extends StatelessWidget {
                 value,
                 style: AppTypography.metricValue(
                   fontSize: 24,
-                  color: AppColors.textPrimary,
+                  color: primaryTextColor,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -98,7 +106,7 @@ class StatCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.micro),
             Text(
               subtitle!,
-              style: AppTypography.bodySmall(color: AppColors.textSecondary),
+              style: AppTypography.bodySmall(color: secondaryTextColor),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

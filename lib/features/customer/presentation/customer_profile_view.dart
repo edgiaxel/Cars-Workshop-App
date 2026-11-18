@@ -20,6 +20,8 @@ class CustomerProfilePage extends ConsumerWidget {
 
   void _showEditProfileDialog(
     BuildContext context,
+    WidgetRef ref,
+    dynamic customer,
     String currentName,
     String? currentPhone,
     String? currentAddress,
@@ -31,10 +33,9 @@ class CustomerProfilePage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text(
           'EDIT CUSTOMER PROFILE',
-          style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+          style: AppTypography.sectionTitle(),
         ),
         content: SizedBox(
           width: 420,
@@ -43,19 +44,19 @@ class CustomerProfilePage extends ConsumerWidget {
             children: [
               TextField(
                 controller: nameCtrl,
-                style: AppTypography.bodyMedium(color: AppColors.textPrimary),
+                style: AppTypography.bodyMedium(),
                 decoration: const InputDecoration(labelText: 'Full Name'),
               ),
               const SizedBox(height: AppSpacing.standard),
               TextField(
                 controller: phoneCtrl,
-                style: AppTypography.bodyMedium(color: AppColors.textPrimary),
+                style: AppTypography.bodyMedium(),
                 decoration: const InputDecoration(labelText: 'Phone Number'),
               ),
               const SizedBox(height: AppSpacing.standard),
               TextField(
                 controller: addressCtrl,
-                style: AppTypography.bodyMedium(color: AppColors.textPrimary),
+                style: AppTypography.bodyMedium(),
                 decoration: const InputDecoration(labelText: 'Primary Address'),
               ),
             ],
@@ -72,16 +73,45 @@ class CustomerProfilePage extends ConsumerWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryAccent,
-              foregroundColor: Colors.black,
+              foregroundColor: Colors.white,
             ),
-            onPressed: () {
-              Navigator.pop(dialogCtx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Profile details updated successfully.'),
-                  backgroundColor: AppColors.statusCompleted,
-                ),
-              );
+            onPressed: () async {
+              final newName = nameCtrl.text.trim();
+              final newPhone = phoneCtrl.text.trim();
+              final newAddress = addressCtrl.text.trim();
+
+              if (customer != null) {
+                try {
+                  await ref.read(customersProvider.notifier).updateCustomer(
+                        id: customer.id as String,
+                        customerType: customer.customerType as String,
+                        companyName: customer.companyName as String?,
+                        address: newAddress,
+                        notes: customer.notes as String?,
+                        fullName: newName,
+                        phone: newPhone,
+                      );
+                  ref.invalidate(currentCustomerProvider);
+                  if (context.mounted) {
+                    Navigator.pop(dialogCtx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Profile details updated successfully.'),
+                        backgroundColor: AppColors.statusCompleted,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to update profile: $e'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                }
+              }
             },
             child: const Text('Save Changes'),
           ),
@@ -90,17 +120,16 @@ class CustomerProfilePage extends ConsumerWidget {
     );
   }
 
-  void _showSecurityDialog(BuildContext context) {
+  void _showSecurityDialog(BuildContext context, WidgetRef ref) {
     final oldPassCtrl = TextEditingController();
     final newPassCtrl = TextEditingController();
 
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.surfacePrimary,
         title: Text(
           'ACCOUNT SECURITY & CREDENTIALS',
-          style: AppTypography.sectionTitle(color: AppColors.textPrimary),
+          style: AppTypography.sectionTitle(),
         ),
         content: SizedBox(
           width: 400,
@@ -110,7 +139,7 @@ class CustomerProfilePage extends ConsumerWidget {
               TextField(
                 controller: oldPassCtrl,
                 obscureText: true,
-                style: AppTypography.bodyMedium(color: AppColors.textPrimary),
+                style: AppTypography.bodyMedium(),
                 decoration: const InputDecoration(
                   labelText: 'Current Password',
                 ),
@@ -119,7 +148,7 @@ class CustomerProfilePage extends ConsumerWidget {
               TextField(
                 controller: newPassCtrl,
                 obscureText: true,
-                style: AppTypography.bodyMedium(color: AppColors.textPrimary),
+                style: AppTypography.bodyMedium(),
                 decoration: const InputDecoration(labelText: 'New Password'),
               ),
             ],
@@ -136,16 +165,42 @@ class CustomerProfilePage extends ConsumerWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryAccent,
-              foregroundColor: Colors.black,
+              foregroundColor: Colors.white,
             ),
-            onPressed: () {
-              Navigator.pop(dialogCtx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Password security credentials updated.'),
-                  backgroundColor: AppColors.statusCompleted,
-                ),
-              );
+            onPressed: () async {
+              final newPass = newPassCtrl.text;
+              if (newPass.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Password must be at least 6 characters.'),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+                return;
+              }
+              try {
+                await ref
+                    .read(authSessionProvider.notifier)
+                    .updatePassword(newPass);
+                if (context.mounted) {
+                  Navigator.pop(dialogCtx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Password credentials updated successfully.'),
+                      backgroundColor: AppColors.statusCompleted,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to update credentials: $e'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text('Update Password'),
           ),
@@ -191,6 +246,8 @@ class CustomerProfilePage extends ConsumerWidget {
                   label: const Text('Edit Profile'),
                   onPressed: () => _showEditProfileDialog(
                     context,
+                    ref,
+                    customer,
                     displayName,
                     phone,
                     address,
@@ -204,10 +261,16 @@ class CustomerProfilePage extends ConsumerWidget {
                 OutlinedButton.icon(
                   icon: const Icon(Icons.lock_reset, size: 16),
                   label: const Text('Security'),
-                  onPressed: () => _showSecurityDialog(context),
+                  onPressed: () => _showSecurityDialog(context, ref),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.borderSubtle),
+                    foregroundColor: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textPrimary
+                        : AppColors.lightTextPrimary,
+                    side: BorderSide(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.borderSubtle
+                          : AppColors.lightBorderSubtle,
+                    ),
                   ),
                 ),
               ],
