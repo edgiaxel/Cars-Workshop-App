@@ -50,11 +50,11 @@ PitMate uses a single Flutter application connected directly to a Supabase backe
 
 ## Current implementation status
 
-Approved. M0 Project Preparation established with clean foundation, verified toolchain, and initial project structure.
+Approved. Milestone M1 — Application Foundation complete with multi-role authentication, responsive shells, customer and vehicle registry, and 197 passing automated tests.
 
 ## Next technical action
 
-Proceed with Milestone M1 — Application Foundation (Authentication, Session Management, and Role Routing).
+Proceed with Milestone M2 — Customer Intake & Diagnosis (Booking Management, Walk-in Admission, Workshop Queue, and Vehicle Inspection).
 
 ---
 

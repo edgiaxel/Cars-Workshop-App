@@ -138,7 +138,7 @@ cars_workshop/
 ## 6. Milestone Roadmap
 
 - [x] **M0 — Project Preparation**: Clean reproducible foundation, docs synced, v1.0 archived to `legacy/`.
-- [ ] **M1 — Application Foundation**: Authentication, session persistence, role-based routing shell.
+- [x] **M1 — Application Foundation**: Authentication, session persistence, role-based routing shell, customer & vehicle registry.
 - [ ] **M2 — Customer Intake & Diagnosis**: Walk-in admission, booking check-in, inspection findings.
 - [ ] **M3 — Workshop Operations**: 5-bay dispatch, mechanic assignment, operation execution.
 - [ ] **M4 — Inventory & Cost Management**: Stock reservation, part requests, ledger tracking.

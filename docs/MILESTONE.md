@@ -6,15 +6,6 @@
 > **Last updated:** 2026-11-20  
 > **Deadline:** To be confirmed
 
-```
-[/goal](slashCommand;goal) [/teamwork](slashCommand;teamwork) 
-
-
-[antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) [caveman](slashCommand;caveman) [ultracave](slashCommand;ultracave) be brief use less token 
-
-Read necessary docs/, update / modify to sync documentation after each exit. 
-```
-
 ---
 
 # 1. Project at a Glance
