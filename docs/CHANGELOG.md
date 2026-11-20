@@ -52,6 +52,38 @@ Changes currently under development.
 
 ---
 
+# [2.0.0-m1] — 2026-11-20
+
+**Milestone M1 — Application Foundation complete.**
+
+### Added
+- **VS-01 Application Bootstrap**:
+  - Global `ResponsiveScaffold` with automatic layout selection across Desktop, Tablet, and Mobile breakpoints.
+  - Dedicated role navigation shells: `AdminShell`, `MechanicShell`, and `CustomerShell`.
+  - Shared motorsport design system components: `PitCard`, `PitPrimaryButton`, `StatusBadge`, `LoadingState`, `ErrorState`, and `EmptyState`.
+  - Dynamic `ThemeProvider` with full light/dark theme toggle and system preference fallback.
+  - Centralized GoRouter routing configuration with role-based workspace segregation.
+- **VS-02 Authentication and Roles**:
+  - Multi-role authentication flows supporting Admin, Mechanic, and Customer credentials.
+  - Customer self-service registration and OTP verification workflows.
+  - Password recovery with token validation.
+  - Session management with automatic profile lookup and unauthorized route protection.
+  - PostgreSQL RLS policies in `supabase/migrations/20261120000000_v2_foundation.sql`.
+- **VS-03 Customer and Vehicle Registry**:
+  - Customer management supporting both registered users and walk-in guest accounts.
+  - Customer profile linking and phone-based contact lookup.
+  - Vehicle registry supporting license plate formatting, make, model, year, and fuel types.
+  - Admin vehicle assignment and customer garage self-service view.
+  - Duplicate registration detection and ownership integrity checks.
+  - Migration schema `supabase/migrations/20261120000001_v2_customers_vehicles.sql`.
+- **Automated Verification**:
+  - Unit tests covering configuration, theme state, database schema migration files, and models.
+  - Widget tests covering responsive layouts, navigation shells, and shared widgets.
+  - 4-tier comprehensive E2E test suite (`test/e2e/e2e_runner_test.dart`) covering individual features, boundary values, cross-feature invariants, and real-world workflows (197/197 passing).
+  - Verified Android debug APK and release Web compilation.
+
+---
+
 # [2.0.0-m0] — 2026-11-20
 
 **Milestone M0 — Project Preparation established.**

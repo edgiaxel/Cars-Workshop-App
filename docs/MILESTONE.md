@@ -1,10 +1,19 @@
 # Milestones — PitMate
 
-> **Current milestone:** M1 — Application Foundation  
-> **Overall status:** M0 Complete / M1 In Progress  
+> **Current milestone:** M2 — Customer Intake & Diagnosis  
+> **Overall status:** M1 Complete / M2 Ready  
 > **Version:** 2.0  
 > **Last updated:** 2026-11-20  
 > **Deadline:** To be confirmed
+
+```
+[/goal](slashCommand;goal) [/teamwork](slashCommand;teamwork) 
+
+
+[antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) [caveman](slashCommand;caveman) [ultracave](slashCommand;ultracave) be brief use less token 
+
+Read necessary docs/, update / modify to sync documentation after each exit. 
+```
 
 ---
 
@@ -52,8 +61,8 @@ Initialize the new repository and validate the critical technical assumptions be
 | ID | Milestone | Outcome | Status |
 |---|---|---|---|
 | M0 | Project Preparation | Verified development foundation | Completed |
-| M1 | Application Foundation | Authentication and role-based application | In progress |
-| M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Not started |
+| M1 | Application Foundation | Authentication and role-based application | Completed |
+| M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Ready |
 | M3 | Workshop Operations | Dispatch and mechanic execution | Not started |
 | M4 | Inventory & Cost Management | Operational stock and service costing | Not started |
 | M5 | Completion & Finance | QC, invoice, payment and handover | Not started |
@@ -139,12 +148,12 @@ Included:
 
 Acceptance:
 
-- [ ] Application launches on Android.
-- [ ] Application launches on Web.
-- [ ] Light and dark themes work.
-- [ ] Shared layout components work.
-- [ ] Navigation behaves consistently.
-- [ ] Loading and error states are handled.
+- [x] Application launches on Android.
+- [x] Application launches on Web.
+- [x] Light and dark themes work.
+- [x] Shared layout components work.
+- [x] Navigation behaves consistently.
+- [x] Loading and error states are handled.
 
 ### VS-02 — Authentication and Roles
 
@@ -165,13 +174,13 @@ Included:
 
 Acceptance:
 
-- [ ] Admin can authenticate.
-- [ ] Mechanic can authenticate.
-- [ ] Customer can register.
-- [ ] Customer can verify email.
-- [ ] Users are routed to correct workspaces.
-- [ ] Unauthorized access is rejected.
-- [ ] RLS prevents cross-customer access.
+- [x] Admin can authenticate.
+- [x] Mechanic can authenticate.
+- [x] Customer can register.
+- [x] Customer can verify email.
+- [x] Users are routed to correct workspaces.
+- [x] Unauthorized access is rejected.
+- [x] RLS prevents cross-customer access.
 
 ### VS-03 — Customer and Vehicle Registry
 
@@ -190,20 +199,20 @@ Included:
 
 Acceptance:
 
-- [ ] Admin can create a customer.
-- [ ] Admin can create a guest customer.
-- [ ] Admin can register vehicles.
-- [ ] Customer can manage their own vehicles.
-- [ ] Vehicle ownership is enforced.
-- [ ] Duplicate registration warnings work.
+- [x] Admin can create a customer.
+- [x] Admin can create a guest customer.
+- [x] Admin can register vehicles.
+- [x] Customer can manage their own vehicles.
+- [x] Vehicle ownership is enforced.
+- [x] Duplicate registration warnings work.
 
 ### M1 Exit Criteria
 
-- All three roles have working authentication.
-- Responsive application shells are functional.
-- Customer and vehicle records can be managed.
-- Basic security tests pass.
-- The application is usable on Android and desktop browser.
+- [x] All three roles have working authentication.
+- [x] Responsive application shells are functional.
+- [x] Customer and vehicle records can be managed.
+- [x] Basic security tests pass.
+- [x] The application is usable on Android and desktop browser.
 
 ---
 
