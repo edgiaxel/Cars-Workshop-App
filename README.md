@@ -1,159 +1,638 @@
 # PitMate
 
-**Automotive Workshop Management System**  
-*Version 2.0 — Motorsport-Inspired Workshop OS*
+**Automotive Workshop Management System**
 
-PitMate is a single-workshop automotive management platform built with **Flutter** and **Supabase**.
-It unifies workshop administrators, mechanics, and vehicle owners through a centralized, role-tailored application with real-time operational synchronization.
+A motorsport-inspired workshop management application built with Flutter and Supabase.
 
----
-
-## 1. Project Overview
-
-PitMate manages the complete automotive service lifecycle across a 5-bay workshop:
-- **Intake & Diagnostics**: Walk-ins, appointments, check-in, visual inspection, and diagnostic findings.
-- **Estimates & Authorization**: Itemized parts and labor estimates with customer digital authorization.
-- **Workshop Dispatch**: Bay allocation, mechanic assignments, and dependency-aware operations tracking.
-- **Parts & Inventory**: Real-time stock reservation, immutable movement ledger, and part requests.
-- **Quality Control**: Multi-point inspection checklists and road test sign-off.
-- **Billing & Settlement**: Snapshotted invoices, multiple payment methods, and cash change computation.
-- **Vehicle Handover**: Customer sign-off, digital receipts, and preventative maintenance reminders.
+PitMate provides an integrated platform for managing workshop operations, customer vehicles, service bookings, mechanic assignments, inventory, finances and vehicle maintenance.
 
 ---
+
+## 1. Overview
+
+PitMate is designed for a single physical automotive workshop.
+
+It connects workshop administrators, mechanics and customers through one application with role-specific interfaces.
+
+The system aims to simplify workshop operations by centralizing:
+
+- Customer and vehicle management.
+- Appointment scheduling.
+- Walk-in vehicle admission.
+- Workshop queue management.
+- Vehicle inspection and diagnostics.
+- Repair estimates and customer authorization.
+- Mechanic assignments and task tracking.
+- Spare-parts inventory.
+- Service costs and mechanic earnings.
+- Quality control.
+- Invoicing and payment records.
+- Maintenance reminders.
+- Workshop reporting.
 
 ## 2. User Roles
 
-| Role | Responsibility | Key Interfaces |
-|---|---|---|
-| **Admin** | Workshop operations, dispatch, inventory, finances, and reporting | Operational Queue, Bay Dispatch, Stock Ledger, Invoicing, Analytics |
-| **Mechanic** | Vehicle diagnosis, repair checklists, parts requests, and task progress | Task Execution Dashboard, Diagnostics Form, Checklist Updates, Earning Telemetry |
-| **Customer** | Vehicle management, booking appointments, estimate approvals, and tracking | Vehicle Garage, Service Tracker, Estimate Review, Invoices & Payment History |
+### Admin
+
+Workshop administrators manage the overall operation.
+
+Capabilities include:
+
+- Workshop dashboard.
+- Customer management.
+- Vehicle registry.
+- Booking management.
+- Walk-in admission.
+- Workshop queue.
+- Bay allocation.
+- Mechanic management.
+- Service assignments.
+- Inventory management.
+- Financial records.
+- Quality control.
+- Reporting and analytics.
+
+### Mechanic
+
+Mechanics handle assigned workshop operations.
+
+Capabilities include:
+
+- Mechanic dashboard.
+- Assigned service orders.
+- Inspection and diagnostics.
+- Task checklists.
+- Repair progress updates.
+- Parts requests.
+- Additional repair findings.
+- Work history.
+- Earnings information.
+
+### Customer
+
+Customers manage their vehicles and follow workshop services.
+
+Capabilities include:
+
+- Account management.
+- Vehicle registration.
+- Appointment booking.
+- Booking status.
+- Active service tracking.
+- Service history.
+- Repair estimates.
+- Customer notifications.
+- Invoices.
+- Maintenance reminders.
 
 ---
 
 ## 3. Technology Stack
 
-- **Frontend**: Flutter 3.47+ (Dart 3.13+)
-- **State Management**: Flutter Riverpod
-- **Routing**: GoRouter (declarative role-based routing)
-- **Backend**: Supabase (PostgreSQL 17)
-- **Authentication**: Supabase Auth (Email/Password, Magic Link, OTP)
-- **Access Control**: PostgreSQL Row Level Security (RLS)
-- **Realtime**: Supabase Realtime (live bay and queue status)
-- **Design System**: Motorsport-inspired palette (Racing Red, dark surface density, Space Grotesk & Inter typography)
+| Component | Technology |
+|---|---|
+| Application | Flutter |
+| Programming language | Dart |
+| Backend | Supabase |
+| Database | PostgreSQL |
+| Authentication | Supabase Auth |
+| Realtime | Supabase Realtime |
+| State management | Riverpod |
+| Navigation | GoRouter |
+| UI framework | Flutter Material 3 |
+| Version control | Git |
+| Collaboration | GitHub |
+| Development IDE | Antigravity IDE |
+
+### Architecture
+
+PitMate follows a layered application architecture.
+
+```text
+Flutter Application
+│
+├── Presentation Layer
+│   ├── Admin Interface
+│   ├── Mechanic Interface
+│   ├── Customer Interface
+│   └── Shared Widgets
+│
+├── State / Application Layer
+│   ├── Riverpod Providers
+│   ├── State Notifiers
+│   └── Application Logic
+│
+└── Data Layer
+    ├── Domain Models
+    ├── Repositories
+    └── Remote Data Sources
+             │
+             ▼
+       Supabase Backend
+             │
+             ├── PostgreSQL
+             ├── Supabase Auth
+             ├── Row Level Security
+             ├── Database Functions
+             ├── Database Triggers
+             └── Realtime
+```
+
+The existing application and its architecture are the starting point for further development.
+
+Refer to `ARCHITECTURE.md` for detailed technical documentation.
 
 ---
 
 ## 4. Repository Structure
 
+The following represents the reported application structure. Inspect the actual repository before assuming every path is unchanged.
+
 ```text
-cars_workshop/
-├── android/                   # Android native platform configuration
-├── ios/                       # iOS native platform configuration
-├── web/                       # Flutter Web configuration
+pitmate/
+│
+├── android/
+├── web/
+│
 ├── lib/
-│   ├── main.dart              # Application entry point
+│   ├── main.dart
+│   │
 │   ├── app/
-│   │   ├── app.dart           # Root MaterialApp.router setup
-│   │   ├── bootstrap.dart     # Service initialization (Supabase, logging)
-│   │   ├── config/            # AppConfig and environment contracts
-│   │   ├── router/            # GoRouter paths, router, and auth guards
-│   │   └── theme/             # Motorsport theme, colors, typography, spacing
-│   ├── core/                  # Shared utilities, constants, error types
-│   ├── shared/                # Cross-feature widgets, models, providers
-│   ├── features/              # Feature-first domain modules
-│   │   ├── auth/              # Sign-in, sign-up, session management
-│   │   ├── customers/         # Customer directory & profile management
-│   │   ├── vehicles/          # Vehicle registry & garage
-│   │   ├── bookings/          # Appointment booking & scheduling
-│   │   ├── workshop/          # Queue, 5-bay layout, intake check-in
-│   │   ├── inspections/       # Vehicle diagnostics & inspection findings
-│   │   ├── estimates/         # Price quotation & customer approval
-│   │   ├── service_orders/    # Authoritative job cards
-│   │   ├── operations/        # Specific repair tasks & checklists
-│   │   ├── mechanics/         # Roster & task assignment dispatch
-│   │   ├── inventory/         # Spare parts catalog, ledger, balances
-│   │   ├── quality_control/   # QC inspection & test drive sign-off
-│   │   ├── finance/           # Invoices, payments, receipts
-│   │   ├── notifications/     # In-app and push notification alerts
-│   │   ├── reminders/         # Maintenance & mileage reminders
-│   │   └── reports/           # Workshop operational telemetry
-│   └── localization/          # Multi-language strings
+│   │   ├── app.dart
+│   │   ├── config/
+│   │   ├── router/
+│   │   ├── theme/
+│   │   └── customization/
+│   │
+│   ├── core/
+│   │
+│   ├── features/
+│   │   ├── admin/
+│   │   ├── mechanic/
+│   │   ├── customer/
+│   │   └── auth/
+│   │
+│   └── shared/
+│       ├── models/
+│       ├── providers/
+│       ├── repositories/
+│       └── widgets/
+│
 ├── supabase/
-│   ├── config.toml            # Local Supabase CLI configuration
-│   ├── migrations/            # Ordered, version-controlled SQL migrations
-│   └── seed.sql               # Development seed dataset
+│   ├── migrations/
+│   └── seed.sql
+│
 ├── test/
-│   ├── unit/                  # Business logic and calculations tests
-│   ├── widget/                # UI presentation and form tests
-│   ├── integration/           # Supabase contract and smoke tests
-│   └── fixtures/              # Reusable mock data fixtures
-├── docs/                      # Canonical documentation
-│   ├── PRD.md                 # Product Requirements Document (Approved)
-│   ├── DESIGN.md              # UI/UX Specifications (Approved)
-│   ├── ARCHITECTURE.md        # Technical Architecture (Approved)
-│   ├── DATABASE_SCHEMA.md     # Database Schema & RLS Policies (Approved)
-│   ├── TESTING.md             # Testing Strategy & Procedures (Approved)
-│   ├── MILESTONE.md           # Milestone roadmap (M0 to M7)
-│   └── CHANGELOG.md           # Version changelog
-├── legacy/                    # Archived Version 1.0 codebase (reference only)
-├── AGENTS.md                  # Autonomous agent operating rules
-└── pubspec.yaml               # Flutter package configuration
+│   ├── unit/
+│   ├── widget/
+│   └── integration/
+│
+├── docs/
+│
+├── AGENTS.md
+├── ARCHITECTURE.md
+├── CHANGELOG.md
+├── DESIGN.md
+├── MILESTONE.md
+├── PRD.md
+├── README.md
+│
+├── pubspec.yaml
+└── pubspec.lock
 ```
 
 ---
 
-## 5. Getting Started
+## 5. Requirements
 
-### Prerequisites
+Before running PitMate, install:
 
-- Flutter SDK (stable channel, >= 3.47.2)
-- Dart SDK (>= 3.13.2)
-- Android SDK (build-tools 36.0.0+) or Google Chrome for web
-- Supabase CLI (`supabase --version` >= 2.75.0)
+- Flutter SDK (stable channel).
+- Dart SDK compatible with the Flutter installation.
+- Android SDK for Android development.
+- A configured Android emulator or physical device.
+- Google Chrome for Flutter Web development.
+- Git.
+- A Supabase project with appropriate access.
 
-### Setup & Run
+The recorded development baseline is:
 
-1. **Install dependencies**:
-   ```bash
-   flutter pub get
-   ```
+| Tool | Reported version |
+|---|---|
+| Flutter | 3.47.2 |
+| Dart | 3.13.2 |
+| Supabase Flutter | 2.18.0 |
+| Riverpod | 3.4.3 |
+| GoRouter | 18.0.2 |
 
-2. **Configure environment**:
-   Copy the example environment template or run with `--dart-define`:
-   ```bash
-   flutter run -d chrome \
-     --dart-define=SUPABASE_URL=https://<your-project>.supabase.co \
-     --dart-define=SUPABASE_ANON_KEY=<your-anon-key>
-   ```
-
-3. **Verify tests and analysis**:
-   ```bash
-   flutter analyze
-   flutter test
-   ```
+Versions should be checked against the current repository's dependency lockfile before making changes.
 
 ---
 
-## 6. Milestone Roadmap
+## 6. Installation
 
-- [x] **M0 — Project Preparation**: Clean reproducible foundation, docs synced, v1.0 archived to `legacy/`.
-- [x] **M1 — Application Foundation**: Authentication, session persistence, role-based routing shell, customer & vehicle registry.
-- [ ] **M2 — Customer Intake & Diagnosis**: Walk-in admission, booking check-in, inspection findings.
-- [ ] **M3 — Workshop Operations**: 5-bay dispatch, mechanic assignment, operation execution.
-- [ ] **M4 — Inventory & Cost Management**: Stock reservation, part requests, ledger tracking.
-- [ ] **M5 — Completion & Finance**: QC verification, invoicing, payment settlement, handover.
-- [ ] **M6 — Communication & Customer Portal**: Maintenance reminders, notifications.
-- [ ] **M7 — Integration & Release**: Full workshop end-to-end testing and release build.
+### 6.1 Clone the repository
+
+```bash
+git clone <REPOSITORY_URL>
+
+cd <REPOSITORY_DIRECTORY>
+```
+
+Replace the placeholders with the actual GitHub repository URL and directory.
+
+### 6.2 Verify Flutter
+
+```bash
+flutter --version
+flutter doctor
+```
+
+Resolve required development environment issues before proceeding.
+
+### 6.3 Install dependencies
+
+```bash
+flutter pub get
+```
+
+Do not delete or regenerate `pubspec.lock` unnecessarily.
+
+### 6.4 Configure Supabase
+
+PitMate connects to Supabase through its existing configuration contract:
+
+`lib/app/config/app_config.dart`
+
+The reported configuration supports:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+
+Provide the appropriate public project URL and publishable client key through the supported build-time configuration mechanism.
+
+Example:
+
+```bash
+flutter run \
+  --dart-define=SUPABASE_URL=<YOUR_SUPABASE_URL> \
+  --dart-define=SUPABASE_ANON_KEY=<YOUR_SUPABASE_PUBLISHABLE_KEY>
+```
+
+Use the configuration expected by the actual repository.
+
+**Security:**
+
+- Never use a Supabase service-role key in the Flutter application.
+- Never commit private credentials.
+- Never place database passwords in client-side configuration.
+- Do not publish real credentials in screenshots or documentation.
+
+### 6.5 Run the application
+
+For Android:
+
+```bash
+flutter run
+```
+
+For Flutter Web:
+
+```bash
+flutter run -d chrome
+```
+
+Select an available Android device or emulator where necessary.
 
 ---
 
-## 7. Canonical Documentation
+## 7. Development Commands
 
-- [PRD.md](docs/PRD.md)
-- [DESIGN.md](docs/DESIGN.md)
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)
-- [TESTING.md](docs/TESTING.md)
-- [MILESTONE.md](docs/MILESTONE.md)
-- [AGENTS.md](AGENTS.md)
+| Purpose | Command |
+|---|---|
+| Check Flutter | `flutter --version` |
+| Check environment | `flutter doctor` |
+| Install dependencies | `flutter pub get` |
+| Run Android | `flutter run` |
+| Run Web | `flutter run -d chrome` |
+| Static analysis | `flutter analyze` |
+| Format code | `dart format .` |
+| Run tests | `flutter test` |
+| Build Android APK | `flutter build apk` |
+| Build Web | `flutter build web` |
+| Build asset bundle | `flutter build bundle` |
+
+### Validation
+
+Before submitting code changes, execute:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+```
+
+Formatting should not introduce unrelated changes. Review the Git diff afterward.
+
+Run integration tests and platform-specific builds when the modified feature requires them.
+
+The commands above are standard Flutter commands; their success in the current working environment must be verified.
+
+---
+
+## 8. Database
+
+PitMate uses Supabase PostgreSQL as its primary persistent database.
+
+The reported baseline contains:
+
+- 19 core PostgreSQL tables.
+- 10 database migrations.
+- Row Level Security policies.
+- Database functions and RPC operations.
+- Automated database triggers.
+- Inventory movement records.
+- Service status history.
+
+Important existing database operations include:
+
+| Function | Purpose |
+|---|---|
+| `check_in_booking` | Convert an eligible booking into a service order |
+| `admit_walk_in` | Register an unscheduled workshop arrival |
+| `get_admin_reports_telemetry` | Generate aggregated workshop reports |
+| `adjust_spare_part_stock` | Adjust inventory and record stock movement |
+
+### Database Rules
+
+- Use version-controlled migrations.
+- Preserve existing migration history.
+- Maintain Row Level Security.
+- Preserve transactional integrity.
+- Do not manually modify production schema without authorization.
+- Never reset the database without explicit approval.
+
+Refer to the existing database schema documentation for the authoritative table and function definitions.
+
+---
+
+## 9. Testing
+
+PitMate uses Flutter's testing framework.
+
+### Unit Testing
+
+Tests individual business logic and application components.
+
+Examples:
+
+- Authentication.
+- User roles.
+- Model serialization.
+- Business calculations.
+- Route guards.
+- Workshop queue ordering.
+
+### Widget Testing
+
+Tests UI behavior.
+
+Examples:
+
+- Role navigation.
+- Login and registration.
+- Workshop queue.
+- Admin reports.
+- Shared widgets.
+- Responsive components.
+
+### Integration Testing
+
+Tests interactions across application and backend boundaries.
+
+Examples:
+
+- Booking lifecycle.
+- Walk-in admission.
+- Service order creation.
+- Role isolation.
+- Supabase RPC contracts.
+
+### Reported Baseline
+
+The system discovery report dated 2026-11-20 recorded:
+
+| Check | Result |
+|---|---|
+| `flutter analyze` | 0 issues |
+| `flutter test` | 89/89 passed |
+| `flutter build bundle` | Passed |
+
+These are historical results. Run the checks again after making changes.
+
+---
+
+## 10. Project Documentation
+
+PitMate maintains separate documents for product, design, engineering and development progress.
+
+| Document | Description |
+|---|---|
+| `PRD.md` | Product requirements and approved scope |
+| `DESIGN.md` | UI/UX specifications and screen behavior |
+| `ARCHITECTURE.md` | Technical architecture |
+| `MILESTONE.md` | Development milestones and vertical slices |
+| `AGENTS.md` | Coding-agent instructions |
+| `CHANGELOG.md` | Historical project changes |
+| `CUSTOMIZATION.md` | Design token and UI customization rules |
+| `DB-SCHEMA.md` / `DATABASE_SCHEMA.md` | Database documentation, depending on the retained repository convention |
+| `TESTING.md` | Testing procedures, if maintained |
+
+Read relevant documents before implementing features.
+
+Do not create duplicate documentation without a reason.
+
+---
+
+## 11. Development Workflow
+
+PitMate follows incremental development.
+
+### Workflow
+
+```text
+Approved Requirement
+        │
+        ▼
+GitHub Issue
+        │
+        ▼
+Repository Inspection
+        │
+        ▼
+Implementation Plan
+        │
+        ▼
+Development Branch
+        │
+        ▼
+Implementation
+        │
+        ▼
+Testing & Verification
+        │
+        ▼
+Git Diff Review
+        │
+        ▼
+Pull Request
+        │
+        ▼
+Review & Integration
+        │
+        ▼
+Documentation Update
+```
+
+### Branch Naming
+
+```text
+main
+develop
+
+feature/<short-name>
+fix/<short-name>
+refactor/<short-name>
+chore/<short-name>
+docs/<short-name>
+test/<short-name>
+```
+
+### Commit Convention
+
+```text
+feat: add customer vehicle registration
+
+fix: prevent duplicate booking check-in
+
+refactor: improve inventory repository
+
+test: add workshop lifecycle tests
+
+docs: update application architecture
+
+chore: update dependencies
+```
+
+### Pull Request Requirements
+
+Every substantial pull request should include:
+
+- Description of changes.
+- Related GitHub issue.
+- Acceptance criteria.
+- Files affected.
+- Test results.
+- Known limitations.
+- Screenshots for significant UI changes.
+
+---
+
+## 12. Coding Agents
+
+The primary development environment is Antigravity IDE.
+
+Greg refers to the Gemini coding agent used in the development workflow.
+
+### Agent Rules
+
+All coding agents must follow `AGENTS.md`.
+
+Agents must:
+
+- Inspect before modifying.
+- Respect approved project scope.
+- Preserve working functionality.
+- Avoid unnecessary refactoring.
+- Follow existing architecture.
+- Write relevant tests.
+- Verify their changes.
+- Report exact results.
+- Avoid exposing credentials.
+- Keep documentation synchronized.
+
+Parallel agents may work on independent tasks using separate branches or worktrees.
+
+All changes must be reviewed before integration.
+
+---
+
+## 13. Current Development Status
+
+**Baseline:** v1.0.0-alpha
+
+The existing application has an operational foundation covering authentication, customer and vehicle management, booking, workshop queue, mechanic task management, inventory, reporting and customer-facing functionality.
+
+Further development follows the approved product requirements and milestone plan.
+
+The current implementation status must be reconciled against the repository before marking individual milestones complete.
+
+Refer to `MILESTONE.md` for current priorities and verified progress.
+
+---
+
+## 14. Scope and Limitations
+
+PitMate currently targets a single physical workshop.
+
+The project does not require:
+
+- Multi-branch workshop management.
+- Microservices.
+- A separate Node.js backend.
+- Kubernetes.
+- A dedicated message broker.
+- A production payment gateway as part of the simulated payment workflow.
+
+Additional capabilities must be justified by actual product requirements and approved before implementation.
+
+---
+
+## 15. Contributing
+
+Contributions should follow the established engineering workflow.
+
+1. Read `AGENTS.md`.
+2. Understand the relevant requirements.
+3. Inspect the existing implementation.
+4. Create a focused branch.
+5. Implement the assigned change.
+6. Run relevant tests.
+7. Review the Git diff.
+8. Open a pull request.
+9. Update documentation where necessary.
+
+Do not submit unrelated changes together.
+
+---
+
+## 16. License
+
+License information is pending confirmation.
+
+Do not assume that the project is open source or redistribute it under an unapproved license.
+
+---
+
+## 17. References
+
+- Flutter: https://flutter.dev/
+- Dart: https://dart.dev/
+- Supabase: https://supabase.com/
+- Supabase Flutter: https://supabase.com/docs/reference/dart/introduction
+- Riverpod: https://riverpod.dev/
+- GoRouter: https://pub.dev/packages/go_router
+
+---
+
+**PitMate — Built for the workshop, designed for the people who keep it running.**

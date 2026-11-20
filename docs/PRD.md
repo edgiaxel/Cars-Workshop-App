@@ -2,7 +2,7 @@
 
 > **Product:** PitMate  
 > **Version:** 2.0 — Clean-Slate Redesign  
-> **Status:** Approved — 2026-11-20  
+> **Status:** Draft — Pending Approval  
 > **Date:** 2026-11-20  
 > **Project Mode:** Complete application redesign  
 > **Deployment Target:** Android, iOS (future), responsive web/desktop admin  

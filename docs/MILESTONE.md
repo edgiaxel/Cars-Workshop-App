@@ -1,7 +1,7 @@
 # Milestones — PitMate
 
-> **Current milestone:** M2 — Customer Intake & Diagnosis  
-> **Overall status:** M1 Complete / M2 Ready  
+> **Current milestone:** M0 — Project Preparation  
+> **Overall status:** Planning Complete / Implementation Not Started  
 > **Version:** 2.0  
 > **Last updated:** 2026-11-20  
 > **Deadline:** To be confirmed
@@ -51,9 +51,9 @@ Initialize the new repository and validate the critical technical assumptions be
 
 | ID | Milestone | Outcome | Status |
 |---|---|---|---|
-| M0 | Project Preparation | Verified development foundation | Completed |
-| M1 | Application Foundation | Authentication and role-based application | Completed |
-| M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Ready |
+| M0 | Project Preparation | Verified development foundation | Not started |
+| M1 | Application Foundation | Authentication and role-based application | Not started |
+| M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Not started |
 | M3 | Workshop Operations | Dispatch and mechanic execution | Not started |
 | M4 | Inventory & Cost Management | Operational stock and service costing | Not started |
 | M5 | Completion & Finance | QC, invoice, payment and handover | Not started |
@@ -70,43 +70,43 @@ Initialize the new repository and validate the critical technical assumptions be
 
 ### Tasks
 
-- [x] Confirm new project directory.
-- [x] Initialize Git repository.
-- [x] Create Flutter application.
-- [x] Verify Flutter and Dart versions.
-- [x] Verify Android development environment.
-- [x] Configure Flutter Web development.
-- [x] Create new Supabase development project.
-- [x] Confirm separation from previous Supabase project.
-- [x] Configure Supabase CLI.
-- [x] Establish local development environment.
-- [x] Configure environment variables/build-time configuration.
-- [x] Install approved dependencies.
-- [x] Commit dependency lockfile.
-- [x] Establish initial directory structure.
-- [x] Add `README.md`.
-- [x] Add `AGENTS.md`.
-- [x] Add documentation directory.
-- [x] Establish Git branching conventions.
-- [x] Establish Antigravity agent workflow.
-- [x] Create initial testing structure.
+- [ ] Confirm new project directory.
+- [ ] Initialize Git repository.
+- [ ] Create Flutter application.
+- [ ] Verify Flutter and Dart versions.
+- [ ] Verify Android development environment.
+- [ ] Configure Flutter Web development.
+- [ ] Create new Supabase development project.
+- [ ] Confirm separation from previous Supabase project.
+- [ ] Configure Supabase CLI.
+- [ ] Establish local development environment.
+- [ ] Configure environment variables/build-time configuration.
+- [ ] Install approved dependencies.
+- [ ] Commit dependency lockfile.
+- [ ] Establish initial directory structure.
+- [ ] Add `README.md`.
+- [ ] Add `AGENTS.md`.
+- [ ] Add documentation directory.
+- [ ] Establish Git branching conventions.
+- [ ] Establish Antigravity agent workflow.
+- [ ] Create initial testing structure.
 
 ### Technical validation
 
-- [x] Flutter Android application launches.
-- [x] Flutter Web application launches.
-- [x] Supabase connection works.
-- [x] Local Supabase database can be started, if local development is selected.
-- [x] Clean database migration process works.
-- [x] Git working tree is clean after initial setup.
+- [ ] Flutter Android application launches.
+- [ ] Flutter Web application launches.
+- [ ] Supabase connection works.
+- [ ] Local Supabase database can be started, if local development is selected.
+- [ ] Clean database migration process works.
+- [ ] Git working tree is clean after initial setup.
 
 ### Required documentation
 
-- [x] `README.md`
-- [x] `AGENTS.md`
-- [x] `ARCHITECTURE.md`
-- [x] `DATABASE_SCHEMA.md`
-- [x] `TESTING.md`
+- [ ] `README.md`
+- [ ] `AGENTS.md`
+- [ ] `ARCHITECTURE.md`
+- [ ] `DATABASE_SCHEMA.md`
+- [ ] `TESTING.md`
 
 ### Exit criteria
 
@@ -139,12 +139,12 @@ Included:
 
 Acceptance:
 
-- [x] Application launches on Android.
-- [x] Application launches on Web.
-- [x] Light and dark themes work.
-- [x] Shared layout components work.
-- [x] Navigation behaves consistently.
-- [x] Loading and error states are handled.
+- [ ] Application launches on Android.
+- [ ] Application launches on Web.
+- [ ] Light and dark themes work.
+- [ ] Shared layout components work.
+- [ ] Navigation behaves consistently.
+- [ ] Loading and error states are handled.
 
 ### VS-02 — Authentication and Roles
 
@@ -165,13 +165,13 @@ Included:
 
 Acceptance:
 
-- [x] Admin can authenticate.
-- [x] Mechanic can authenticate.
-- [x] Customer can register.
-- [x] Customer can verify email.
-- [x] Users are routed to correct workspaces.
-- [x] Unauthorized access is rejected.
-- [x] RLS prevents cross-customer access.
+- [ ] Admin can authenticate.
+- [ ] Mechanic can authenticate.
+- [ ] Customer can register.
+- [ ] Customer can verify email.
+- [ ] Users are routed to correct workspaces.
+- [ ] Unauthorized access is rejected.
+- [ ] RLS prevents cross-customer access.
 
 ### VS-03 — Customer and Vehicle Registry
 
@@ -190,20 +190,20 @@ Included:
 
 Acceptance:
 
-- [x] Admin can create a customer.
-- [x] Admin can create a guest customer.
-- [x] Admin can register vehicles.
-- [x] Customer can manage their own vehicles.
-- [x] Vehicle ownership is enforced.
-- [x] Duplicate registration warnings work.
+- [ ] Admin can create a customer.
+- [ ] Admin can create a guest customer.
+- [ ] Admin can register vehicles.
+- [ ] Customer can manage their own vehicles.
+- [ ] Vehicle ownership is enforced.
+- [ ] Duplicate registration warnings work.
 
 ### M1 Exit Criteria
 
-- [x] All three roles have working authentication.
-- [x] Responsive application shells are functional.
-- [x] Customer and vehicle records can be managed.
-- [x] Basic security tests pass.
-- [x] The application is usable on Android and desktop browser.
+- All three roles have working authentication.
+- Responsive application shells are functional.
+- Customer and vehicle records can be managed.
+- Basic security tests pass.
+- The application is usable on Android and desktop browser.
 
 ---
 

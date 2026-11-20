@@ -1,6 +1,6 @@
 # Architecture — PitMate
 
-> **Status:** Approved — 2026-11-20  
+> **Status:** Proposed — Part 3  
 > **Version:** 2.0  
 > **Last updated:** 2026-11-20  
 > **Project type:** Clean-slate Flutter application  
@@ -50,11 +50,11 @@ PitMate uses a single Flutter application connected directly to a Supabase backe
 
 ## Current implementation status
 
-Approved. Milestone M1 — Application Foundation complete with multi-role authentication, responsive shells, customer and vehicle registry, and 197 passing automated tests.
+Architecture proposed. No new repository or implementation has been verified.
 
 ## Next technical action
 
-Proceed with Milestone M2 — Customer Intake & Diagnosis (Booking Management, Walk-in Admission, Workshop Queue, and Vehicle Inspection).
+Initialize the new project structure and establish the development environment after architecture approval.
 
 ---
 

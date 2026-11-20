@@ -1,8 +1,7 @@
 # PitMate — Agent Instructions
 
 > **Document:** AGENTS.md  
-> **Status:** Approved — 2026-11-20  
-> **Version:** 2.0  
+> **Status:** Active project instruction draft  
 > **Last updated:** 2026-11-20  
 > **Applies to:** All coding agents, including Antigravity agents and human contributors.
 
@@ -126,16 +125,18 @@ Before any destructive operation:
 4. Obtain explicit user approval.
 5. Verify the target environment.
 
-## Clean-Slate Architecture (Version 2.0 Authorized)
+## Clean-Slate Architecture
 
-The clean-slate redesign (Version 2.0) has been explicitly approved and authorized by the user.
-The previous Version 1.0 implementation is preserved in `legacy/` for reference.
+The clean-slate architecture discussed in Part 3 is a proposed direction, not authorization to discard the current implementation.
 
-Rules for Version 2.0:
-- Version 1.0 in `legacy/` is non-binding reference material; do not cross-import from `legacy/`.
-- Build cleanly following `docs/ARCHITECTURE.md`, `docs/PRD.md`, and `docs/DESIGN.md`.
-- Never delete `legacy/` without explicit authorization.
-- Version 2.0 uses feature-first modular architecture (`lib/features/`, `lib/app/`, `lib/core/`, `lib/shared/`).
+Before implementing a major architectural replacement:
+
+- Compare the existing architecture.
+- Identify which features already work.
+- Identify the actual architectural deficiency.
+- Estimate migration impact.
+- Propose an incremental alternative.
+- Obtain approval for consequential changes.
 
 ---
 

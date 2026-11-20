@@ -2,7 +2,7 @@
 
 > **Product:** PitMate  
 > **Version:** 2.0  
-> **Status:** Approved — 2026-11-20  
+> **Status:** Initial Design Specification — Draft  
 > **Date:** 2026-11-20  
 > **Visual Direction:** Motorsport-inspired professional workshop management  
 > **Platforms:** Mobile-first customer/mechanic, responsive desktop/mobile admin
