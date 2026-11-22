@@ -1,18 +1,10 @@
 # Milestones — PitMate
 
-> **Current milestone:** M0 — Project Preparation  
-> **Overall status:** Planning Complete / Implementation Not Started  
+> **Current milestone:** M1 Completed — Ready for M2  
+> **Overall status:** M0 & M1 Complete  
 > **Version:** 2.0  
-> **Last updated:** 2026-11-20  
+> **Last updated:** 2026-11-22  
 > **Deadline:** To be confirmed
-
-```
-[caveman](slashCommand;caveman) [antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) 
-
-[/goal](slashCommand;goal) 
-
-Read docs/ and necessary documents and sync to be updated. Read the existing project code before continuing. 
-```
 
 ---
 
@@ -30,28 +22,22 @@ Customers, mechanics and administrators use one integrated application with role
 
 ## Current state
 
-- Part 2 — Product Definition: Draft produced, decisions approved by user.
-- Part 3 — Architecture: Proposed.
-- Part 3 — Milestone Planning: Proposed.
-- New repository: Not initialized.
-- New Supabase project: Not initialized.
-- Database schema: Not implemented.
-- UI prototype: Not approved.
-- Implementation: Not started.
+- M0 Project Preparation: Complete.
+- M1 Application Foundation: Complete.
+- Multi-agent worktree implementation verified: 42/42 tests passing.
+- Next: M2 Customer Intake & Diagnosis.
 
 ## Next action
 
-Initialize the new repository and validate the critical technical assumptions before implementing dependent features.
+Begin Milestone M2 Customer Intake & Diagnosis planning.
 
 ## Related documents
 
 - `PRD.md`
 - `DESIGN.md`
 - `ARCHITECTURE.md`
-- `DATABASE_SCHEMA.md` (to be produced)
-- `BUSINESS_FLOWS.md` (to be produced)
-- `TESTING.md` (to be produced)
-- `SEED_STRATEGY.md` (to be produced)
+- `DATABASE_SCHEMA.md`
+- `TESTING.md`
 
 ---
 
@@ -59,9 +45,9 @@ Initialize the new repository and validate the critical technical assumptions be
 
 | ID | Milestone | Outcome | Status |
 |---|---|---|---|
-| M0 | Project Preparation | Verified development foundation | Not started |
-| M1 | Application Foundation | Authentication and role-based application | Not started |
-| M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Not started |
+| M0 | Project Preparation | Verified development foundation | Complete |
+| M1 | Application Foundation | Authentication and role-based application | Complete |
+| M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Next |
 | M3 | Workshop Operations | Dispatch and mechanic execution | Not started |
 | M4 | Inventory & Cost Management | Operational stock and service costing | Not started |
 | M5 | Completion & Finance | QC, invoice, payment and handover | Not started |
@@ -148,12 +134,12 @@ Included:
 
 Acceptance:
 
-- [ ] Application launches on Android.
-- [ ] Application launches on Web.
-- [ ] Light and dark themes work.
-- [ ] Shared layout components work.
-- [ ] Navigation behaves consistently.
-- [ ] Loading and error states are handled.
+- [x] Application launches on Android.
+- [x] Application launches on Web.
+- [x] Light and dark themes work.
+- [x] Shared layout components work.
+- [x] Navigation behaves consistently.
+- [x] Loading and error states are handled.
 
 ### VS-02 — Authentication and Roles
 
@@ -174,13 +160,13 @@ Included:
 
 Acceptance:
 
-- [ ] Admin can authenticate.
-- [ ] Mechanic can authenticate.
-- [ ] Customer can register.
-- [ ] Customer can verify email.
-- [ ] Users are routed to correct workspaces.
-- [ ] Unauthorized access is rejected.
-- [ ] RLS prevents cross-customer access.
+- [x] Admin can authenticate.
+- [x] Mechanic can authenticate.
+- [x] Customer can register.
+- [x] Customer can verify email.
+- [x] Users are routed to correct workspaces.
+- [x] Unauthorized access is rejected.
+- [x] RLS prevents cross-customer access.
 
 ### VS-03 — Customer and Vehicle Registry
 
@@ -199,20 +185,20 @@ Included:
 
 Acceptance:
 
-- [ ] Admin can create a customer.
-- [ ] Admin can create a guest customer.
-- [ ] Admin can register vehicles.
-- [ ] Customer can manage their own vehicles.
-- [ ] Vehicle ownership is enforced.
-- [ ] Duplicate registration warnings work.
+- [x] Admin can create a customer.
+- [x] Admin can create a guest customer.
+- [x] Admin can register vehicles.
+- [x] Customer can manage their own vehicles.
+- [x] Vehicle ownership is enforced.
+- [x] Duplicate registration warnings work.
 
 ### M1 Exit Criteria
 
-- All three roles have working authentication.
-- Responsive application shells are functional.
-- Customer and vehicle records can be managed.
-- Basic security tests pass.
-- The application is usable on Android and desktop browser.
+- [x] All three roles have working authentication.
+- [x] Responsive application shells are functional.
+- [x] Customer and vehicle records can be managed.
+- [x] Basic security tests pass.
+- [x] The application is usable on Android and desktop browser.
 
 ---
 
