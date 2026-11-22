@@ -54,3 +54,48 @@ flutter build apk --debug
 - Every new model or business logic module must include unit tests.
 - Reusable UI components and role shells must include widget tests covering loading, error, and content states.
 - All tests must pass cleanly before milestone completion.
+
+---
+
+# 5. Playwright CLI Localhost Web E2E Verification
+
+For milestone validation, the orchestrator verifies end-to-end user workflows against a running localhost Flutter Web build using the Playwright CLI (`npx -y playwright-cli`):
+
+### 5.1 Local Server Startup
+```bash
+# Serve Flutter web build or debug server on port 8080
+flutter run -d web-server --web-port=8080 --web-hostname=127.0.0.1
+```
+
+### 5.2 Playwright CLI End-to-End Test Workflow
+```bash
+# 1. Launch browser session
+npx -y playwright-cli open http://127.0.0.1:8080
+
+# 2. Inspect active UI snapshot
+npx -y playwright-cli snapshot
+
+# 3. Test Customer Booking
+npx -y playwright-cli fill <ref_email> "customer@pitmate.com"
+npx -y playwright-cli fill <ref_password> "password123"
+npx -y playwright-cli click <ref_submit>
+npx -y playwright-cli click <ref_book_service>
+
+# 4. Test Admin Intake & Inspection Review
+npx -y playwright-cli open http://127.0.0.1:8080
+# Login as admin@pitmate.com
+# Check in booking or register walk-in -> Service Order generated
+
+# 5. Test Mechanic Inspection Workspace
+# Login as mechanic@pitmate.com
+# Fill findings, check completeness, submit diagnostic report
+
+# 6. Test Customer Estimate Approval
+# Login as customer@pitmate.com
+# Review itemized charges -> Approve estimate
+
+# 7. Capture visual proof & close
+npx -y playwright-cli screenshot --filename=e2e_m2_exit.png
+npx -y playwright-cli close
+```
+

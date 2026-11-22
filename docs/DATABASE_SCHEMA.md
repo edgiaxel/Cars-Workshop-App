@@ -30,7 +30,7 @@ Tables and schema migrations are introduced incrementally per milestone based on
 | Milestone | Target Domain | Key Tables / Objects | Status |
 |---|---|---|---|
 | **M1** | Auth & Identity | `user_role` enum, `profiles`, `customer_type` enum, `customers`, `vehicles`, RLS policies, auth trigger | **Implemented** |
-| **M2** | Customer Intake & Diagnosis | `bookings`, `service_orders`, `inspections`, `estimates` | Planned |
+| **M2** | Customer Intake & Diagnosis | `bookings`, `service_orders`, `inspections`, `inspection_findings`, `estimates`, `estimate_items`, `estimate_authorizations` | **In Progress / Specified** |
 | **M3** | Workshop Operations | `workshop_bays`, `service_order_tasks`, `mechanic_assignments` | Planned |
 | **M4** | Inventory & Costing | `parts`, `inventory_transactions`, `part_requests` | Planned |
 | **M5** | Invoicing & Finance | `invoices`, `invoice_items`, `payments` | Planned |
@@ -239,3 +239,233 @@ Development and testing environments are seeded via `supabase/seed.sql` with pre
 - **Company Fleet Customer**: `PT Logistik Nusantara Prima`
 - **Guest Walk-in Customer**: `Joko Walk-in Guest`
 - **Vehicles**: Toyota Innova Reborn, Honda HR-V, Mitsubishi Pajero Sport, Isuzu Elf NMR 71, Suzuki Ertiga.
+
+---
+
+# 5. Milestone M2: Customer Intake & Diagnosis Schema Specification
+
+## 5.1 Enums
+
+### `public.booking_status`
+```sql
+CREATE TYPE public.booking_status AS ENUM (
+  'pending', 'confirmed', 'cancelled', 'rescheduled', 'checked_in', 'rejected'
+);
+```
+
+### `public.service_order_status`
+```sql
+CREATE TYPE public.service_order_status AS ENUM (
+  'intake_pending', 'inspection_pending', 'inspection_in_progress', 'inspection_completed',
+  'estimate_pending', 'estimate_approved', 'estimate_rejected',
+  'in_progress', 'qc_pending', 'completed', 'closed', 'cancelled'
+);
+```
+
+### `public.intake_type`
+```sql
+CREATE TYPE public.intake_type AS ENUM ('walk_in', 'booking');
+```
+
+### `public.inspection_status`
+```sql
+CREATE TYPE public.inspection_status AS ENUM ('assigned', 'in_progress', 'completed', 'reviewed');
+```
+
+### `public.finding_condition`
+```sql
+CREATE TYPE public.finding_condition AS ENUM ('good', 'fair', 'critical');
+```
+
+### `public.severity_level`
+```sql
+CREATE TYPE public.severity_level AS ENUM ('low', 'medium', 'urgent');
+```
+
+### `public.estimate_status`
+```sql
+CREATE TYPE public.estimate_status AS ENUM (
+  'draft', 'sent', 'approved', 'partially_approved', 'rejected', 'superseded'
+);
+```
+
+### `public.authorization_status`
+```sql
+CREATE TYPE public.authorization_status AS ENUM ('pending', 'approved', 'rejected', 'deferred');
+```
+
+---
+
+## 5.2 Tables
+
+### 5.2.1 `public.bookings`
+Manages customer appointment reservations before vehicle arrival.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Booking ID |
+| `customer_id` | `UUID` | `NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE` | Customer reference |
+| `vehicle_id` | `UUID` | `NOT NULL REFERENCES public.vehicles(id) ON DELETE CASCADE` | Vehicle reference |
+| `booking_date` | `DATE` | `NOT NULL` | Requested service date |
+| `time_slot` | `TEXT` | `NOT NULL` | Slot (e.g. 08:00 - 10:00) |
+| `service_type` | `TEXT` | `NOT NULL` | Requested service (e.g. Periodic Service) |
+| `customer_notes` | `TEXT` | `NULL` | Customer symptoms / remarks |
+| `admin_notes` | `TEXT` | `NULL` | Internal workshop notes |
+| `status` | `public.booking_status` | `NOT NULL DEFAULT 'pending'` | Current booking status |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Update timestamp |
+
+**Indexes:**
+- `idx_bookings_customer_id` ON `public.bookings(customer_id)`
+- `idx_bookings_date` ON `public.bookings(booking_date, status)`
+
+---
+
+### 5.2.2 `public.service_orders`
+The central workshop visit record created at vehicle arrival.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Service Order ID |
+| `order_number` | `TEXT` | `NOT NULL UNIQUE` | Human-readable sequential ID (e.g. `SO-202611-0001`) |
+| `customer_id` | `UUID` | `NOT NULL REFERENCES public.customers(id) ON DELETE RESTRICT` | Customer reference |
+| `vehicle_id` | `UUID` | `NOT NULL REFERENCES public.vehicles(id) ON DELETE RESTRICT` | Vehicle reference |
+| `booking_id` | `UUID` | `NULL REFERENCES public.bookings(id) ON DELETE SET NULL` | Origin booking (if appointment) |
+| `intake_type` | `public.intake_type` | `NOT NULL DEFAULT 'walk_in'` | Intake origin |
+| `odometer` | `INT` | `NOT NULL` | Odometer reading in KM at check-in |
+| `customer_complaint` | `TEXT` | `NOT NULL` | Customer reported symptoms / requests |
+| `fuel_level` | `TEXT` | `NULL` | Fuel gauge level (e.g. 1/2, Full) |
+| `initial_notes` | `TEXT` | `NULL` | Exterior condition / damage observations |
+| `status` | `public.service_order_status` | `NOT NULL DEFAULT 'inspection_pending'` | Lifecycle stage |
+| `assigned_bay` | `TEXT` | `NULL` | Assigned service bay identifier |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Update timestamp |
+
+**Invariants & Constraints:**
+- **Single Active Order Invariant**: A vehicle cannot have multiple active service orders concurrently.
+  ```sql
+  CREATE UNIQUE INDEX idx_service_orders_single_active_vehicle
+    ON public.service_orders (vehicle_id)
+    WHERE status NOT IN ('completed', 'closed', 'cancelled');
+  ```
+
+---
+
+### 5.2.3 `public.inspections`
+Diagnostic inspection sessions performed on a checked-in vehicle.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Inspection ID |
+| `service_order_id` | `UUID` | `NOT NULL REFERENCES public.service_orders(id) ON DELETE CASCADE` | Service order reference |
+| `mechanic_id` | `UUID` | `NULL REFERENCES public.profiles(id) ON DELETE SET NULL` | Assigned technician |
+| `status` | `public.inspection_status` | `NOT NULL DEFAULT 'assigned'` | Inspection progress |
+| `summary` | `TEXT` | `NULL` | Diagnostic summary |
+| `started_at` | `TIMESTAMPTZ` | `NULL` | Start timestamp |
+| `completed_at` | `TIMESTAMPTZ` | `NULL` | Submission timestamp |
+| `reviewed_by` | `UUID` | `NULL REFERENCES public.profiles(id) ON DELETE SET NULL` | Reviewing service advisor / admin |
+| `reviewed_at` | `TIMESTAMPTZ` | `NULL` | Review timestamp |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Update timestamp |
+
+---
+
+### 5.2.4 `public.inspection_findings`
+Detailed itemized findings and evidence recorded during vehicle diagnosis.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Finding ID |
+| `inspection_id` | `UUID` | `NOT NULL REFERENCES public.inspections(id) ON DELETE CASCADE` | Inspection session reference |
+| `category` | `TEXT` | `NOT NULL` | System category (e.g. Powertrain, Brakes) |
+| `item_name` | `TEXT` | `NOT NULL` | Checked item (e.g. Front Brake Pads) |
+| `condition` | `public.finding_condition` | `NOT NULL DEFAULT 'good'` | Condition status |
+| `severity` | `public.severity_level` | `NOT NULL DEFAULT 'low'` | Finding urgency |
+| `notes` | `TEXT` | `NULL` | Mechanic observations |
+| `photo_urls` | `TEXT[]` | `NULL` | Uploaded evidence photos |
+| `recommended_action` | `TEXT` | `NULL` | Recommended repair / maintenance |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+
+---
+
+### 5.2.5 `public.estimates`
+Itemized repair estimates presented to customers for authorization.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Estimate ID |
+| `service_order_id` | `UUID` | `NOT NULL REFERENCES public.service_orders(id) ON DELETE CASCADE` | Service order reference |
+| `inspection_id` | `UUID` | `NULL REFERENCES public.inspections(id) ON DELETE SET NULL` | Source inspection reference |
+| `revision_number` | `INT` | `NOT NULL DEFAULT 1` | Revision sequence (1, 2, ...) |
+| `status` | `public.estimate_status` | `NOT NULL DEFAULT 'draft'` | Estimate authorization status |
+| `subtotal_cents` | `BIGINT` | `NOT NULL DEFAULT 0` | Parts + Labor subtotal in cents |
+| `tax_cents` | `BIGINT` | `NOT NULL DEFAULT 0` | Tax amount in cents |
+| `discount_cents` | `BIGINT` | `NOT NULL DEFAULT 0` | Applied discount in cents |
+| `total_cents` | `BIGINT` | `NOT NULL DEFAULT 0` | Final total in cents |
+| `notes` | `TEXT` | `NULL` | Terms or additional notes |
+| `created_by` | `UUID` | `NULL REFERENCES public.profiles(id) ON DELETE SET NULL` | Creator admin |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Update timestamp |
+
+**Constraints:**
+- `CONSTRAINT uq_service_order_revision UNIQUE (service_order_id, revision_number)`
+
+---
+
+### 5.2.6 `public.estimate_items`
+Itemized parts and labor operations proposed within an estimate.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Item ID |
+| `estimate_id` | `UUID` | `NOT NULL REFERENCES public.estimates(id) ON DELETE CASCADE` | Estimate reference |
+| `item_type` | `TEXT` | `NOT NULL DEFAULT 'labor'` | Type (`part`, `labor`, `package`) |
+| `description` | `TEXT` | `NOT NULL` | Description of item / service |
+| `quantity` | `INT` | `NOT NULL DEFAULT 1` | Quantity or labor units |
+| `unit_price_cents`| `BIGINT` | `NOT NULL` | Price per unit in cents |
+| `total_price_cents`| `BIGINT`| `NOT NULL` | Quantity * Unit Price in cents |
+| `is_optional` | `BOOLEAN` | `NOT NULL DEFAULT FALSE` | Optional recommendation flag |
+| `authorization_status` | `public.authorization_status` | `NOT NULL DEFAULT 'pending'` | Individual line authorization |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+
+---
+
+### 5.2.7 `public.estimate_authorizations`
+Immutable audit record of customer approval, rejection, or deferral.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Authorization ID |
+| `estimate_id` | `UUID` | `NOT NULL REFERENCES public.estimates(id) ON DELETE CASCADE` | Estimate reference |
+| `authorized_by` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT` | Authorizing customer profile |
+| `status` | `public.estimate_status` | `NOT NULL` | Decision (`approved`, `partially_approved`, `rejected`) |
+| `signature_token`| `TEXT` | `NULL` | Verification / signature token |
+| `notes` | `TEXT` | `NULL` | Customer feedback / rejection reason |
+| `authorized_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Timestamp of authorization |
+
+---
+
+## 5.3 Database Functions & RPCs
+
+### 5.3.1 `public.create_service_order_intake(...)`
+Atomic vehicle intake transaction:
+- Validates that the vehicle has no active service order.
+- Generates sequential order number `SO-YYYYMM-XXXX`.
+- If booking is provided, marks booking status as `'checked_in'`.
+- Updates vehicle current mileage.
+- Inserts `service_orders` record.
+- Automatically inserts an initial `inspections` record in `'assigned'` status.
+
+### 5.3.2 `public.submit_inspection(...)`
+Atomic inspection submission:
+- Verifies all mandatory checklist categories are addressed.
+- Sets inspection status to `'completed'` and records `completed_at`.
+- Updates service order status to `'estimate_pending'`.
+
+### 5.3.3 `public.authorize_estimate(...)`
+Atomic customer authorization:
+- Validates authorizing customer owns the vehicle linked to the service order.
+- Records immutable `estimate_authorizations` entry.
+- Updates estimate status (`'approved'`, `'partially_approved'`, `'rejected'`).
+- If approved, updates service order status to `'estimate_approved'`.
+

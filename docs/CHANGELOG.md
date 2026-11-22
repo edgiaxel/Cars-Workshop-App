@@ -28,11 +28,14 @@ Changes currently under development.
 
 ### Added
 
-- Pending implementation.
+- Database schema specification for Milestone M2: `bookings`, `service_orders`, `inspections`, `inspection_findings`, `estimates`, `estimate_items`, `estimate_authorizations`.
+- Playwright CLI end-to-end verification procedures in `TESTING.md`.
+- Multi-agent worktree execution plan for Milestone M2 (VS-04 Booking Management, VS-05 Walk-in Intake, VS-06 Inspection & Diagnosis, VS-07 Estimate & Authorization).
 
 ### Changed
 
-- Pending implementation.
+- Synced `MILESTONE.md` marking M1 complete and advancing M2 to Active Planning.
+- Updated `DATABASE_SCHEMA.md` with M2 tables, enums, RPC contracts, and RLS policies.
 
 ### Fixed
 

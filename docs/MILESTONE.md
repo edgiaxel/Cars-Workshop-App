@@ -1,9 +1,9 @@
 # Milestones — PitMate
 
-> **Current milestone:** M1 Completed — Ready for M2  
-> **Overall status:** M0 & M1 Complete  
+> **Current milestone:** M2 Customer Intake & Diagnosis — Active  
+> **Overall status:** M0 & M1 Complete (42/42 tests passing), M2 In Planning  
 > **Version:** 2.0  
-> **Last updated:** 2026-11-22  
+> **Last updated:** 2026-11-23  
 > **Deadline:** To be confirmed
 
 ---
@@ -14,6 +14,9 @@
 [caveman](slashCommand;caveman) be brief
 
 Read docs/ with necessary documents then update and sync them. Read the existing project code before continuing. 
+
+We are using multiagent workflow with different worktree
+You as the orchestrator your job is to review the work, merge them and make sure the code works to real app, no mockup no hardcode, connect the real workflow to database and backend logic everything and run playwright CLI to test in localhost and do the testing that everything has worked
 ```
 ---
 

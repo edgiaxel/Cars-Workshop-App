@@ -206,6 +206,72 @@ BEGIN
     color = EXCLUDED.color,
     notes = EXCLUDED.notes;
 
+  -- M2 Seed Data: Bookings, Service Orders, Inspections, Estimates
+  DECLARE
+    v_civic_id UUID;
+    v_yaris_id UUID;
+    v_booking_id UUID;
+    v_m2_order public.service_orders;
+    v_m2_insp_id UUID;
+    v_m2_est_id UUID;
+  BEGIN
+    SELECT id INTO v_yaris_id FROM public.vehicles WHERE license_plate = 'B 1234 TOY';
+    SELECT id INTO v_civic_id FROM public.vehicles WHERE license_plate = 'B 5678 CIV';
+
+    -- 1. Pending Booking for Yaris
+    INSERT INTO public.bookings (
+      customer_id, vehicle_id, booking_date, time_slot, service_type, customer_notes, status
+    ) VALUES (
+      v_axel_cust_id, v_yaris_id, CURRENT_DATE + INTERVAL '1 day', '09:00 - 11:00',
+      'Periodic Maintenance & Fluid Flush', 'Clutch pedal feels slightly soft', 'pending'
+    ) RETURNING id INTO v_booking_id;
+
+    -- 2. Active Service Order for Civic Type R
+    IF NOT EXISTS (
+      SELECT 1 FROM public.service_orders WHERE vehicle_id = v_civic_id AND status NOT IN ('completed', 'closed', 'cancelled')
+    ) THEN
+      v_m2_order := public.create_service_order_intake(
+        v_axel_cust_id,
+        v_civic_id,
+        8200,
+        'Grinding noise from front axle during high-speed deceleration',
+        'walk_in',
+        NULL,
+        '3/4',
+        'No visible body damage, OEM wheels intact',
+        'Bay 02'
+      );
+
+      -- Get the generated inspection
+      SELECT id INTO v_m2_insp_id FROM public.inspections WHERE service_order_id = v_m2_order.id LIMIT 1;
+
+      -- Add findings
+      INSERT INTO public.inspection_findings (
+        inspection_id, category, item_name, condition, severity, notes, recommended_action
+      ) VALUES
+        (v_m2_insp_id, 'Brakes & Suspension', 'Front Brake Pads (Brembo 4-pot)', 'critical', 'urgent', 'Pad material worn to 1.8mm. Rotor showing minor thermal discoloration.', 'Replace front brake pad set immediately and bed-in.'),
+        (v_m2_insp_id, 'Brakes & Suspension', 'Brake Fluid', 'fair', 'medium', 'Moisture level 2.8%, boiling point reduced.', 'Flush and replace with Motul RBF 660 synthetic fluid.'),
+        (v_m2_insp_id, 'Powertrain', 'Engine Oil & Filter', 'good', 'low', 'Level nominal, oil condition clean.', 'Inspect next scheduled interval.');
+
+      -- Submit inspection
+      PERFORM public.submit_inspection(v_m2_insp_id, 'Front brake pads severely worn. Recommend immediate replacement with high-temp brake fluid flush.', v_verstappen_id);
+
+      -- Create Estimate
+      INSERT INTO public.estimates (
+        service_order_id, inspection_id, revision_number, status, subtotal_cents, tax_cents, discount_cents, total_cents, notes, created_by
+      ) VALUES (
+        v_m2_order.id, v_m2_insp_id, 1, 'sent', 315000000, 34650000, 0, 349650000, 'All parts OEM specification. Includes professional brake caliper service and track bleed.', v_admin_id
+      ) RETURNING id INTO v_m2_est_id;
+
+      -- Add Estimate Items
+      INSERT INTO public.estimate_items (estimate_id, item_type, description, quantity, unit_price_cents, total_price_cents, is_optional)
+      VALUES
+        (v_m2_est_id, 'part', 'Honda OEM Brembo Front Brake Pad Set (FL5)', 1, 220000000, 220000000, FALSE),
+        (v_m2_est_id, 'part', 'Motul RBF 660 High-Temp Racing Brake Fluid (500ml)', 2, 22500000, 45000000, FALSE),
+        (v_m2_est_id, 'labor', 'Front Brake Overhaul & Precision Bleeding Service', 1, 50000000, 50000000, FALSE);
+    END IF;
+  END;
+
 END $$;
 
 DROP FUNCTION IF EXISTS public.create_seed_user;
