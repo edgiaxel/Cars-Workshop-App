@@ -49,3 +49,12 @@ class NotFoundException extends AppException {
     super.originalException,
   });
 }
+
+/// Database and persistence errors.
+class DatabaseException extends AppException {
+  const DatabaseException(
+    super.message, {
+    super.code,
+    super.originalException,
+  });
+}
