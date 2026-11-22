@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/features/admin/presentation/admin_bookings_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_customers_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_overview_screen.dart';
 import 'package:pitmate/features/auth/domain/user_role.dart';
@@ -8,6 +9,8 @@ import 'package:pitmate/features/auth/presentation/screens/forgot_password_scree
 import 'package:pitmate/features/auth/presentation/screens/login_screen.dart';
 import 'package:pitmate/features/auth/presentation/screens/register_screen.dart';
 import 'package:pitmate/features/auth/presentation/screens/verify_otp_screen.dart';
+import 'package:pitmate/features/bookings/presentation/screens/book_service_screen.dart';
+import 'package:pitmate/features/bookings/presentation/screens/customer_appointments_screen.dart';
 import 'package:pitmate/features/customers/presentation/customer_garage_screen.dart';
 import 'package:pitmate/features/mechanic/presentation/mechanic_home_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -71,6 +74,10 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const AdminCustomersScreen(),
     ),
     GoRoute(
+      path: RoutePaths.adminBookings,
+      builder: (context, state) => const AdminBookingsScreen(),
+    ),
+    GoRoute(
       path: RoutePaths.mechanic,
       builder: (context, state) => const MechanicHomeScreen(),
     ),
@@ -81,6 +88,17 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RoutePaths.customerGarage,
       builder: (context, state) => const CustomerGarageScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.bookService,
+      builder: (context, state) {
+        final vehicleId = state.uri.queryParameters['vehicleId'];
+        return BookServiceScreen(initialVehicleId: vehicleId);
+      },
+    ),
+    GoRoute(
+      path: RoutePaths.customerAppointments,
+      builder: (context, state) => const CustomerAppointmentsScreen(),
     ),
   ],
 );

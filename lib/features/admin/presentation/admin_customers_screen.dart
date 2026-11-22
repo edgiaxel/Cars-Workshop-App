@@ -252,6 +252,8 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
       onNavIndexChanged: (i) {
         if (i == 0) {
           context.go(RoutePaths.admin);
+        } else if (i == 3) {
+          context.go(RoutePaths.adminBookings);
         } else {
           setState(() => _navIndex = i);
         }

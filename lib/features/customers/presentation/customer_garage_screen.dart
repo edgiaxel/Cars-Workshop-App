@@ -227,7 +227,13 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
       userName: _customerName,
       userSubtitle: _customerSubtitle,
       currentIndex: _navIndex,
-      onNavIndexChanged: (index) => setState(() => _navIndex = index),
+      onNavIndexChanged: (index) {
+        if (index == 1) {
+          context.go(RoutePaths.customerAppointments);
+          return;
+        }
+        setState(() => _navIndex = index);
+      },
       navItems: _navItems,
       telemetryNotice: 'CONNECTED TO PITMATE CLOUD',
       onLogout: () async {

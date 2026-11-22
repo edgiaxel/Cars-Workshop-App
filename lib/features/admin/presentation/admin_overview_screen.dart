@@ -33,6 +33,10 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
       context.go(RoutePaths.adminCustomers);
       return;
     }
+    if (index == 3) {
+      context.go(RoutePaths.adminBookings);
+      return;
+    }
     setState(() => _navIndex = index);
   }
 
