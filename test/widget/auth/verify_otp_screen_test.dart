@@ -28,7 +28,14 @@ class FakeOtpAuthRepository implements IAuthRepository {
   Future<Result<UserProfile>> signInWithPassword(String email, String password) async =>
       const Result.failure(AuthException('Not implemented'));
   @override
-  Future<Result<UserProfile>> signUpWithPassword(String email, String password, String fullName, [String? phone]) async =>
+  Future<Result<UserProfile>> signUpWithPassword(
+    String email,
+    String password,
+    String fullName, [
+    String? phone,
+    String customerType = 'individual',
+    String? companyName,
+  ]) async =>
       const Result.failure(AuthException('Not implemented'));
 
   @override

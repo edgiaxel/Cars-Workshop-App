@@ -52,7 +52,14 @@ class FakeAuthRepository implements IAuthRepository {
   }
 
   @override
-  Future<Result<UserProfile>> signUpWithPassword(String email, String password, String fullName, [String? phone]) async {
+  Future<Result<UserProfile>> signUpWithPassword(
+    String email,
+    String password,
+    String fullName, [
+    String? phone,
+    String customerType = 'individual',
+    String? companyName,
+  ]) async {
     final profile = UserProfile(
       id: 'new-user-id',
       role: UserRole.customer,
@@ -244,7 +251,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final emailField = tester.widget<TextFormField>(find.byKey(const Key('login_email_field')));
-    expect(emailField.controller?.text, 'admin@pitmate.local');
+    expect(emailField.controller?.text, 'admin@pitmate.co');
 
     final state = container.read(authNotifierProvider);
     expect(state, isA<AuthAuthenticated>());

@@ -29,7 +29,14 @@ class TestMockRepository implements IAuthRepository {
   }
 
   @override
-  Future<Result<UserProfile>> signUpWithPassword(String email, String password, String fullName, [String? phone]) async {
+  Future<Result<UserProfile>> signUpWithPassword(
+    String email,
+    String password,
+    String fullName, [
+    String? phone,
+    String customerType = 'individual',
+    String? companyName,
+  ]) async {
     if (failNext) return const Result.failure(AuthException('Signup failed'));
     return Result.success(UserProfile(id: '2', role: UserRole.customer, fullName: fullName, isEmailVerified: false));
   }

@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Mechanic Home Screen matching screens/mechanic_home_my_work_2 prototype:
 /// - Shift telemetry header (Bay indicator, shift hours)
 /// - Compact workload metrics (Assigned, In Progress, On Hold, Passed QC)
 /// - Current Active Job focal card (Honda Civic Type R FL5, K20C1, task checklist progress)
 /// - Assigned jobs queue (BMW 320i F30 LCI, Subaru WRX STI)
-class MechanicHomeScreen extends StatefulWidget {
+class MechanicHomeScreen extends ConsumerStatefulWidget {
   const MechanicHomeScreen({super.key});
 
   @override
-  State<MechanicHomeScreen> createState() => _MechanicHomeScreenState();
+  ConsumerState<MechanicHomeScreen> createState() => _MechanicHomeScreenState();
 }
 
-class _MechanicHomeScreenState extends State<MechanicHomeScreen> {
+class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
   int _navIndex = 0;
 
   static const List<RoleNavItem> _mechanicNavItems = [
@@ -33,15 +38,27 @@ class _MechanicHomeScreenState extends State<MechanicHomeScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    String mechanicName = 'Max Verstappen';
+    try {
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      final name = currentUser?.userMetadata?['full_name'] as String?;
+      if (name != null && name.isNotEmpty) {
+        mechanicName = name;
+      }
+    } catch (_) {}
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Mechanic Telemetry',
-      userName: 'Dian S.',
+      userName: mechanicName,
       userSubtitle: 'Lead Performance Tech',
       currentIndex: _navIndex,
       onNavIndexChanged: (i) => setState(() => _navIndex = i),
       navItems: _mechanicNavItems,
       telemetryNotice: 'BAY 02 TELEMETRY ONLINE',
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       actions: [
         IconButton(
           icon: const Icon(Icons.notifications_none, size: 22),

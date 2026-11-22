@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/auth_state.dart';
 
@@ -97,13 +99,27 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        if (GoRouter.maybeOf(context) != null) {
+          context.go(RoutePaths.customerGarage);
+        } else {
+          Navigator.of(context).maybePop();
+        }
       }
     });
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Verify Email'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (GoRouter.maybeOf(context) != null) {
+              context.canPop() ? context.pop() : context.go(RoutePaths.login);
+            } else {
+              Navigator.of(context).maybePop();
+            }
+          },
+        ),
       ),
       body: SafeArea(
         child: Center(

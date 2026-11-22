@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
 
 /// Admin Workshop Overview Screen matching screens/admin_home_overview prototype.
-class AdminOverviewScreen extends StatefulWidget {
+class AdminOverviewScreen extends ConsumerStatefulWidget {
   const AdminOverviewScreen({super.key});
 
   @override
-  State<AdminOverviewScreen> createState() => _AdminOverviewScreenState();
+  ConsumerState<AdminOverviewScreen> createState() => _AdminOverviewScreenState();
 }
 
-class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
+class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
   int _navIndex = 0;
 
   static const List<RoleNavItem> _adminNavItems = [
@@ -41,12 +43,16 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Workshop Dispatch',
-      userName: 'Marcus T.',
+      userName: 'Toto Wolf',
       userSubtitle: 'Workshop Director',
       currentIndex: _navIndex,
       onNavIndexChanged: _onNavChanged,
       navItems: _adminNavItems,
       telemetryNotice: '4/5 BAYS ACTIVE (80%)',
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       actions: [
         IconButton(
           icon: const Icon(Icons.people_alt_outlined, size: 20),

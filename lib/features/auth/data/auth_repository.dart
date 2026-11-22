@@ -23,6 +23,8 @@ abstract class IAuthRepository {
     String password,
     String fullName, [
     String? phone,
+    String customerType = 'individual',
+    String? companyName,
   ]);
 
   Future<Result<UserProfile>> verifyEmailOtp(
@@ -140,6 +142,8 @@ class AuthRepository implements IAuthRepository {
     String password,
     String fullName, [
     String? phone,
+    String customerType = 'individual',
+    String? companyName,
   ]) async {
     try {
       final normalizedEmail = email.trim();
@@ -150,6 +154,9 @@ class AuthRepository implements IAuthRepository {
           'full_name': fullName.trim(),
           if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
           'role': 'customer',
+          'customer_type': customerType,
+          if (companyName != null && companyName.trim().isNotEmpty)
+            'company_name': companyName.trim(),
         },
       );
 
@@ -166,15 +173,27 @@ class AuthRepository implements IAuthRepository {
         role: UserRole.customer,
         fullName: fullName.trim(),
         phoneNumber: phone?.trim(),
+        customerType: customerType,
+        companyName: companyName?.trim(),
         isEmailVerified: isVerified,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      // Attempt initial profile upsert if authenticated session exists
+      // Attempt initial profile & customer upsert if authenticated session exists
       if (response.session != null) {
         try {
           await _client.from('profiles').upsert(profile.toJson());
+          await _client.from('customers').upsert({
+            'profile_id': user.id,
+            'full_name': fullName.trim(),
+            'phone_number': phone?.trim(),
+            'email': normalizedEmail,
+            'customer_type': customerType,
+            if (companyName != null && companyName.trim().isNotEmpty)
+              'company_name': companyName.trim(),
+            'is_guest': false,
+          });
         } catch (_) {
           // May be handled by server database trigger
         }

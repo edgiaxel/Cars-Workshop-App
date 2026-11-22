@@ -112,14 +112,17 @@ Mechanics can move between bays and work on different vehicles according to assi
 
 ACT-005 may initially use the Admin role. Separate owner permissions are a future extension.
 
-## 3.1 Authentication
+## 3.1 Authentication & Customer Classification
 
-- Admin and mechanics use authenticated accounts.
-- Customers can register independently via Email and Password.
+- Admin and mechanics use authenticated accounts provisioned by administration.
+- Customers are classified into two distinct types:
+  - **Individual (`individual`):** Private vehicle owners. Can use the workshop as walk-in unregistered guests (intake by admin) or as registered self-service accounts via email/password.
+  - **Company (`company`):** Corporate, fleet, and motorsport entities. Company accounts **must be registered first**—either self-registered through the application or manually provisioned by an Administrator. Unregistered guest walk-ins are not permitted for company accounts.
+- Customer self-registration supports selecting account type (`individual` vs `company`). Company registrations require an explicit business entity name.
 - Following sign-up, customer must verify email using a 6-digit OTP sent to their email.
 - Unverified customers have restricted access: they cannot book appointments or submit service requests until email OTP verification is complete.
-- Admin can create customer records for walk-in visitors without requiring an initial online account (Guest Customer).
-- Guest customers do not require accounts upfront.
+- Admin can create customer records for walk-in visitors without requiring an initial online account (Guest Customer, applicable to individuals only).
+- Admin can manually register new customer accounts (both individual and company) directly from the Admin Customer Registry.
 - Existing guest records can later be linked to verified customer accounts through an authorized phone/email matching process.
 - Role assignment is strictly controlled server-side; public sign-up automatically assigns `customer` role and cannot self-elevate to admin or mechanic.
 
@@ -366,10 +369,13 @@ If the customer rejects all work, the service order follows the inspection-fee/d
 
 Admin can create, view and update customer records and vehicles.
 
+Admin can manually register new accounts (both individual and company) directly from the workshop console.
+
 Customers can manage their own profile and vehicles.
 
 **Acceptance criteria:**
 - [ ] Admin can register guest and account-based customers.
+- [ ] Admin can manually register corporate company customers with company name.
 - [ ] Vehicle records contain registration plate, make, model, year and available specifications.
 - [ ] Customer ownership is enforced.
 - [ ] Vehicle history is preserved.

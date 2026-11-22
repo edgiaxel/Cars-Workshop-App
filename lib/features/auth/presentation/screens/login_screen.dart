@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
 import '../../domain/user_role.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/auth_state.dart';
@@ -7,7 +9,7 @@ import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import 'verify_otp_screen.dart';
 
-/// PitMate Authentication Sign In screen.
+/// PitMate Authentication Sign In screen connected to live Supabase backend.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -40,15 +42,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _fillDemoCredentials(UserRole role) {
-    final email = switch (role) {
-      UserRole.admin => 'admin@pitmate.local',
-      UserRole.mechanic => 'mechanic@pitmate.local',
-      UserRole.customer => 'customer@pitmate.local',
-    };
+  void _fillAccountAndSignIn(String email, [String password = '000000']) {
     _emailController.text = email;
-    _passwordController.text = 'PitMate123!';
-    ref.read(authNotifierProvider.notifier).switchDemoRole(role);
+    _passwordController.text = password;
+    ref.read(authNotifierProvider.notifier).signIn(email, password);
+  }
+
+  void _onForgotPasswordPressed() {
+    if (GoRouter.maybeOf(context) != null) {
+      context.push(RoutePaths.forgotPassword);
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const ForgotPasswordScreen(),
+        ),
+      );
+    }
+  }
+
+  void _onRegisterPressed() {
+    if (GoRouter.maybeOf(context) != null) {
+      context.push(RoutePaths.register);
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const RegisterScreen(),
+        ),
+      );
+    }
   }
 
   @override
@@ -58,22 +79,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState is AuthLoading;
 
-    // Listen for state changes
+    // Listen for auth state transitions
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       if (next is AuthError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
-            backgroundColor: Colors.red[800],
+            backgroundColor: const Color(0xFFB2221C),
             behavior: SnackBarBehavior.floating,
           ),
         );
       } else if (next is AuthUnverifiedCustomer) {
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => VerifyOtpScreen(email: next.email),
-          ),
-        );
+        if (GoRouter.maybeOf(context) != null) {
+          context.push('${RoutePaths.verifyOtp}?email=${Uri.encodeComponent(next.email)}');
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => VerifyOtpScreen(email: next.email),
+            ),
+          );
+        }
+      } else if (next is AuthAuthenticated) {
+        if (GoRouter.maybeOf(context) != null) {
+          switch (next.userProfile.role) {
+            case UserRole.admin:
+              context.go(RoutePaths.admin);
+            case UserRole.mechanic:
+              context.go(RoutePaths.mechanic);
+            case UserRole.customer:
+              context.go(RoutePaths.customerGarage);
+          }
+        }
       }
     });
 
@@ -124,7 +160,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
 
                   // Login Form Card
                   Card(
@@ -158,7 +194,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               autocorrect: false,
                               decoration: const InputDecoration(
                                 labelText: 'Email Address',
-                                hintText: 'mechanic@pitmate.local',
+                                hintText: 'admin@pitmate.co',
                                 prefixIcon: Icon(Icons.email_outlined),
                                 border: OutlineInputBorder(),
                               ),
@@ -215,14 +251,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               alignment: Alignment.centerRight,
                               child: TextButton(
                                 key: const Key('forgot_password_button'),
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) =>
-                                          const ForgotPasswordScreen(),
-                                    ),
-                                  );
-                                },
+                                onPressed: _onForgotPasswordPressed,
                                 child: const Text('Forgot Password?'),
                               ),
                             ),
@@ -275,22 +304,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       TextButton(
                         key: const Key('login_to_register_button'),
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const RegisterScreen(),
-                            ),
-                          );
-                        },
+                        onPressed: _onRegisterPressed,
                         child: const Text('Create Account'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
 
-                  // Quick Demo Role Switcher (Dev Mode)
+                  // Quick Demo Accounts Panel
                   Container(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(14.0),
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF1E2229) : Colors.grey[200],
                       borderRadius: BorderRadius.circular(12),
@@ -304,21 +327,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Row(
                           children: [
                             Icon(
-                              Icons.speed,
+                              Icons.bolt,
                               size: 16,
                               color: isDark ? Colors.grey[400] : Colors.grey[700],
                             ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                'DEV DEMO ROLE QUICK-SWITCH',
+                                'QUICK SIGN IN (SEEDED ACCOUNTS • PW: 000000)',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.8,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[700],
+                                  color: isDark ? Colors.grey[400] : Colors.grey[700],
                                 ),
                               ),
                             ),
@@ -332,23 +353,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ActionChip(
                               key: const Key('demo_role_admin'),
                               avatar: const Icon(Icons.shield, size: 16),
-                              label: const Text('Admin'),
-                              onPressed: () =>
-                                  _fillDemoCredentials(UserRole.admin),
+                              label: const Text('Toto Wolf (Admin)'),
+                              onPressed: () => _fillAccountAndSignIn('admin@pitmate.co'),
                             ),
                             ActionChip(
                               key: const Key('demo_role_mechanic'),
                               avatar: const Icon(Icons.build, size: 16),
-                              label: const Text('Mechanic'),
-                              onPressed: () =>
-                                  _fillDemoCredentials(UserRole.mechanic),
+                              label: const Text('Max Verstappen (Mech)'),
+                              onPressed: () => _fillAccountAndSignIn('verstappen@pitmate.co'),
+                            ),
+                            ActionChip(
+                              avatar: const Icon(Icons.build, size: 16),
+                              label: const Text('Sergio Perez (Mech)'),
+                              onPressed: () => _fillAccountAndSignIn('perez@pitmate.co'),
                             ),
                             ActionChip(
                               key: const Key('demo_role_customer'),
                               avatar: const Icon(Icons.person, size: 16),
-                              label: const Text('Customer'),
-                              onPressed: () =>
-                                  _fillDemoCredentials(UserRole.customer),
+                              label: const Text('Axel Zeed (Individual)'),
+                              onPressed: () => _fillAccountAndSignIn('lexazeed@gmail.com'),
+                            ),
+                            ActionChip(
+                              avatar: const Icon(Icons.business, size: 16),
+                              label: const Text('Aston Martin (Company)'),
+                              onPressed: () => _fillAccountAndSignIn('motorsport@astonmartin.com'),
+                            ),
+                            ActionChip(
+                              avatar: const Icon(Icons.business, size: 16),
+                              label: const Text('BMW (Company)'),
+                              onPressed: () => _fillAccountAndSignIn('motorsport@bmw-m.com'),
                             ),
                           ],
                         ),

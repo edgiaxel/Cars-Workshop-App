@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/auth_state.dart';
 import 'verify_otp_screen.dart';
 
-/// Customer self-registration screen for PitMate.
+/// PitMate Customer Registration Screen supporting Individual and Company accounts.
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -21,6 +23,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _companyNameController = TextEditingController();
+  
+  String _customerType = 'individual'; // 'individual' or 'company'
   bool _obscurePassword = true;
 
   @override
@@ -29,6 +34,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _companyNameController.dispose();
     super.dispose();
   }
 
@@ -39,6 +45,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _passwordController.text,
             fullName: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
+            customerType: _customerType,
+            companyName: _customerType == 'company' ? _companyNameController.text.trim() : null,
           );
     }
   }
@@ -50,35 +58,55 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState is AuthLoading;
 
-    // Listen to auth events to navigate to OTP screen
+    // Listen for auth state changes
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       if (next is AuthError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
-            backgroundColor: Colors.red[800],
+            backgroundColor: const Color(0xFFB2221C),
             behavior: SnackBarBehavior.floating,
           ),
         );
       } else if (next is AuthUnverifiedCustomer) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(
-            builder: (_) => VerifyOtpScreen(email: next.email),
-          ),
-        );
+        if (GoRouter.maybeOf(context) != null) {
+          context.push('${RoutePaths.verifyOtp}?email=${Uri.encodeComponent(next.email)}');
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => VerifyOtpScreen(email: next.email),
+            ),
+          );
+        }
+      } else if (next is AuthAuthenticated) {
+        if (GoRouter.maybeOf(context) != null) {
+          context.go(RoutePaths.customerGarage);
+        } else {
+          Navigator.of(context).maybePop();
+        }
       }
     });
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Account'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (GoRouter.maybeOf(context) != null) {
+              context.canPop() ? context.pop() : context.go(RoutePaths.login);
+            } else {
+              Navigator.of(context).maybePop();
+            }
+          },
+        ),
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
+              constraints: const BoxConstraints(maxWidth: 480),
               child: Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -96,28 +124,49 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       children: [
                         Text(
                           'Join PitMate',
-                          style: theme.textTheme.headlineSmall?.copyWith(
+                          style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Track service orders, vehicle history, and invoices.',
+                          'Select your customer classification to configure your workspace.',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
-                        // Full Name
+                        // Account Classification (Individual vs Company)
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
+                              value: 'individual',
+                              label: Text('Individual'),
+                              icon: Icon(Icons.person_outline),
+                            ),
+                            ButtonSegment(
+                              value: 'company',
+                              label: Text('Company / Fleet'),
+                              icon: Icon(Icons.business_outlined),
+                            ),
+                          ],
+                          selected: {_customerType},
+                          onSelectionChanged: (selection) {
+                            setState(() => _customerType = selection.first);
+                          },
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Full Name / Contact Person
                         TextFormField(
                           key: const Key('register_name_field'),
                           controller: _nameController,
                           textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(
-                            labelText: 'Full Name',
-                            prefixIcon: Icon(Icons.person_outline),
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: _customerType == 'company' ? 'Contact Person Full Name' : 'Full Name',
+                            prefixIcon: const Icon(Icons.person_outline),
+                            border: const OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -130,6 +179,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
+
+                        // Company Name field (conditional)
+                        if (_customerType == 'company') ...[
+                          TextFormField(
+                            key: const Key('register_company_name_field'),
+                            controller: _companyNameController,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              labelText: 'Company / Business Entity Name',
+                              hintText: 'e.g. Aston Martin F1 Team',
+                              prefixIcon: Icon(Icons.domain_outlined),
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (_customerType == 'company' && (value == null || value.trim().isEmpty)) {
+                                return 'Company name is required for company accounts';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                        ],
 
                         // Phone Number
                         TextFormField(
@@ -216,14 +287,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ),
                           ),
                           child: isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
                               : const Text(
                                   'Register Account',
                                   style: TextStyle(
@@ -244,7 +315,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               style: theme.textTheme.bodyMedium,
                             ),
                             TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
+                              onPressed: () => context.go(RoutePaths.login),
                               child: const Text('Sign In'),
                             ),
                           ],

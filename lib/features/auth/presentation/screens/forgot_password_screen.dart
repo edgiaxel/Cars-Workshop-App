@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/auth_state.dart';
 
@@ -186,7 +188,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           // Back to login
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.canPop() ? context.pop() : context.go(RoutePaths.login),
             child: const Text('Back to Sign In'),
           ),
         ],
@@ -221,7 +223,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 24),
         ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.canPop() ? context.pop() : context.go(RoutePaths.login),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFB2221C),
             foregroundColor: Colors.white,

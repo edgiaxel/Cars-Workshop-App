@@ -8,6 +8,15 @@
 
 ---
 
+```
+[antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) 
+
+[caveman](slashCommand;caveman) be brief
+
+Read docs/ with necessary documents then update and sync them. Read the existing project code before continuing. 
+```
+---
+
 # 1. Project at a Glance
 
 ## Goal

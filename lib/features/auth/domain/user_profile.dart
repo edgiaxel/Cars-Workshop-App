@@ -7,6 +7,8 @@ class UserProfile {
   final String fullName;
   final String? phoneNumber;
   final String? avatarUrl;
+  final String customerType;
+  final String? companyName;
   final bool isEmailVerified;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -17,6 +19,8 @@ class UserProfile {
     required this.fullName,
     this.phoneNumber,
     this.avatarUrl,
+    this.customerType = 'individual',
+    this.companyName,
     this.isEmailVerified = false,
     this.createdAt,
     this.updatedAt,
@@ -34,6 +38,8 @@ class UserProfile {
               json['phone_number'] ??
               json['phoneNumber']) as String?,
       avatarUrl: (json['avatar_url'] ?? json['avatarUrl']) as String?,
+      customerType: (json['customer_type'] ?? json['customerType']) as String? ?? 'individual',
+      companyName: (json['company_name'] ?? json['companyName']) as String?,
       isEmailVerified:
           (json['is_email_verified'] ?? json['isEmailVerified'] ?? false)
               as bool,
@@ -57,7 +63,10 @@ class UserProfile {
       'role': role.name,
       'full_name': fullName,
       if (phoneNumber != null) 'phone': phoneNumber,
+      if (phoneNumber != null) 'phone_number': phoneNumber,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
+      'customer_type': customerType,
+      if (companyName != null) 'company_name': companyName,
       'is_email_verified': isEmailVerified,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
@@ -70,6 +79,8 @@ class UserProfile {
     String? fullName,
     String? phoneNumber,
     String? avatarUrl,
+    String? customerType,
+    String? companyName,
     bool? isEmailVerified,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -80,6 +91,8 @@ class UserProfile {
       fullName: fullName ?? this.fullName,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      customerType: customerType ?? this.customerType,
+      companyName: companyName ?? this.companyName,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -96,6 +109,8 @@ class UserProfile {
           fullName == other.fullName &&
           phoneNumber == other.phoneNumber &&
           avatarUrl == other.avatarUrl &&
+          customerType == other.customerType &&
+          companyName == other.companyName &&
           isEmailVerified == other.isEmailVerified &&
           createdAt == other.createdAt &&
           updatedAt == other.updatedAt;
@@ -107,6 +122,8 @@ class UserProfile {
         fullName,
         phoneNumber,
         avatarUrl,
+        customerType,
+        companyName,
         isEmailVerified,
         createdAt,
         updatedAt,
@@ -116,6 +133,7 @@ class UserProfile {
   String toString() {
     return 'UserProfile(id: $id, role: ${role.name}, fullName: $fullName, '
         'phoneNumber: $phoneNumber, avatarUrl: $avatarUrl, '
+        'customerType: $customerType, companyName: $companyName, '
         'isEmailVerified: $isEmailVerified)';
   }
 }

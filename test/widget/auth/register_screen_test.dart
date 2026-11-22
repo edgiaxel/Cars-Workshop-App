@@ -33,7 +33,14 @@ class FakeRegisterAuthRepository implements IAuthRepository {
   }
 
   @override
-  Future<Result<UserProfile>> signUpWithPassword(String email, String password, String fullName, [String? phone]) async {
+  Future<Result<UserProfile>> signUpWithPassword(
+    String email,
+    String password,
+    String fullName, [
+    String? phone,
+    String customerType = 'individual',
+    String? companyName,
+  ]) async {
     registeredEmail = email;
     registeredFullName = fullName;
 

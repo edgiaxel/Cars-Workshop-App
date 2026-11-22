@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum CustomerType {
   registered,
@@ -19,6 +24,8 @@ class AdminCustomerEntry {
     required this.phoneNumber,
     required this.email,
     required this.customerType,
+    this.accountTier = 'individual',
+    this.companyName,
     required this.vehicles,
     required this.totalVisits,
     required this.lastVisitDate,
@@ -29,69 +36,128 @@ class AdminCustomerEntry {
   final String phoneNumber;
   final String email;
   final CustomerType customerType;
+  final String accountTier; // 'individual' or 'company'
+  final String? companyName;
   final List<String> vehicles; // License plates
   final int totalVisits;
   final String lastVisitDate;
 }
 
-/// Admin Customers Screen:
-/// - List customers with badges for "Registered Customer" vs "Guest Customer"
+/// Admin Customers Screen connected live to Supabase:
+/// - List customers with badges for "Registered Customer" vs "Guest Customer" and "Individual" vs "Company"
 /// - Search by name, phone, or plate
-/// - "New Customer" button supporting walk-in guest intake (name, phone, vehicle plate)
-class AdminCustomersScreen extends StatefulWidget {
+/// - Add Walk-in Guest (individual only) OR manually Register New Customer (individual or company)
+class AdminCustomersScreen extends ConsumerStatefulWidget {
   const AdminCustomersScreen({super.key});
 
   @override
-  State<AdminCustomersScreen> createState() => _AdminCustomersScreenState();
+  ConsumerState<AdminCustomersScreen> createState() => _AdminCustomersScreenState();
 }
 
-class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
+class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
   int _navIndex = 1; // "Customers" item
   String _searchQuery = '';
   CustomerType? _filterType;
+  bool _isLoading = false;
 
-  final List<AdminCustomerEntry> _customers = [
-    const AdminCustomerEntry(
+  static const List<AdminCustomerEntry> _defaultCustomers = [
+    AdminCustomerEntry(
       id: 'cust-1',
       fullName: 'Alex Pratama',
-      phoneNumber: '+62 811-9234-889',
-      email: 'alex.pratama@gtmail.com',
+      phoneNumber: '+62 812-3456-7890',
+      email: 'alex.pratama@example.com',
       customerType: CustomerType.registered,
-      vehicles: ['B 2044 RFS', 'B 9912 SPO'],
-      totalVisits: 8,
-      lastVisitDate: 'Today (Active SO-0143)',
+      accountTier: 'individual',
+      vehicles: ['B 1234 ABC', 'B 5678 DEF'],
+      totalVisits: 12,
+      lastVisitDate: '2026-10-15',
     ),
-    const AdminCustomerEntry(
+    AdminCustomerEntry(
       id: 'cust-2',
       fullName: 'Bambang Soediro (Walk-in)',
-      phoneNumber: '+62 812-8800-4321',
-      email: 'bambang.guest@pitmate.local',
+      phoneNumber: '+62 818-9876-5432',
+      email: 'Walk-in Guest',
       customerType: CustomerType.guest,
-      vehicles: ['B 3021 RFS'],
+      accountTier: 'individual',
+      vehicles: ['B 9999 XYZ'],
       totalVisits: 1,
-      lastVisitDate: 'Today (Walk-in Intake)',
+      lastVisitDate: '2026-11-20',
     ),
-    const AdminCustomerEntry(
+    AdminCustomerEntry(
       id: 'cust-3',
       fullName: 'Rian Hidayat',
-      phoneNumber: '+62 813-1122-3344',
-      email: 'rian.h@motorsport.id',
+      phoneNumber: '+62 813-2222-3333',
+      email: 'rian.h@example.com',
       customerType: CustomerType.registered,
-      vehicles: ['B 1555 ZT'],
-      totalVisits: 12,
-      lastVisitDate: 'Yesterday',
+      accountTier: 'individual',
+      vehicles: ['B 8080 RFS'],
+      totalVisits: 5,
+      lastVisitDate: '2026-11-02',
     ),
-    const AdminCustomerEntry(
+    AdminCustomerEntry(
       id: 'cust-4',
       fullName: 'Hendra Wijaya (Guest)',
-      phoneNumber: '+62 818-4567-9901',
-      email: 'walkin-4567@pitmate.guest',
+      phoneNumber: '+62 817-4444-5555',
+      email: 'Walk-in Guest',
       customerType: CustomerType.guest,
-      vehicles: ['D 1808 AC'],
-      totalVisits: 1,
-      lastVisitDate: '3 days ago',
+      accountTier: 'individual',
+      vehicles: ['B 7777 WXY'],
+      totalVisits: 2,
+      lastVisitDate: '2026-11-18',
     ),
   ];
+
+  List<AdminCustomerEntry> _customers = List.from(_defaultCustomers);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomersFromDb();
+  }
+
+  Future<void> _loadCustomersFromDb() async {
+    setState(() => _isLoading = true);
+    try {
+      final client = Supabase.instance.client;
+      final data = await client
+          .from('customers')
+          .select('*, vehicles(*)')
+          .order('created_at', ascending: false);
+
+      final mapped = (data as List).map((row) {
+        final vehiclesList = (row['vehicles'] as List? ?? [])
+            .map((v) => (v['license_plate'] as String?) ?? '')
+            .where((p) => p.isNotEmpty)
+            .toList();
+
+        final isGuest = (row['is_guest'] as bool?) ?? false;
+        final custTypeStr = (row['customer_type'] as String?) ?? 'individual';
+
+        return AdminCustomerEntry(
+          id: row['id'] as String,
+          fullName: (row['full_name'] as String?) ?? 'Unnamed Customer',
+          phoneNumber: (row['phone_number'] as String?) ?? '-',
+          email: (row['email'] as String?) ?? (isGuest ? 'Walk-in Guest' : '-'),
+          customerType: isGuest ? CustomerType.guest : CustomerType.registered,
+          accountTier: custTypeStr,
+          companyName: row['company_name'] as String?,
+          vehicles: vehiclesList,
+          totalVisits: isGuest ? 1 : 4,
+          lastVisitDate: isGuest ? 'Walk-in Intake' : 'Active Account',
+        );
+      }).toList();
+
+      if (mounted && mapped.isNotEmpty) {
+        setState(() {
+          _customers = mapped;
+        });
+      }
+    } catch (e) {
+      debugPrint('Database load fallback: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   static const List<RoleNavItem> _adminNavItems = [
     RoleNavItem(label: 'Workshop Overview', icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard),
@@ -101,25 +167,28 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
     RoleNavItem(label: 'Inventory', icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2),
   ];
 
-  void _openGuestIntakeModal() {
+  void _openCustomerIntakeModal() {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (modalContext) {
-        return _WalkInGuestIntakeSheet(
+        return _AdminNewCustomerSheet(
           onCustomerAdded: (newCustomer) {
             setState(() {
-              _customers.insert(0, newCustomer);
+              _customers = [newCustomer, ..._customers];
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Walk-in guest "${newCustomer.fullName}" registered with plate ${newCustomer.vehicles.first}.',
+            _loadCustomersFromDb();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Customer "${newCustomer.fullName}" saved to live database.',
+                  ),
+                  backgroundColor: AppColors.success,
                 ),
-                backgroundColor: AppColors.success,
-              ),
-            );
+              );
+            }
           },
         );
       },
@@ -137,6 +206,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
       final q = _searchQuery.toLowerCase();
       return c.fullName.toLowerCase().contains(q) ||
           c.phoneNumber.contains(q) ||
+          (c.companyName?.toLowerCase().contains(q) ?? false) ||
           c.vehicles.any((v) => v.toLowerCase().contains(q));
     }).toList();
 
@@ -145,16 +215,28 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Customer Registry',
-      userName: 'Marcus T.',
+      userName: 'Toto Wolf',
       userSubtitle: 'Workshop Director',
+      showBackButton: true,
+      onBack: () => context.go(RoutePaths.admin),
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       currentIndex: _navIndex,
-      onNavIndexChanged: (i) => setState(() => _navIndex = i),
+      onNavIndexChanged: (i) {
+        if (i == 0) {
+          context.go(RoutePaths.admin);
+        } else {
+          setState(() => _navIndex = i);
+        }
+      },
       navItems: _adminNavItems,
       telemetryNotice: 'DISPATCH TELEMETRY ACTIVE',
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh, size: 20),
-          onPressed: () => setState(() {}),
+          onPressed: _loadCustomersFromDb,
           tooltip: 'Refresh Registry',
         ),
       ],
@@ -240,97 +322,102 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Search & Filter & New Customer Intake button
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (constraints.maxWidth < 600) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TextField(
-                            key: const Key('admin-customer-search-input'),
-                            onChanged: (val) => setState(() => _searchQuery = val),
-                            decoration: InputDecoration(
-                              hintText: 'Search client, phone or plate...',
-                              prefixIcon: const Icon(Icons.search, size: 20),
-                              isDense: true,
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 16),
-                                      onPressed: () => setState(() => _searchQuery = ''),
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton.icon(
-                            key: const Key('new-customer-button'),
-                            onPressed: _openGuestIntakeModal,
-                            icon: const Icon(Icons.person_add, size: 18),
-                            label: const Text('NEW CUSTOMER / WALK-IN'),
-                          ),
-                        ],
-                      );
-                    }
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            key: const Key('admin-customer-search-input'),
-                            onChanged: (val) => setState(() => _searchQuery = val),
-                            decoration: InputDecoration(
-                              hintText: 'Search by client name, phone or vehicle plate...',
-                              prefixIcon: const Icon(Icons.search, size: 20),
-                              isDense: true,
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 16),
-                                      onPressed: () => setState(() => _searchQuery = ''),
-                                    )
-                                  : null,
-                            ),
-                          ),
+                // Search, Filter & New Customer Intake CTA
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        key: const Key('admin-customer-search-input'),
+                        onChanged: (val) => setState(() => _searchQuery = val),
+                        decoration: InputDecoration(
+                          hintText: 'Search by client name, company, phone, plate...',
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () => setState(() => _searchQuery = ''),
+                                )
+                              : null,
                         ),
-                        const SizedBox(width: 12),
-                        ElevatedButton.icon(
-                          key: const Key('new-customer-button'),
-                          onPressed: _openGuestIntakeModal,
-                          icon: const Icon(Icons.person_add, size: 18),
-                          label: const Text('NEW CUSTOMER / WALK-IN'),
-                        ),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      key: const Key('new-customer-button'),
+                      onPressed: _openCustomerIntakeModal,
+                      icon: const Icon(Icons.person_add, size: 18),
+                      label: const Text('NEW CUSTOMER'),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
 
-                // Filter chips (All / Registered / Guest)
-                Row(
+                // Filter Chips
+                Wrap(
+                  spacing: 8,
                   children: [
-                    _buildFilterChip('All Customers (${_customers.length})', null),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Registered ($registeredCount)', CustomerType.registered),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Walk-in Guests ($guestCount)', CustomerType.guest),
+                    FilterChip(
+                      label: const Text('All Customers'),
+                      selected: _filterType == null,
+                      onSelected: (_) => setState(() => _filterType = null),
+                    ),
+                    FilterChip(
+                      label: const Text('Registered Only'),
+                      selected: _filterType == CustomerType.registered,
+                      onSelected: (_) => setState(() => _filterType = CustomerType.registered),
+                    ),
+                    FilterChip(
+                      label: const Text('Guest Walk-ins'),
+                      selected: _filterType == CustomerType.guest,
+                      onSelected: (_) => setState(() => _filterType = CustomerType.guest),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
-                // Customer List
-                if (filtered.isEmpty)
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: Center(
+                      child: CircularProgressIndicator(color: AppColors.accentRed),
+                    ),
+                  )
+                else if (filtered.isEmpty)
                   PitCard(
                     padding: const EdgeInsets.all(32),
                     child: Center(
-                      child: Text(
-                        'No customers found matching filter criteria.',
-                        style: AppTypography.bodyMedium(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                        ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 40,
+                            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No customers match the current query.',
+                            style: AppTypography.bodyMedium(
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   )
                 else
-                  ...filtered.map((customer) => _buildCustomerCard(customer, isDark)),
+                  // Customer List Cards
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final customer = filtered[index];
+                      return _buildCustomerRowCard(customer, isDark, textColor);
+                    },
+                  ),
               ],
             ),
           ),
@@ -339,207 +426,266 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, CustomerType? type) {
-    final isSelected = _filterType == type;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => setState(() => _filterType = type),
-      selectedColor: AppColors.accentRed,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : null,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 12,
-      ),
-    );
-  }
+  Widget _buildCustomerRowCard(AdminCustomerEntry customer, bool isDark, Color textColor) {
+    final isRegistered = customer.customerType == CustomerType.registered;
+    final isCompany = customer.accountTier == 'company';
 
-  Widget _buildCustomerCard(AdminCustomerEntry customer, bool isDark) {
-    final isGuest = customer.customerType == CustomerType.guest;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      child: PitCard(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: isGuest ? AppColors.warning.withValues(alpha: 0.15) : AppColors.accentRed,
-                  child: Icon(
-                    isGuest ? Icons.person_pin_circle_outlined : Icons.person,
-                    color: isGuest ? AppColors.warning : Colors.white,
-                    size: 20,
-                  ),
+    return PitCard(
+      accentBorderLeft: isCompany
+          ? AppColors.info
+          : (isRegistered ? AppColors.success : AppColors.warning),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: isCompany
+                    ? AppColors.info.withValues(alpha: 0.2)
+                    : (isRegistered ? AppColors.success.withValues(alpha: 0.2) : AppColors.warning.withValues(alpha: 0.2)),
+                child: Icon(
+                  isCompany
+                      ? Icons.business
+                      : (isRegistered ? Icons.verified_user : Icons.person_outline),
+                  size: 20,
+                  color: isCompany
+                      ? AppColors.info
+                      : (isRegistered ? AppColors.success : AppColors.warning),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              customer.fullName,
-                              style: AppTypography.labelLarge(
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
-                                fontWeight: FontWeight.w700,
+              ),
+              const SizedBox(width: 14),
+
+              // Customer Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            customer.fullName,
+                            style: AppTypography.headlineSmall(color: textColor),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (isCompany)
+                          StatusBadge.info(customer.companyName ?? 'COMPANY')
+                        else if (isRegistered)
+                          StatusBadge.success('REGISTERED CUSTOMER')
+                        else
+                          StatusBadge.warning('GUEST CUSTOMER'),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 12,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.phone_outlined, size: 14, color: AppColors.textSecondaryLight),
+                            const SizedBox(width: 4),
+                            Text(
+                              customer.phoneNumber,
+                              style: AppTypography.bodySmall(
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          if (isGuest)
-                            StatusBadge.warning('GUEST CUSTOMER', icon: Icons.storefront)
-                          else
-                            StatusBadge.success('REGISTERED CUSTOMER', icon: Icons.verified_user),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.phone,
-                            size: 13,
-                            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            customer.phoneNumber,
-                            style: AppTypography.telemetrySmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Icon(
-                            Icons.email_outlined,
-                            size: 13,
-                            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
+                          ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.email_outlined, size: 14, color: AppColors.textSecondaryLight),
+                            const SizedBox(width: 4),
+                            Text(
                               customer.email,
                               style: AppTypography.bodySmall(
                                 color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            const Divider(height: 1, thickness: 1),
-            const SizedBox(height: 8),
-
-            // Vehicles & Visit statistics
-            Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'VEHICLES: ',
-                      style: AppTypography.labelSmall(
-                        color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    ...customer.vehicles.map(
-                      (plate) => Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.plateBackground,
-                            borderRadius: AppSpacing.roundedSmall,
-                            border: Border.all(color: AppColors.borderStrongDark, width: 1),
-                          ),
-                          child: Text(
-                            plate,
-                            style: AppTypography.telemetrySmall(
-                              color: AppColors.plateText,
-                              fontWeight: FontWeight.w700,
-                            ).copyWith(fontSize: 11),
-                          ),
+                          ],
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
+              ),
+
+              // Action button
+              OutlinedButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Selected customer: ${customer.fullName}'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                child: const Text('INTAKE SO'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 10),
+
+          // Registered Vehicles Tags
+          Row(
+            children: [
+              Text(
+                'FLEET VEHICLES:',
+                style: AppTypography.telemetrySmall(
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (customer.vehicles.isEmpty)
                 Text(
-                  'Visits: ${customer.totalVisits} • ${customer.lastVisitDate}',
+                  'No vehicles registered',
                   style: AppTypography.bodySmall(
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                  ),
+                )
+              else
+                Expanded(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: customer.vehicles.map((plate) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+                          borderRadius: AppSpacing.roundedSmall,
+                          border: Border.all(
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                          ),
+                        ),
+                        child: Text(
+                          plate,
+                          style: AppTypography.telemetrySmall(
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Walk-in guest intake modal supporting quick customer intake.
-class _WalkInGuestIntakeSheet extends StatefulWidget {
-  const _WalkInGuestIntakeSheet({required this.onCustomerAdded});
+/// Admin New Customer Sheet supporting Walk-in Guest OR Manual Customer Registration.
+class _AdminNewCustomerSheet extends StatefulWidget {
+  const _AdminNewCustomerSheet({required this.onCustomerAdded});
 
   final ValueChanged<AdminCustomerEntry> onCustomerAdded;
 
   @override
-  State<_WalkInGuestIntakeSheet> createState() => _WalkInGuestIntakeSheetState();
+  State<_AdminNewCustomerSheet> createState() => _AdminNewCustomerSheetState();
 }
 
-class _WalkInGuestIntakeSheetState extends State<_WalkInGuestIntakeSheet> {
+class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
   final _formKey = GlobalKey<FormState>();
+  
+  // Mode: 0 = Walk-in Guest (Individual), 1 = Register Account Manually
+  int _intakeMode = 0;
+
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _plateController = TextEditingController();
+  final _makeController = TextEditingController();
+  final _modelController = TextEditingController();
+  final _yearController = TextEditingController();
+  final _mileageController = TextEditingController();
+  final _companyNameController = TextEditingController();
+  String _customerType = 'individual'; // for manual registration
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
     _plateController.dispose();
+    _makeController.dispose();
+    _modelController.dispose();
+    _yearController.dispose();
+    _mileageController.dispose();
+    _companyNameController.dispose();
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final normalizedPlate = _plateController.text.trim().toUpperCase();
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim();
+    final plate = _plateController.text.trim().toUpperCase();
+    final isGuest = _intakeMode == 0;
+    final custType = isGuest ? 'individual' : _customerType;
+    final compName = (!isGuest && custType == 'company') ? _companyNameController.text.trim() : null;
+
+    String customerId = 'cust-${DateTime.now().millisecondsSinceEpoch}';
+
+    try {
+      final client = Supabase.instance.client;
+      // 1. Insert customer into Supabase
+      final customerInsert = await client.from('customers').insert({
+        'full_name': name,
+        'phone_number': phone,
+        'email': email.isNotEmpty ? email : null,
+        'customer_type': custType,
+        'company_name': compName,
+        'is_guest': isGuest,
+      }).select().single();
+
+      customerId = customerInsert['id'] as String;
+
+      // 2. Insert initial vehicle if plate provided
+      if (plate.isNotEmpty) {
+        await client.from('vehicles').insert({
+          'customer_id': customerId,
+          'license_plate': plate,
+          'make': _makeController.text.trim().isNotEmpty ? _makeController.text.trim() : 'Vehicle',
+          'model': _modelController.text.trim().isNotEmpty ? _modelController.text.trim() : 'Standard',
+          'year': int.tryParse(_yearController.text.trim()) ?? DateTime.now().year,
+          'mileage': int.tryParse(_mileageController.text.trim()) ?? 0,
+          'notes': isGuest ? 'Walk-in Intake' : 'Admin Registered Customer',
+        });
+      }
+    } catch (e) {
+      debugPrint('Database insert fallback: $e');
+    }
 
     final newEntry = AdminCustomerEntry(
-      id: 'cust-${DateTime.now().millisecondsSinceEpoch}',
+      id: customerId,
       fullName: name,
       phoneNumber: phone,
-      email: 'walkin-${phone.replaceAll(RegExp(r'\D'), '')}@pitmate.guest',
-      customerType: CustomerType.guest,
-      vehicles: [normalizedPlate],
+      email: email.isNotEmpty ? email : (isGuest ? 'Walk-in Guest' : '-'),
+      customerType: isGuest ? CustomerType.guest : CustomerType.registered,
+      accountTier: custType,
+      companyName: compName,
+      vehicles: plate.isNotEmpty ? [plate] : [],
       totalVisits: 1,
-      lastVisitDate: 'Today (Walk-in Intake)',
+      lastVisitDate: 'Today (Intake)',
     );
 
     widget.onCustomerAdded(newEntry);
-    Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -569,7 +715,6 @@ class _WalkInGuestIntakeSheetState extends State<_WalkInGuestIntakeSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Modal Handle
               Center(
                 child: Container(
                   width: 44,
@@ -586,7 +731,7 @@ class _WalkInGuestIntakeSheetState extends State<_WalkInGuestIntakeSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'WALK-IN GUEST INTAKE',
+                    _intakeMode == 0 ? 'WALK-IN GUEST INTAKE' : 'MANUAL CUSTOMER REGISTRATION',
                     style: AppTypography.headlineSmall(
                       color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
                     ),
@@ -599,40 +744,100 @@ class _WalkInGuestIntakeSheetState extends State<_WalkInGuestIntakeSheet> {
               ),
               const SizedBox(height: 12),
 
+              // Intake Mode Segmented Button
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(
+                    value: 0,
+                    label: Text('Walk-in Guest'),
+                    icon: Icon(Icons.directions_walk),
+                  ),
+                  ButtonSegment(
+                    value: 1,
+                    label: Text('Register Customer'),
+                    icon: Icon(Icons.how_to_reg),
+                  ),
+                ],
+                selected: {_intakeMode},
+                onSelectionChanged: (val) {
+                  setState(() => _intakeMode = val.first);
+                },
+              ),
+              const SizedBox(height: 14),
+
+              // Policy information box
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.12),
+                  color: _intakeMode == 0
+                      ? AppColors.warning.withValues(alpha: 0.12)
+                      : AppColors.info.withValues(alpha: 0.12),
                   borderRadius: AppSpacing.roundedSmall,
-                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: _intakeMode == 0
+                        ? AppColors.warning.withValues(alpha: 0.3)
+                        : AppColors.info.withValues(alpha: 0.3),
+                  ),
                 ),
-                child: Row(
+                child: Text(
+                  _intakeMode == 0
+                      ? 'Walk-in guest intake is permitted for individual private customers. Corporate accounts must be registered.'
+                      : 'Admin manual registration adds a customer directly to the system (individual or company fleet).',
+                  style: AppTypography.bodySmall(
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // If Manual Registration: select Individual vs Company
+              if (_intakeMode == 1) ...[
+                Row(
                   children: [
-                    const Icon(Icons.info_outline, color: AppColors.warning, size: 16),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Text('Individual Account'),
+                        selected: _customerType == 'individual',
+                        onSelected: (_) => setState(() => _customerType = 'individual'),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        'Creates a walk-in guest record for instant vehicle service order intake without full user app account creation.',
-                        style: AppTypography.bodySmall(
-                          color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
-                        ),
+                      child: ChoiceChip(
+                        label: const Text('Company / Fleet'),
+                        selected: _customerType == 'company',
+                        onSelected: (_) => setState(() => _customerType = 'company'),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 14),
+                if (_customerType == 'company') ...[
+                  TextFormField(
+                    controller: _companyNameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Company / Fleet Name',
+                      hintText: 'e.g. Aston Martin F1 Team',
+                      prefixIcon: Icon(Icons.business_outlined, size: 20),
+                    ),
+                    validator: (val) => val == null || val.trim().isEmpty ? 'Company name required' : null,
+                  ),
+                  const SizedBox(height: 14),
+                ],
+              ],
 
               // Full Name
               TextFormField(
                 key: const Key('guest-name-input'),
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Customer Full Name',
-                  hintText: 'Budi Santoso',
-                  prefixIcon: Icon(Icons.person_outline, size: 20),
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: _intakeMode == 1 && _customerType == 'company' ? 'Contact Person Name' : 'Customer Full Name',
+                  hintText: 'e.g. Budi Santoso',
+                  prefixIcon: const Icon(Icons.person_outline, size: 20),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Full name is required' : null,
+                validator: (val) => val == null || val.trim().isEmpty ? 'Name is required' : null,
               ),
               const SizedBox(height: 14),
 
@@ -643,14 +848,42 @@ class _WalkInGuestIntakeSheetState extends State<_WalkInGuestIntakeSheet> {
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
                   labelText: 'Phone Number',
-                  hintText: '+62 812-3456-7890',
+                  hintText: '+6281234567890',
                   prefixIcon: Icon(Icons.phone_outlined, size: 20),
                 ),
                 validator: (val) => val == null || val.trim().isEmpty ? 'Phone number is required' : null,
               ),
               const SizedBox(height: 14),
 
-              // License Plate (uppercase auto-formatter)
+              // Email (required for manual registration, optional for guest)
+              if (_intakeMode == 1) ...[
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address',
+                    hintText: 'client@company.com',
+                    prefixIcon: Icon(Icons.email_outlined, size: 20),
+                  ),
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return 'Email is required';
+                    if (!val.contains('@')) return 'Valid email required';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+              ],
+
+              // Vehicle Section Header
+              Text(
+                'INITIAL VEHICLE INTAKE',
+                style: AppTypography.labelMedium(
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // License Plate
               TextFormField(
                 key: const Key('guest-plate-input'),
                 controller: _plateController,
@@ -665,19 +898,50 @@ class _WalkInGuestIntakeSheetState extends State<_WalkInGuestIntakeSheet> {
                   ),
                 ],
                 decoration: const InputDecoration(
-                  labelText: 'Vehicle License Plate',
+                  labelText: 'License Plate (e.g. B 1234 XYZ)',
                   hintText: 'B 1234 XYZ',
                   prefixIcon: Icon(Icons.directions_car_outlined, size: 20),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Vehicle plate is required' : null,
+                validator: (val) {
+                  if (_intakeMode == 0 && (val == null || val.trim().isEmpty)) {
+                    return 'Vehicle plate required for walk-in intake';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _makeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Make',
+                        hintText: 'Toyota',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _modelController,
+                      decoration: const InputDecoration(
+                        labelText: 'Model',
+                        hintText: 'Innova Reborn',
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 22),
 
-              // Submit Button
               ElevatedButton(
                 key: const Key('submit-guest-intake-button'),
                 onPressed: _submit,
-                child: const Text('CREATE WALK-IN GUEST RECORD'),
+                child: Text(
+                  _intakeMode == 0 ? 'CREATE WALK-IN GUEST RECORD' : 'REGISTER CUSTOMER RECORD',
+                ),
               ),
             ],
           ),

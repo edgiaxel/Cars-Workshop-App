@@ -522,14 +522,18 @@ Candidate tables:
 | Table | Responsibility |
 |---|---|
 | profiles | Authenticated user profiles and roles |
-| customers | Customer-specific business information |
+| customers | Customer-specific business information (individual or company) |
 | mechanics | Technician information |
 | mechanic_skills | Technician capabilities |
 | workshop_settings | Workshop configuration |
 
-Guest customers are represented in customer records without requiring an authenticated profile.
+### Customer Classification & Onboarding
 
-Account linking must be explicit and verified.
+1. **Individual Customers (`individual`):** Private vehicle owners. May begin as walk-in unregistered guests (guest customers created at intake by admin) or register directly through the application via email/password.
+2. **Company Customers (`company`):** Corporate fleets and motorsport teams. Must be registered prior to service intake—either through self-registration in the app or manually provisioned by an Administrator. Walk-in guest intake is not permitted for company accounts.
+3. **Admin Customer Provisioning:** Administrators can manually register both individual and company customer accounts directly from the Admin Customer Registry without requiring client-side self-onboarding.
+4. Guest customers are represented in customer records without requiring an authenticated profile.
+5. Account linking must be explicit and verified.
 
 ## 6.3 Fleet domain
 

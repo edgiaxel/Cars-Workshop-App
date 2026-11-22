@@ -103,6 +103,8 @@ class AuthNotifier extends Notifier<AuthState> {
     required String password,
     required String fullName,
     String? phone,
+    String customerType = 'individual',
+    String? companyName,
   }) async {
     state = const AuthLoading(message: 'Creating account...');
     final result = await _repository.signUpWithPassword(
@@ -110,6 +112,8 @@ class AuthNotifier extends Notifier<AuthState> {
       password,
       fullName,
       phone,
+      customerType,
+      companyName,
     );
     return result.when(
       success: (profile) {

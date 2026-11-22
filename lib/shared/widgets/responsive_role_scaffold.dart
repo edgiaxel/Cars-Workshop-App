@@ -37,6 +37,9 @@ class ResponsiveRoleScaffold extends StatelessWidget {
     this.actions,
     this.floatingActionButton,
     this.telemetryNotice,
+    this.onBack,
+    this.showBackButton,
+    this.onLogout,
   });
 
   final String roleTitle;
@@ -49,6 +52,9 @@ class ResponsiveRoleScaffold extends StatelessWidget {
   final List<Widget>? actions;
   final Widget? floatingActionButton;
   final String? telemetryNotice;
+  final VoidCallback? onBack;
+  final bool? showBackButton;
+  final VoidCallback? onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -226,6 +232,14 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                           ],
                         ),
                       ),
+                      if (onLogout != null)
+                        IconButton(
+                          key: const Key('scaffold_logout_button'),
+                          icon: const Icon(Icons.logout, size: 18),
+                          tooltip: 'Sign Out',
+                          onPressed: onLogout,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        ),
                     ],
                   ),
                 ),
@@ -247,6 +261,15 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
+                      if (showBackButton == true || (showBackButton == null && onBack != null)) ...[
+                        IconButton(
+                          key: const Key('scaffold_back_button'),
+                          icon: const Icon(Icons.arrow_back, size: 20),
+                          tooltip: 'Back',
+                          onPressed: onBack,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       Text(
                         roleTitle,
                         style: AppTypography.headlineMedium(color: textColor),
@@ -319,14 +342,24 @@ class ResponsiveRoleScaffold extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
-                  const PitMateLogo(compact: true),
-                  const SizedBox(width: 10),
-                  Container(
-                    height: 16,
-                    width: 1,
-                    color: borderColor,
-                  ),
-                  const SizedBox(width: 10),
+                  if (showBackButton == true || (showBackButton == null && onBack != null)) ...[
+                    IconButton(
+                      key: const Key('mobile_scaffold_back_button'),
+                      icon: const Icon(Icons.arrow_back, size: 20),
+                      tooltip: 'Back',
+                      onPressed: onBack,
+                    ),
+                    const SizedBox(width: 4),
+                  ] else ...[
+                    const PitMateLogo(compact: true),
+                    const SizedBox(width: 10),
+                    Container(
+                      height: 16,
+                      width: 1,
+                      color: borderColor,
+                    ),
+                    const SizedBox(width: 10),
+                  ],
                   Expanded(
                     child: Text(
                       roleTitle.toUpperCase(),
@@ -338,7 +371,15 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                     ),
                   ),
                   ...?actions,
-                  const SizedBox(width: 8),
+                  if (onLogout != null) ...[
+                    IconButton(
+                      key: const Key('mobile_scaffold_logout_button'),
+                      icon: const Icon(Icons.logout, size: 20),
+                      tooltip: 'Sign Out',
+                      onPressed: onLogout,
+                    ),
+                  ],
+                  const SizedBox(width: 4),
                   CircleAvatar(
                     radius: 15,
                     backgroundColor: AppColors.racingRed,
