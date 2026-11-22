@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/features/admin/presentation/admin_customers_screen.dart';
+import 'package:pitmate/features/admin/presentation/admin_inspection_review_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_overview_screen.dart';
 import 'package:pitmate/features/auth/domain/user_role.dart';
 import 'package:pitmate/features/auth/presentation/screens/forgot_password_screen.dart';
@@ -9,6 +10,7 @@ import 'package:pitmate/features/auth/presentation/screens/login_screen.dart';
 import 'package:pitmate/features/auth/presentation/screens/register_screen.dart';
 import 'package:pitmate/features/auth/presentation/screens/verify_otp_screen.dart';
 import 'package:pitmate/features/customers/presentation/customer_garage_screen.dart';
+import 'package:pitmate/features/mechanic/presentation/inspection_workspace_screen.dart';
 import 'package:pitmate/features/mechanic/presentation/mechanic_home_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -71,8 +73,30 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const AdminCustomersScreen(),
     ),
     GoRoute(
+      path: RoutePaths.adminInspectionReview,
+      builder: (context, state) {
+        final orderId = state.uri.queryParameters['orderId'];
+        final inspectionId = state.uri.queryParameters['inspectionId'];
+        return AdminInspectionReviewScreen(
+          serviceOrderId: orderId,
+          inspectionId: inspectionId,
+        );
+      },
+    ),
+    GoRoute(
       path: RoutePaths.mechanic,
       builder: (context, state) => const MechanicHomeScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.mechanicInspection,
+      builder: (context, state) {
+        final orderId = state.uri.queryParameters['orderId'];
+        final inspectionId = state.uri.queryParameters['inspectionId'];
+        return InspectionWorkspaceScreen(
+          serviceOrderId: orderId,
+          inspectionId: inspectionId,
+        );
+      },
     ),
     GoRoute(
       path: RoutePaths.customer,
