@@ -12,10 +12,7 @@ import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-enum CustomerType {
-  registered,
-  guest,
-}
+enum CustomerType { registered, guest }
 
 class AdminCustomerEntry {
   const AdminCustomerEntry({
@@ -51,7 +48,8 @@ class AdminCustomersScreen extends ConsumerStatefulWidget {
   const AdminCustomersScreen({super.key});
 
   @override
-  ConsumerState<AdminCustomersScreen> createState() => _AdminCustomersScreenState();
+  ConsumerState<AdminCustomersScreen> createState() =>
+      _AdminCustomersScreenState();
 }
 
 class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
@@ -160,11 +158,32 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
   }
 
   static const List<RoleNavItem> _adminNavItems = [
-    RoleNavItem(label: 'Workshop Overview', icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard),
-    RoleNavItem(label: 'Customers & Fleet', icon: Icons.people_outline, selectedIcon: Icons.people),
-    RoleNavItem(label: 'Service Orders', icon: Icons.assignment_outlined, selectedIcon: Icons.assignment, badge: '4'),
-    RoleNavItem(label: 'Bay Schedule', icon: Icons.calendar_month_outlined, selectedIcon: Icons.calendar_month),
-    RoleNavItem(label: 'Inventory', icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2),
+    RoleNavItem(
+      label: 'Workshop Overview',
+      icon: Icons.dashboard_outlined,
+      selectedIcon: Icons.dashboard,
+    ),
+    RoleNavItem(
+      label: 'Customers & Fleet',
+      icon: Icons.people_outline,
+      selectedIcon: Icons.people,
+    ),
+    RoleNavItem(
+      label: 'Service Orders',
+      icon: Icons.assignment_outlined,
+      selectedIcon: Icons.assignment,
+      badge: '4',
+    ),
+    RoleNavItem(
+      label: 'Bay Schedule',
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month,
+    ),
+    RoleNavItem(
+      label: 'Inventory',
+      icon: Icons.inventory_2_outlined,
+      selectedIcon: Icons.inventory_2,
+    ),
   ];
 
   void _openCustomerIntakeModal() {
@@ -198,7 +217,9 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final textColor = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.graphitePrimary;
 
     final filtered = _customers.where((c) {
       if (_filterType != null && c.customerType != _filterType) return false;
@@ -210,8 +231,12 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
           c.vehicles.any((v) => v.toLowerCase().contains(q));
     }).toList();
 
-    final registeredCount = _customers.where((c) => c.customerType == CustomerType.registered).length;
-    final guestCount = _customers.where((c) => c.customerType == CustomerType.guest).length;
+    final registeredCount = _customers
+        .where((c) => c.customerType == CustomerType.registered)
+        .length;
+    final guestCount = _customers
+        .where((c) => c.customerType == CustomerType.guest)
+        .length;
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Customer Registry',
@@ -260,13 +285,17 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                             Text(
                               'TOTAL IN REGISTRY',
                               style: AppTypography.labelSmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               '${_customers.length}',
-                              style: AppTypography.displayMedium(color: textColor),
+                              style: AppTypography.displayMedium(
+                                color: textColor,
+                              ),
                             ),
                           ],
                         ),
@@ -283,13 +312,17 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                             Text(
                               'REGISTERED CLIENTS',
                               style: AppTypography.labelSmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               '$registeredCount',
-                              style: AppTypography.displayMedium(color: AppColors.success),
+                              style: AppTypography.displayMedium(
+                                color: AppColors.success,
+                              ),
                             ),
                           ],
                         ),
@@ -306,13 +339,17 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                             Text(
                               'WALK-IN GUESTS',
                               style: AppTypography.labelSmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               '$guestCount',
-                              style: AppTypography.displayMedium(color: AppColors.warning),
+                              style: AppTypography.displayMedium(
+                                color: AppColors.warning,
+                              ),
                             ),
                           ],
                         ),
@@ -330,13 +367,18 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                         key: const Key('admin-customer-search-input'),
                         onChanged: (val) => setState(() => _searchQuery = val),
                         decoration: InputDecoration(
-                          hintText: 'Search by client name, company, phone, plate...',
+                          hintText:
+                              'Search by client name, company, phone, plate...',
                           prefixIcon: const Icon(Icons.search, size: 20),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
                                   icon: const Icon(Icons.clear, size: 18),
-                                  onPressed: () => setState(() => _searchQuery = ''),
+                                  onPressed: () =>
+                                      setState(() => _searchQuery = ''),
                                 )
                               : null,
                         ),
@@ -365,12 +407,14 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                     FilterChip(
                       label: const Text('Registered Only'),
                       selected: _filterType == CustomerType.registered,
-                      onSelected: (_) => setState(() => _filterType = CustomerType.registered),
+                      onSelected: (_) =>
+                          setState(() => _filterType = CustomerType.registered),
                     ),
                     FilterChip(
                       label: const Text('Guest Walk-ins'),
                       selected: _filterType == CustomerType.guest,
-                      onSelected: (_) => setState(() => _filterType = CustomerType.guest),
+                      onSelected: (_) =>
+                          setState(() => _filterType = CustomerType.guest),
                     ),
                   ],
                 ),
@@ -380,7 +424,9 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                   const Padding(
                     padding: EdgeInsets.all(40.0),
                     child: Center(
-                      child: CircularProgressIndicator(color: AppColors.accentRed),
+                      child: CircularProgressIndicator(
+                        color: AppColors.accentRed,
+                      ),
                     ),
                   )
                 else if (filtered.isEmpty)
@@ -393,13 +439,17 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                           Icon(
                             Icons.people_outline,
                             size: 40,
-                            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                            color: isDark
+                                ? AppColors.textMutedDark
+                                : AppColors.textMutedLight,
                           ),
                           const SizedBox(height: 12),
                           Text(
                             'No customers match the current query.',
                             style: AppTypography.bodyMedium(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ],
@@ -426,7 +476,11 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
     );
   }
 
-  Widget _buildCustomerRowCard(AdminCustomerEntry customer, bool isDark, Color textColor) {
+  Widget _buildCustomerRowCard(
+    AdminCustomerEntry customer,
+    bool isDark,
+    Color textColor,
+  ) {
     final isRegistered = customer.customerType == CustomerType.registered;
     final isCompany = customer.accountTier == 'company';
 
@@ -445,11 +499,15 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                 radius: 20,
                 backgroundColor: isCompany
                     ? AppColors.info.withValues(alpha: 0.2)
-                    : (isRegistered ? AppColors.success.withValues(alpha: 0.2) : AppColors.warning.withValues(alpha: 0.2)),
+                    : (isRegistered
+                          ? AppColors.success.withValues(alpha: 0.2)
+                          : AppColors.warning.withValues(alpha: 0.2)),
                 child: Icon(
                   isCompany
                       ? Icons.business
-                      : (isRegistered ? Icons.verified_user : Icons.person_outline),
+                      : (isRegistered
+                            ? Icons.verified_user
+                            : Icons.person_outline),
                   size: 20,
                   color: isCompany
                       ? AppColors.info
@@ -468,7 +526,9 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                         Flexible(
                           child: Text(
                             customer.fullName,
-                            style: AppTypography.headlineSmall(color: textColor),
+                            style: AppTypography.headlineSmall(
+                              color: textColor,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -488,12 +548,18 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.phone_outlined, size: 14, color: AppColors.textSecondaryLight),
+                            const Icon(
+                              Icons.phone_outlined,
+                              size: 14,
+                              color: AppColors.textSecondaryLight,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               customer.phoneNumber,
                               style: AppTypography.bodySmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -501,12 +567,18 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.email_outlined, size: 14, color: AppColors.textSecondaryLight),
+                            const Icon(
+                              Icons.email_outlined,
+                              size: 14,
+                              color: AppColors.textSecondaryLight,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               customer.email,
                               style: AppTypography.bodySmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -541,7 +613,9 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
               Text(
                 'FLEET VEHICLES:',
                 style: AppTypography.telemetrySmall(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -550,7 +624,9 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                 Text(
                   'No vehicles registered',
                   style: AppTypography.bodySmall(
-                    color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                    color: isDark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                   ),
                 )
               else
@@ -560,18 +636,27 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                     runSpacing: 4,
                     children: customer.vehicles.map((plate) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+                          color: isDark
+                              ? AppColors.surfaceElevatedDark
+                              : AppColors.surfaceElevatedLight,
                           borderRadius: AppSpacing.roundedSmall,
                           border: Border.all(
-                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                            color: isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight,
                           ),
                         ),
                         child: Text(
                           plate,
                           style: AppTypography.telemetrySmall(
-                            color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.graphitePrimary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -599,7 +684,7 @@ class _AdminNewCustomerSheet extends StatefulWidget {
 
 class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Mode: 0 = Walk-in Guest (Individual), 1 = Register Account Manually
   int _intakeMode = 0;
 
@@ -637,21 +722,27 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
     final plate = _plateController.text.trim().toUpperCase();
     final isGuest = _intakeMode == 0;
     final custType = isGuest ? 'individual' : _customerType;
-    final compName = (!isGuest && custType == 'company') ? _companyNameController.text.trim() : null;
+    final compName = (!isGuest && custType == 'company')
+        ? _companyNameController.text.trim()
+        : null;
 
     String customerId = 'cust-${DateTime.now().millisecondsSinceEpoch}';
 
     try {
       final client = Supabase.instance.client;
       // 1. Insert customer into Supabase
-      final customerInsert = await client.from('customers').insert({
-        'full_name': name,
-        'phone_number': phone,
-        'email': email.isNotEmpty ? email : null,
-        'customer_type': custType,
-        'company_name': compName,
-        'is_guest': isGuest,
-      }).select().single();
+      final customerInsert = await client
+          .from('customers')
+          .insert({
+            'full_name': name,
+            'phone_number': phone,
+            'email': email.isNotEmpty ? email : null,
+            'customer_type': custType,
+            'company_name': compName,
+            'is_guest': isGuest,
+          })
+          .select()
+          .single();
 
       customerId = customerInsert['id'] as String;
 
@@ -660,9 +751,14 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
         await client.from('vehicles').insert({
           'customer_id': customerId,
           'license_plate': plate,
-          'make': _makeController.text.trim().isNotEmpty ? _makeController.text.trim() : 'Vehicle',
-          'model': _modelController.text.trim().isNotEmpty ? _modelController.text.trim() : 'Standard',
-          'year': int.tryParse(_yearController.text.trim()) ?? DateTime.now().year,
+          'make': _makeController.text.trim().isNotEmpty
+              ? _makeController.text.trim()
+              : 'Vehicle',
+          'model': _modelController.text.trim().isNotEmpty
+              ? _modelController.text.trim()
+              : 'Standard',
+          'year':
+              int.tryParse(_yearController.text.trim()) ?? DateTime.now().year,
           'mileage': int.tryParse(_mileageController.text.trim()) ?? 0,
           'notes': isGuest ? 'Walk-in Intake' : 'Admin Registered Customer',
         });
@@ -721,7 +817,9 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -731,9 +829,13 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    _intakeMode == 0 ? 'WALK-IN GUEST INTAKE' : 'MANUAL CUSTOMER REGISTRATION',
+                    _intakeMode == 0
+                        ? 'WALK-IN GUEST INTAKE'
+                        : 'MANUAL CUSTOMER REGISTRATION',
                     style: AppTypography.headlineSmall(
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.graphitePrimary,
                     ),
                   ),
                   IconButton(
@@ -784,7 +886,9 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                       ? 'Walk-in guest intake is permitted for individual private customers. Corporate accounts must be registered.'
                       : 'Admin manual registration adds a customer directly to the system (individual or company fleet).',
                   style: AppTypography.bodySmall(
-                    color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.graphitePrimary,
                   ),
                 ),
               ),
@@ -798,7 +902,8 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                       child: ChoiceChip(
                         label: const Text('Individual Account'),
                         selected: _customerType == 'individual',
-                        onSelected: (_) => setState(() => _customerType = 'individual'),
+                        onSelected: (_) =>
+                            setState(() => _customerType = 'individual'),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -806,7 +911,8 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                       child: ChoiceChip(
                         label: const Text('Company / Fleet'),
                         selected: _customerType == 'company',
-                        onSelected: (_) => setState(() => _customerType = 'company'),
+                        onSelected: (_) =>
+                            setState(() => _customerType = 'company'),
                       ),
                     ),
                   ],
@@ -821,7 +927,9 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                       hintText: 'e.g. Aston Martin F1 Team',
                       prefixIcon: Icon(Icons.business_outlined, size: 20),
                     ),
-                    validator: (val) => val == null || val.trim().isEmpty ? 'Company name required' : null,
+                    validator: (val) => val == null || val.trim().isEmpty
+                        ? 'Company name required'
+                        : null,
                   ),
                   const SizedBox(height: 14),
                 ],
@@ -833,11 +941,15 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
-                  labelText: _intakeMode == 1 && _customerType == 'company' ? 'Contact Person Name' : 'Customer Full Name',
+                  labelText: _intakeMode == 1 && _customerType == 'company'
+                      ? 'Contact Person Name'
+                      : 'Customer Full Name',
                   hintText: 'e.g. Budi Santoso',
                   prefixIcon: const Icon(Icons.person_outline, size: 20),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Name is required' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Name is required'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -851,7 +963,9 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                   hintText: '+6281234567890',
                   prefixIcon: Icon(Icons.phone_outlined, size: 20),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Phone number is required' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Phone number is required'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -866,7 +980,9 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                     prefixIcon: Icon(Icons.email_outlined, size: 20),
                   ),
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Email is required';
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Email is required';
+                    }
                     if (!val.contains('@')) return 'Valid email required';
                     return null;
                   },
@@ -878,7 +994,9 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
               Text(
                 'INITIAL VEHICLE INTAKE',
                 style: AppTypography.labelMedium(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                 ),
               ),
               const SizedBox(height: 8),
@@ -940,7 +1058,9 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                 key: const Key('submit-guest-intake-button'),
                 onPressed: _submit,
                 child: Text(
-                  _intakeMode == 0 ? 'CREATE WALK-IN GUEST RECORD' : 'REGISTER CUSTOMER RECORD',
+                  _intakeMode == 0
+                      ? 'CREATE WALK-IN GUEST RECORD'
+                      : 'REGISTER CUSTOMER RECORD',
                 ),
               ),
             ],

@@ -21,7 +21,8 @@ class CustomerGarageScreen extends ConsumerStatefulWidget {
   const CustomerGarageScreen({super.key});
 
   @override
-  ConsumerState<CustomerGarageScreen> createState() => _CustomerGarageScreenState();
+  ConsumerState<CustomerGarageScreen> createState() =>
+      _CustomerGarageScreenState();
 }
 
 class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
@@ -95,13 +96,17 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
 
         if (customerData != null) {
           _customerRecordId = customerData['id'] as String;
-          _customerName = (customerData['full_name'] as String?) ??
+          _customerName =
+              (customerData['full_name'] as String?) ??
               (user.userMetadata?['full_name'] as String?) ??
               'Customer Member';
-          final custType = customerData['customer_type'] as String? ?? 'individual';
+          final custType =
+              customerData['customer_type'] as String? ?? 'individual';
           final compName = customerData['company_name'] as String?;
           _customerSubtitle = custType == 'company'
-              ? (compName != null ? 'Corporate Fleet • $compName' : 'Corporate Fleet Member')
+              ? (compName != null
+                    ? 'Corporate Fleet • $compName'
+                    : 'Corporate Fleet Member')
               : 'Individual Customer Member';
 
           final vehicleRows = await client
@@ -118,7 +123,10 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
               year: (row['year'] as int?) ?? DateTime.now().year,
               licensePlate: (row['license_plate'] as String?) ?? '',
               mileageKm: (row['mileage'] as int?) ?? 0,
-              trim: (row['engine_type'] as String?) ?? (row['transmission'] as String?) ?? 'Standard',
+              trim:
+                  (row['engine_type'] as String?) ??
+                  (row['transmission'] as String?) ??
+                  'Standard',
               colorName: (row['color'] as String?) ?? 'Default',
               status: VehicleStatus.ready,
             );
@@ -140,10 +148,26 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
   }
 
   static const List<RoleNavItem> _navItems = [
-    RoleNavItem(label: 'My Garage', icon: Icons.garage_outlined, selectedIcon: Icons.garage),
-    RoleNavItem(label: 'Book Service', icon: Icons.calendar_month_outlined, selectedIcon: Icons.calendar_month),
-    RoleNavItem(label: 'Invoices', icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long),
-    RoleNavItem(label: 'Profile', icon: Icons.person_outline, selectedIcon: Icons.person),
+    RoleNavItem(
+      label: 'My Garage',
+      icon: Icons.garage_outlined,
+      selectedIcon: Icons.garage,
+    ),
+    RoleNavItem(
+      label: 'Book Service',
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month,
+    ),
+    RoleNavItem(
+      label: 'Invoices',
+      icon: Icons.receipt_long_outlined,
+      selectedIcon: Icons.receipt_long,
+    ),
+    RoleNavItem(
+      label: 'Profile',
+      icon: Icons.person_outline,
+      selectedIcon: Icons.person,
+    ),
   ];
 
   void _openAddVehicleSheet() {
@@ -194,7 +218,9 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryTextColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final primaryTextColor = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.graphitePrimary;
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Customer Garage',
@@ -235,22 +261,33 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
                       children: [
                         Text(
                           'MY VEHICLES',
-                          style: AppTypography.headlineSmall(color: primaryTextColor),
+                          style: AppTypography.headlineSmall(
+                            color: primaryTextColor,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+                            color: isDark
+                                ? AppColors.surfaceElevatedDark
+                                : AppColors.surfaceElevatedLight,
                             borderRadius: AppSpacing.roundedSmall,
                             border: Border.all(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
                             ),
                           ),
                           child: Text(
                             '${_vehicles.length}',
                             style: AppTypography.telemetrySmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -271,7 +308,9 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
                   const Padding(
                     padding: EdgeInsets.all(40.0),
                     child: Center(
-                      child: CircularProgressIndicator(color: AppColors.accentRed),
+                      child: CircularProgressIndicator(
+                        color: AppColors.accentRed,
+                      ),
                     ),
                   )
                 else if (_vehicles.isEmpty)
@@ -284,13 +323,17 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
                           Icon(
                             Icons.directions_car_outlined,
                             size: 44,
-                            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                            color: isDark
+                                ? AppColors.textMutedDark
+                                : AppColors.textMutedLight,
                           ),
                           const SizedBox(height: 12),
                           Text(
                             'No vehicles registered in your garage yet.',
                             style: AppTypography.bodyMedium(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -305,7 +348,9 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
                   )
                 else
                   // Vehicle Cards
-                  ..._vehicles.map((vehicle) => _buildVehicleCard(vehicle, isDark)),
+                  ..._vehicles.map(
+                    (vehicle) => _buildVehicleCard(vehicle, isDark),
+                  ),
               ],
             ),
           ),
@@ -388,7 +433,9 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
             Text(
               title,
               style: AppTypography.labelMedium(
-                color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.graphitePrimary,
                 fontWeight: FontWeight.w700,
               ),
               overflow: TextOverflow.ellipsis,
@@ -397,7 +444,9 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
             Text(
               subtitle,
               style: AppTypography.bodySmall(
-                color: isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight,
+                color: isDark
+                    ? AppColors.textMutedDark
+                    : AppColors.textSecondaryLight,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -422,10 +471,14 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
                   width: 54,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+                    color: isDark
+                        ? AppColors.surfaceElevatedDark
+                        : AppColors.surfaceElevatedLight,
                     borderRadius: AppSpacing.roundedMedium,
                     border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
                     ),
                   ),
                   child: const Center(
@@ -449,7 +502,9 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
                             child: Text(
                               vehicle.displayName,
                               style: AppTypography.headlineSmall(
-                                color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.graphitePrimary,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -457,11 +512,17 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
                           const SizedBox(width: 8),
                           // High-contrast Plate Container
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.plateBackground,
                               borderRadius: AppSpacing.roundedSmall,
-                              border: Border.all(color: AppColors.borderStrongDark, width: 1.5),
+                              border: Border.all(
+                                color: AppColors.borderStrongDark,
+                                width: 1.5,
+                              ),
                             ),
                             child: Text(
                               vehicle.licensePlate,
@@ -477,7 +538,9 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
                       Text(
                         vehicle.specsSubtitle,
                         style: AppTypography.bodySmall(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -495,13 +558,17 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
                               Icon(
                                 Icons.speed,
                                 size: 14,
-                                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                                color: isDark
+                                    ? AppColors.textMutedDark
+                                    : AppColors.textMutedLight,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 '${vehicle.mileageKm.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} km',
                                 style: AppTypography.telemetrySmall(
-                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight,
                                 ),
                               ),
                             ],
@@ -530,9 +597,13 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  vehicle.bayAssignment != null ? 'Assigned: ${vehicle.bayAssignment}' : 'No active shop bay',
+                  vehicle.bayAssignment != null
+                      ? 'Assigned: ${vehicle.bayAssignment}'
+                      : 'No active shop bay',
                   style: AppTypography.bodySmall(
-                    color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                    color: isDark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                   ),
                 ),
                 TextButton.icon(
@@ -551,10 +622,16 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
   Widget _buildStatusBadge(CustomerVehicle vehicle) {
     switch (vehicle.status) {
       case VehicleStatus.inWorkshop:
-        return StatusBadge.info('IN WORKSHOP (${vehicle.bayAssignment ?? "BAY"})', icon: Icons.build);
+        return StatusBadge.info(
+          'IN WORKSHOP (${vehicle.bayAssignment ?? "BAY"})',
+          icon: Icons.build,
+        );
       case VehicleStatus.passedQC:
       case VehicleStatus.ready:
-        return StatusBadge.success('PASSED QC / READY', icon: Icons.check_circle);
+        return StatusBadge.success(
+          'PASSED QC / READY',
+          icon: Icons.check_circle,
+        );
       case VehicleStatus.serviceDue:
         return StatusBadge.warning('SERVICE DUE', icon: Icons.schedule);
       case VehicleStatus.awaitingAuth:
@@ -683,7 +760,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -695,7 +774,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                   Text(
                     'ADD VEHICLE TO GARAGE',
                     style: AppTypography.headlineSmall(
-                      color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.graphitePrimary,
                     ),
                   ),
                   IconButton(
@@ -718,7 +799,10 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                 decoration: InputDecoration(
                   labelText: 'License Plate (e.g. B 1234 XYZ)',
                   hintText: 'B 2044 RFS',
-                  prefixIcon: const Icon(Icons.confirmation_number_outlined, size: 20),
+                  prefixIcon: const Icon(
+                    Icons.confirmation_number_outlined,
+                    size: 20,
+                  ),
                   suffixIcon: _isDuplicate
                       ? const Icon(Icons.warning_amber, color: AppColors.danger)
                       : null,
@@ -743,11 +827,17 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                   decoration: BoxDecoration(
                     color: AppColors.danger.withValues(alpha: 0.12),
                     borderRadius: AppSpacing.roundedSmall,
-                    border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
+                    border: Border.all(
+                      color: AppColors.danger.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: AppColors.danger, size: 16),
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.danger,
+                        size: 16,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -775,7 +865,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                         labelText: 'Make',
                         hintText: 'Toyota',
                       ),
-                      validator: (val) => val == null || val.trim().isEmpty ? 'Make required' : null,
+                      validator: (val) => val == null || val.trim().isEmpty
+                          ? 'Make required'
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -787,7 +879,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                         labelText: 'Model',
                         hintText: 'GR Yaris',
                       ),
-                      validator: (val) => val == null || val.trim().isEmpty ? 'Model required' : null,
+                      validator: (val) => val == null || val.trim().isEmpty
+                          ? 'Model required'
+                          : null,
                     ),
                   ),
                 ],
@@ -807,7 +901,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                         labelText: 'Year',
                         hintText: '2023',
                       ),
-                      validator: (val) => val == null || val.trim().isEmpty ? 'Year required' : null,
+                      validator: (val) => val == null || val.trim().isEmpty
+                          ? 'Year required'
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -821,7 +917,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
                         labelText: 'Mileage (km)',
                         hintText: '10000',
                       ),
-                      validator: (val) => val == null || val.trim().isEmpty ? 'Mileage required' : null,
+                      validator: (val) => val == null || val.trim().isEmpty
+                          ? 'Mileage required'
+                          : null,
                     ),
                   ),
                 ],

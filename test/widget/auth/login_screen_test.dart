@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,18 +27,27 @@ class FakeAuthRepository implements IAuthRepository {
   Stream<sb.AuthState> get authStateChanges => _authStateController.stream;
 
   @override
-  String? get currentSessionUserEmail => currentProfile != null ? 'test@pitmate.local' : null;
+  String? get currentSessionUserEmail =>
+      currentProfile != null ? 'test@pitmate.local' : null;
 
   @override
   sb.User? get currentUser => null;
 
   @override
-  Future<Result<UserProfile>> signInWithPassword(String email, String password) async {
+  Future<Result<UserProfile>> signInWithPassword(
+    String email,
+    String password,
+  ) async {
     lastSignInEmail = email;
     lastSignInPassword = password;
 
     if (shouldFailSignIn) {
-      return const Result.failure(AuthException('Invalid credentials provided.', code: 'invalid_credentials'));
+      return const Result.failure(
+        AuthException(
+          'Invalid credentials provided.',
+          code: 'invalid_credentials',
+        ),
+      );
     }
 
     final profile = UserProfile(
@@ -93,7 +103,11 @@ class FakeAuthRepository implements IAuthRepository {
   }
 
   @override
-  Future<Result<void>> resetPassword(String token, String newPassword, [String? email]) async {
+  Future<Result<void>> resetPassword(
+    String token,
+    String newPassword, [
+    String? email,
+  ]) async {
     return const Result.success(null);
   }
 
@@ -126,16 +140,14 @@ void main() {
 
   Widget buildTestApp({FakeAuthRepository? repo}) {
     return ProviderScope(
-      overrides: [
-        authRepositoryProvider.overrideWithValue(repo ?? fakeRepo),
-      ],
-      child: const MaterialApp(
-        home: LoginScreen(),
-      ),
+      overrides: [authRepositoryProvider.overrideWithValue(repo ?? fakeRepo)],
+      child: const MaterialApp(home: LoginScreen()),
     );
   }
 
-  testWidgets('renders all essential login elements', (WidgetTester tester) async {
+  testWidgets('renders all essential login elements', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1000, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -177,7 +189,9 @@ void main() {
     expect(find.text('Please enter your password'), findsOneWidget);
   });
 
-  testWidgets('validates email format and password length', (WidgetTester tester) async {
+  testWidgets('validates email format and password length', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1000, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -186,8 +200,14 @@ void main() {
     await tester.pumpWidget(buildTestApp());
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byKey(const Key('login_email_field')), 'invalid-email');
-    await tester.enterText(find.byKey(const Key('login_password_field')), '123');
+    await tester.enterText(
+      find.byKey(const Key('login_email_field')),
+      'invalid-email',
+    );
+    await tester.enterText(
+      find.byKey(const Key('login_password_field')),
+      '123',
+    );
 
     await tester.tap(find.byKey(const Key('login_submit_button')));
     await tester.pumpAndSettle();
@@ -225,42 +245,47 @@ void main() {
     expect(textFieldAfter.obscureText, isFalse);
   });
 
-  testWidgets('quick demo role switcher populates credentials and switches role', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1000, 1200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
+  testWidgets(
+    'quick demo role switcher populates credentials and switches role',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1000, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
 
-    final container = ProviderContainer(
-      overrides: [authRepositoryProvider.overrideWithValue(fakeRepo)],
-    );
+      final container = ProviderContainer(
+        overrides: [authRepositoryProvider.overrideWithValue(fakeRepo)],
+      );
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const MaterialApp(
-          home: LoginScreen(),
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: LoginScreen()),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    // Tap Admin Demo chip
-    await tester.ensureVisible(find.byKey(const Key('demo_role_admin')));
-    await tester.tap(find.byKey(const Key('demo_role_admin')));
-    await tester.pumpAndSettle();
+      // Tap Admin Demo chip
+      await tester.ensureVisible(find.byKey(const Key('demo_role_admin')));
+      await tester.tap(find.byKey(const Key('demo_role_admin')));
+      await tester.pumpAndSettle();
 
-    final emailField = tester.widget<TextFormField>(find.byKey(const Key('login_email_field')));
-    expect(emailField.controller?.text, 'admin@pitmate.co');
+      final emailField = tester.widget<TextFormField>(
+        find.byKey(const Key('login_email_field')),
+      );
+      expect(emailField.controller?.text, 'admin@pitmate.co');
 
-    final state = container.read(authNotifierProvider);
-    expect(state, isA<AuthAuthenticated>());
-    if (state is AuthAuthenticated) {
-      expect(state.userProfile.role, UserRole.admin);
-    }
-  });
+      final state = container.read(authNotifierProvider);
+      expect(state, isA<AuthAuthenticated>());
+      if (state is AuthAuthenticated) {
+        expect(state.userProfile.role, UserRole.admin);
+      }
+    },
+  );
 
-  testWidgets('successful sign in invokes repository and signs in user', (WidgetTester tester) async {
+  testWidgets('successful sign in invokes repository and signs in user', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1000, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -269,8 +294,14 @@ void main() {
     await tester.pumpWidget(buildTestApp());
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byKey(const Key('login_email_field')), 'user@pitmate.local');
-    await tester.enterText(find.byKey(const Key('login_password_field')), 'Password123');
+    await tester.enterText(
+      find.byKey(const Key('login_email_field')),
+      'user@pitmate.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('login_password_field')),
+      'Password123',
+    );
 
     await tester.ensureVisible(find.byKey(const Key('login_submit_button')));
     await tester.tap(find.byKey(const Key('login_submit_button')));
@@ -280,7 +311,9 @@ void main() {
     expect(fakeRepo.lastSignInPassword, 'Password123');
   });
 
-  testWidgets('failed sign in displays error in SnackBar', (WidgetTester tester) async {
+  testWidgets('failed sign in displays error in SnackBar', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1000, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -291,8 +324,14 @@ void main() {
     await tester.pumpWidget(buildTestApp());
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byKey(const Key('login_email_field')), 'wrong@pitmate.local');
-    await tester.enterText(find.byKey(const Key('login_password_field')), 'WrongPassword');
+    await tester.enterText(
+      find.byKey(const Key('login_email_field')),
+      'wrong@pitmate.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('login_password_field')),
+      'WrongPassword',
+    );
 
     await tester.ensureVisible(find.byKey(const Key('login_submit_button')));
     await tester.tap(find.byKey(const Key('login_submit_button')));
@@ -301,7 +340,9 @@ void main() {
     expect(find.text('Invalid credentials provided.'), findsOneWidget);
   });
 
-  testWidgets('navigation to register screen works', (WidgetTester tester) async {
+  testWidgets('navigation to register screen works', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1000, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -310,7 +351,9 @@ void main() {
     await tester.pumpWidget(buildTestApp());
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(const Key('login_to_register_button')));
+    await tester.ensureVisible(
+      find.byKey(const Key('login_to_register_button')),
+    );
     await tester.tap(find.byKey(const Key('login_to_register_button')));
     await tester.pumpAndSettle();
 
@@ -318,7 +361,9 @@ void main() {
     expect(find.text('Join PitMate'), findsOneWidget);
   });
 
-  testWidgets('navigation to forgot password screen works', (WidgetTester tester) async {
+  testWidgets('navigation to forgot password screen works', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1000, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetDevicePixelRatio);

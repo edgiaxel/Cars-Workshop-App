@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+
 import '../providers/auth_notifier.dart';
 import '../providers/auth_state.dart';
 import 'verify_otp_screen.dart';
@@ -24,7 +25,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _companyNameController = TextEditingController();
-  
+
   String _customerType = 'individual'; // 'individual' or 'company'
   bool _obscurePassword = true;
 
@@ -40,13 +41,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   void _onRegisterPressed() {
     if (_formKey.currentState?.validate() ?? false) {
-      ref.read(authNotifierProvider.notifier).signUp(
+      ref
+          .read(authNotifierProvider.notifier)
+          .signUp(
             email: _emailController.text.trim(),
             password: _passwordController.text,
             fullName: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
             customerType: _customerType,
-            companyName: _customerType == 'company' ? _companyNameController.text.trim() : null,
+            companyName: _customerType == 'company'
+                ? _companyNameController.text.trim()
+                : null,
           );
     }
   }
@@ -70,7 +75,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
       } else if (next is AuthUnverifiedCustomer) {
         if (GoRouter.maybeOf(context) != null) {
-          context.push('${RoutePaths.verifyOtp}?email=${Uri.encodeComponent(next.email)}');
+          context.push(
+            '${RoutePaths.verifyOtp}?email=${Uri.encodeComponent(next.email)}',
+          );
         } else {
           Navigator.of(context).push(
             MaterialPageRoute<void>(
@@ -104,7 +111,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: Card(
@@ -164,7 +174,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           controller: _nameController,
                           textCapitalization: TextCapitalization.words,
                           decoration: InputDecoration(
-                            labelText: _customerType == 'company' ? 'Contact Person Full Name' : 'Full Name',
+                            labelText: _customerType == 'company'
+                                ? 'Contact Person Full Name'
+                                : 'Full Name',
                             prefixIcon: const Icon(Icons.person_outline),
                             border: const OutlineInputBorder(),
                           ),
@@ -193,7 +205,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               border: OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (_customerType == 'company' && (value == null || value.trim().isEmpty)) {
+                              if (_customerType == 'company' &&
+                                  (value == null || value.trim().isEmpty)) {
                                 return 'Company name is required for company accounts';
                               }
                               return null;

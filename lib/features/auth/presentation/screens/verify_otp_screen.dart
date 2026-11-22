@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+
 import '../providers/auth_notifier.dart';
 import '../providers/auth_state.dart';
 
@@ -10,10 +12,7 @@ import '../providers/auth_state.dart';
 class VerifyOtpScreen extends ConsumerStatefulWidget {
   final String email;
 
-  const VerifyOtpScreen({
-    super.key,
-    required this.email,
-  });
+  const VerifyOtpScreen({super.key, required this.email});
 
   static const String routePath = '/verify-otp';
   static const String routeName = 'verify-otp';
@@ -26,15 +25,23 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
   final _otpController = TextEditingController();
   int _countdownSeconds = 60;
   Timer? _countdownTimer;
+  Timer? _authStatusPollTimer;
 
   @override
   void initState() {
     super.initState();
     _startCountdown();
+    // Auto-poll auth status in case user confirmed via email link in browser
+    _authStatusPollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        ref.read(authNotifierProvider.notifier).checkAuthStatus();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _authStatusPollTimer?.cancel();
     _countdownTimer?.cancel();
     _otpController.dispose();
     super.dispose();
@@ -124,7 +131,10 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 20.0,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
               child: Card(
@@ -202,8 +212,8 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                         key: const Key('otp_submit_button'),
                         onPressed:
                             isLoading || _otpController.text.trim().length != 6
-                                ? null
-                                : _onVerifyPressed,
+                            ? null
+                            : _onVerifyPressed,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFB2221C),
                           foregroundColor: Colors.white,
@@ -228,6 +238,19 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Link confirmation check button
+                      OutlinedButton.icon(
+                        key: const Key('otp_check_link_button'),
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                await ref.read(authNotifierProvider.notifier).checkAuthStatus();
+                              },
+                        icon: const Icon(Icons.check_circle_outline, size: 18),
+                        label: const Text('Confirmed via Email Link? Continue'),
                       ),
                       const SizedBox(height: 16),
 

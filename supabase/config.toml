@@ -51,3 +51,4 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = false
 enable_confirmations = false
+otp_length = 6

@@ -33,7 +33,15 @@ BEGIN
       raw_user_meta_data,
       created_at,
       updated_at,
-      confirmation_token
+      confirmation_token,
+      recovery_token,
+      email_change_token_new,
+      email_change,
+      phone,
+      phone_change,
+      phone_change_token,
+      email_change_token_current,
+      reauthentication_token
     ) VALUES (
       v_user_id,
       '00000000-0000-0000-0000-000000000000',
@@ -46,6 +54,14 @@ BEGIN
       jsonb_build_object('full_name', p_full_name, 'phone_number', p_phone, 'role', p_role::text),
       NOW(),
       NOW(),
+      '',
+      '',
+      '',
+      '',
+      COALESCE(p_phone, ''),
+      '',
+      '',
+      '',
       ''
     );
     
@@ -70,6 +86,14 @@ BEGIN
     UPDATE auth.users
     SET encrypted_password = extensions.crypt(p_password, extensions.gen_salt('bf')),
         email_confirmed_at = NOW(),
+        confirmation_token = COALESCE(confirmation_token, ''),
+        recovery_token = COALESCE(recovery_token, ''),
+        email_change_token_new = COALESCE(email_change_token_new, ''),
+        email_change = COALESCE(email_change, ''),
+        phone_change = COALESCE(phone_change, ''),
+        phone_change_token = COALESCE(phone_change_token, ''),
+        email_change_token_current = COALESCE(email_change_token_current, ''),
+        reauthentication_token = COALESCE(reauthentication_token, ''),
         raw_user_meta_data = jsonb_build_object('full_name', p_full_name, 'phone_number', p_phone, 'role', p_role::text)
     WHERE id = v_user_id;
   END IF;
