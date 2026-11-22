@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/features/admin/presentation/admin_bookings_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_customers_screen.dart';
+import 'package:pitmate/features/admin/presentation/admin_estimate_builder_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_inspection_review_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_overview_screen.dart';
 import 'package:pitmate/features/auth/domain/user_role.dart';
@@ -12,6 +13,7 @@ import 'package:pitmate/features/auth/presentation/screens/register_screen.dart'
 import 'package:pitmate/features/auth/presentation/screens/verify_otp_screen.dart';
 import 'package:pitmate/features/bookings/presentation/screens/book_service_screen.dart';
 import 'package:pitmate/features/bookings/presentation/screens/customer_appointments_screen.dart';
+import 'package:pitmate/features/customers/presentation/customer_estimate_approval_screen.dart';
 import 'package:pitmate/features/customers/presentation/customer_garage_screen.dart';
 import 'package:pitmate/features/mechanic/presentation/inspection_workspace_screen.dart';
 import 'package:pitmate/features/mechanic/presentation/mechanic_home_screen.dart';
@@ -91,6 +93,13 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: RoutePaths.adminEstimateBuilder,
+      builder: (context, state) {
+        final orderId = state.uri.queryParameters['orderId'];
+        return AdminEstimateBuilderScreen(serviceOrderId: orderId);
+      },
+    ),
+    GoRoute(
       path: RoutePaths.mechanic,
       builder: (context, state) => const MechanicHomeScreen(),
     ),
@@ -123,6 +132,17 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RoutePaths.customerAppointments,
       builder: (context, state) => const CustomerAppointmentsScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.customerEstimateApproval,
+      builder: (context, state) {
+        final estimateId = state.uri.queryParameters['estimateId'];
+        final orderId = state.uri.queryParameters['orderId'];
+        return CustomerEstimateApprovalScreen(
+          estimateId: estimateId,
+          serviceOrderId: orderId,
+        );
+      },
     ),
   ],
 );
