@@ -1,0 +1,138 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;family=IBM+Plex+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "page-bg": "#111417",
+        "surface-card": "#191E23",
+        "surface-nested": "#242B32",
+        "surface-pill": "#2B333B",
+        "border-default": "#343C44",
+        "border-strong": "#46515B",
+        "text-primary": "#F1F3F5",
+        "text-secondary": "#A5ADB6",
+        "text-muted": "#7D8791",
+        "accent-red": "#F05A4F",
+        "accent-red-hover": "#FF7166",
+        "status-success": "#55B889",
+        "status-warning": "#E6B45A",
+        "status-danger": "#F07171"
+      },
+      borderRadius: {
+        "DEFAULT": "0.125rem",
+        "lg": "0.25rem",
+        "xl": "0.5rem",
+        "2xl": "0.75rem",
+        "full": "9999px"
+      },
+      spacing: {
+        "margin": "1rem",
+        "space-xl": "2rem",
+        "space-sm": "0.5rem",
+        "space-lg": "1.5rem",
+        "gutter": "1rem",
+        "space-xs": "0.25rem",
+        "space-md": "1rem"
+      },
+      fontFamily: {
+        "technical-metric": ["Barlow Condensed", "sans-serif"],
+        "headline-lg": ["Barlow Condensed", "sans-serif"],
+        "headline-md": ["Barlow Condensed", "sans-serif"],
+        "headline-sm": ["Barlow Condensed", "sans-serif"],
+        "technical-data": ["JetBrains Mono", "monospace"],
+        "label-lg": ["Inter", "sans-serif"],
+        "label-md": ["Inter", "sans-serif"],
+        "title-md": ["Inter", "sans-serif"],
+        "body-lg": ["Inter", "sans-serif"],
+        "body-md": ["Inter", "sans-serif"],
+        "body-sm": ["Inter", "sans-serif"]
+      },
+      fontSize: {
+        "technical-metric": ["28px", { lineHeight: "28px", letterSpacing: "0.01em", fontWeight: "700" }],
+        "label-md": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }],
+        "headline-md": ["24px", { lineHeight: "28px", letterSpacing: "0.01em", fontWeight: "600" }],
+        "headline-sm": ["20px", { lineHeight: "24px", letterSpacing: "0.02em", fontWeight: "600" }],
+        "title-md": ["16px", { lineHeight: "22px", fontWeight: "600" }],
+        "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+        "label-lg": ["13px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }],
+        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+        "headline-lg": ["32px", { lineHeight: "36px", letterSpacing: "0.01em", fontWeight: "600" }],
+        "technical-data": ["13px", { lineHeight: "16px", letterSpacing: "-0.01em", fontWeight: "500" }],
+        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }]
+      }
+    }
+  }
+};</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#111417;color:#F1F3F5;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style></head><body class="bg-page-bg text-text-primary min-h-screen flex flex-col font-body-md selection:bg-accent-red selection:text-white"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-card/90 backdrop-blur-xl border-b border-border-default/60 shadow-[0_4px_16px_rgba(0,0,0,0.35)]"><div class="h-14 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><div class="flex items-center gap-2.5"><!-- PitMate technical automotive workshop brand mark (Dark theme adapted) --><div class="h-[28px] flex items-center flex-shrink-0"><svg fill="none" height="32.5" viewBox="0 0 160 40" width="130" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(4, 6)">
+<path d="M4 2 L22 2 L28 14 L22 26 L4 26 Z" fill="#2B333B"></path>
+<path d="M4 2 L16 2 L20 10 L16 18 L4 18 Z" fill="#F05A4F"></path>
+<rect fill="#FFFFFF" height="5" width="5" x="8" y="7"></rect>
+<circle cx="23" cy="20" fill="#F05A4F" r="2.5"></circle>
+</g>
+<text fill="#F1F3F5" font-family="'Barlow Condensed', sans-serif" font-size="22" font-weight="800" letter-spacing="1.5" x="38" y="27">PIT<tspan fill="#F05A4F">MATE</tspan></text>
+<text fill="#A5ADB6" font-family="'IBM Plex Mono', monospace" font-size="7" font-weight="600" letter-spacing="0.5" x="122" y="16">OS-2</text>
+<rect fill="#F05A4F" height="2" width="22" x="122" y="20"></rect>
+</svg></div><div class="h-4 w-px bg-border-default"></div><h1 class="font-headline-sm text-[18px] uppercase text-text-primary tracking-wider font-semibold">My Work</h1></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><button aria-label="Notifications" class="relative w-10 h-10 flex items-center justify-center text-text-secondary hover:text-text-primary rounded-xl hover:bg-surface-nested active:bg-surface-nested transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent-red ring-2 ring-surface-card"></span></button><div class="flex items-center gap-2 pl-1"><div class="hidden sm:flex flex-col items-end leading-none"><span class="font-label-md text-label-md text-text-primary truncate max-w-[80px]">Dian S.</span><span class="font-label-md text-[9px] text-text-muted uppercase">Lead Tech</span></div><div class="w-8 h-8 rounded-full bg-accent-red/20 border border-accent-red/40 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-accent-red text-[19px]">person</span></div></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-28 bg-page-bg px-margin"><div class="flex flex-col w-full pb-8 space-y-4">
+<!-- 1. Welcome Section & Shift Telemetry -->
+<div class="w-full bg-surface-card p-4 rounded-xl border border-border-default shadow-sm flex flex-col gap-3"><div class="flex items-center justify-between"><h2 class="font-headline-md text-headline-md text-text-primary uppercase tracking-tight font-bold">Good morning, Dian S.</h2><span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-nested border border-border-default text-text-primary font-technical-data text-[11px] font-medium"><span class="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>Active</span></div><div class="flex items-center gap-2 text-text-secondary font-body-sm flex-wrap"><div class="flex items-center gap-1 text-text-primary font-semibold"><span class="material-symbols-outlined text-[16px] text-accent-red">precision_manufacturing</span><span>Bay 02</span></div><span class="text-text-muted">•</span><span>Morning Shift (08:00 – 17:00)</span><span class="text-text-muted">•</span><span class="text-text-secondary">Hoist B</span></div></div>
+<!-- 2. Compact Workload Metrics (Mechanic-specific Telemetry) -->
+<div class="grid grid-cols-4 gap-2 w-full"><div class="bg-surface-card p-3 rounded-xl shadow-sm border border-border-default flex flex-col justify-between"><span class="font-label-md text-[10px] text-text-muted uppercase tracking-wider">Assigned</span><div class="mt-1 flex items-baseline justify-between"><span class="font-headline-lg text-headline-lg text-text-primary leading-none font-bold">4</span><span class="font-label-md text-[9px] text-text-muted uppercase">Total</span></div></div><div class="bg-surface-card p-3 rounded-xl shadow-sm border-l-2 border-l-accent-red border border-border-default flex flex-col justify-between"><span class="font-label-md text-[10px] text-accent-red uppercase tracking-wider font-semibold">In Progress</span><div class="mt-1 flex items-baseline justify-between"><span class="font-headline-lg text-headline-lg text-accent-red leading-none font-bold">1</span><span class="material-symbols-outlined text-[14px] text-accent-red">play_arrow</span></div></div><div class="bg-surface-card p-3 rounded-xl shadow-sm border border-border-default flex flex-col justify-between"><span class="font-label-md text-[10px] text-text-muted uppercase tracking-wider">On Hold</span><div class="mt-1 flex items-baseline justify-between"><span class="font-headline-lg text-headline-lg text-status-warning leading-none font-bold">2</span><span class="font-label-md text-[9px] text-text-muted uppercase">Parts</span></div></div><div class="bg-surface-card p-3 rounded-xl shadow-sm border border-border-default flex flex-col justify-between"><span class="font-label-md text-[10px] text-text-muted uppercase tracking-wider">Passed QC</span><div class="mt-1 flex items-baseline justify-between"><span class="font-headline-lg text-headline-lg text-status-success leading-none font-bold">1</span><span class="material-symbols-outlined text-[14px] text-status-success">check</span></div></div></div>
+<!-- 3. Current Task (Primary Focal Point) -->
+<div class="w-full bg-surface-card rounded-xl border border-border-default shadow-sm overflow-hidden flex flex-col"><div class="h-1.5 w-full bg-accent-red"></div><div class="p-4 flex flex-col gap-3.5"><div class="flex items-start justify-between gap-2"><div class="flex flex-col"><div class="flex items-center gap-2"><span class="font-label-md text-label-md uppercase text-accent-red font-semibold tracking-wider">Active Job</span><span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-accent-red/20 text-accent-red border border-accent-red/30">In Progress</span></div><span class="font-technical-data text-title-md text-text-primary font-bold mt-0.5">SO-2026-0143</span></div><div class="px-2 py-1 rounded bg-surface-nested border border-border-default flex items-center gap-1 text-text-secondary"><span class="material-symbols-outlined text-[15px] text-accent-red">location_on</span><span class="font-label-md text-[11px] uppercase tracking-wider text-text-primary font-semibold">Bay 02 • Hoist B</span></div></div><div class="p-3 rounded-lg bg-surface-nested border border-border-default/70 flex items-center justify-between gap-3"><div class="flex items-center gap-2.5 min-w-0"><div class="w-9 h-9 rounded-lg bg-surface-pill border border-border-default flex items-center justify-center flex-shrink-0 text-text-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">directions_car</span></div><div class="flex flex-col min-w-0"><h3 class="font-title-md text-title-md text-text-primary font-semibold truncate leading-tight">Honda Civic Type R (FL5)</h3><div class="flex items-center gap-1.5 mt-0.5"><span class="font-technical-data text-body-sm text-text-secondary bg-surface-pill px-1.5 py-0.5 rounded border border-border-default">B 9912 SPO</span><span class="font-label-md text-[10px] text-text-muted">2.0L Turbo K20C1</span></div></div></div></div><div class="flex flex-col gap-1"><span class="font-label-md text-[11px] uppercase text-text-muted tracking-wider">Procedure</span><p class="font-title-md text-body-md text-text-primary font-semibold leading-snug">Brake Rotor &amp; Pad Bedding + High-Temp Fluid Flush</p></div><div class="p-3 rounded-lg bg-surface-nested border-l-2 border-l-status-warning border border-border-default flex flex-col gap-1"><div class="flex items-center gap-1.5 text-status-warning"><span class="material-symbols-outlined text-[15px]">chat</span><span class="font-label-md text-[10px] uppercase font-bold tracking-wider">Driver Complaint</span></div><p class="font-body-sm text-text-secondary italic">“Customer reported slight pedal sponginess after 3 track laps at Sentul. Check caliper piston seals.”</p></div><div class="flex flex-col gap-1.5"><div class="flex items-center justify-between text-body-sm"><span class="font-label-md text-label-md uppercase text-text-secondary font-semibold">Verification Tasks</span><span class="font-technical-data text-body-sm font-bold text-text-primary">3 of 5 (60%)</span></div><div class="grid grid-cols-5 gap-1.5 h-2 w-full"><div class="h-full rounded-sm bg-accent-red"></div><div class="h-full rounded-sm bg-accent-red"></div><div class="h-full rounded-sm bg-accent-red"></div><div class="h-full rounded-sm bg-surface-pill"></div><div class="h-full rounded-sm bg-surface-pill"></div></div></div><div class="pt-1 flex flex-col gap-2"><button class="w-full h-12 bg-accent-red hover:bg-accent-red-hover active:bg-accent-red-hover text-white rounded-xl font-headline-sm text-headline-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-colors"><span>Open Active Job</span><span class="material-symbols-outlined text-[20px]">arrow_forward</span></button><div class="grid grid-cols-2 gap-2"><button class="h-10 bg-surface-nested hover:bg-surface-pill active:bg-surface-pill border border-border-default rounded-lg text-text-primary font-label-lg text-label-lg flex items-center justify-center gap-1.5 transition-colors"><span class="material-symbols-outlined text-[17px] text-text-secondary">assignment_late</span><span>Report Finding</span></button><button class="h-10 bg-surface-nested hover:bg-surface-pill active:bg-surface-pill border border-border-default rounded-lg text-text-primary font-label-lg text-label-lg flex items-center justify-center gap-1.5 transition-colors"><span class="material-symbols-outlined text-[17px] text-text-secondary">build_circle</span><span>Request Part</span></button></div></div></div></div>
+<!-- 4. Assigned Jobs Queue -->
+<div class="w-full flex flex-col gap-3 pt-1"><div class="flex flex-col gap-2"><div class="flex items-center justify-between"><h3 class="font-headline-sm text-headline-sm uppercase text-text-primary tracking-wide">Assigned Jobs</h3><span class="font-technical-data text-[11px] text-text-muted uppercase">Bay 02 Pipeline</span></div><div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-body-sm scrollbar-none"><button class="px-3 py-1 rounded-full bg-accent-red text-white font-label-md text-label-md uppercase whitespace-nowrap shadow-sm border border-accent-red">All (4)</button><button class="px-3 py-1 rounded-full bg-surface-card text-text-secondary hover:text-text-primary hover:bg-surface-nested border border-border-default font-label-md text-label-md uppercase whitespace-nowrap">Active (1)</button><button class="px-3 py-1 rounded-full bg-surface-card text-text-secondary hover:text-text-primary hover:bg-surface-nested border border-border-default font-label-md text-label-md uppercase whitespace-nowrap">Queued (2)</button><button class="px-3 py-1 rounded-full bg-surface-card text-text-secondary hover:text-text-primary hover:bg-surface-nested border border-border-default font-label-md text-label-md uppercase whitespace-nowrap">On Hold (1)</button></div></div><div class="flex flex-col gap-2.5"><div class="w-full bg-surface-card rounded-xl p-3.5 shadow-sm border border-border-default flex flex-col gap-2"><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="font-technical-data text-body-sm font-bold text-text-primary">SO-2026-0146</span><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-status-warning/15 text-status-warning border border-status-warning/30">High Priority</span></div><span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-surface-nested text-text-secondary border border-border-default font-technical-data">Queued</span></div><div class="flex items-center justify-between"><div class="flex flex-col"><h4 class="font-title-md text-title-md text-text-primary font-semibold">Toyota GR Yaris</h4><span class="font-technical-data text-body-sm text-text-secondary">B 2044 RFS</span></div><div class="text-right flex flex-col items-end"><span class="font-label-md text-[10px] text-text-muted uppercase">Est. Start</span><span class="font-technical-data text-body-sm font-bold text-text-primary">11:30 AM</span></div></div><div class="text-body-sm text-text-secondary pt-0.5 flex items-center justify-between"><span class="truncate">Scheduled 10,000 km Oil &amp; Spark Plug Service</span></div></div><div class="w-full bg-surface-card rounded-xl p-3.5 shadow-sm border border-border-default flex flex-col gap-2"><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="font-technical-data text-body-sm font-bold text-text-primary">SO-2026-0144</span><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-surface-nested text-text-secondary border border-border-default">Normal</span></div><span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-status-warning/15 text-status-warning border border-status-warning/30 font-technical-data">Awaiting Customer Auth</span></div><div class="flex items-center justify-between"><div class="flex flex-col"><h4 class="font-title-md text-title-md text-text-primary font-semibold">BMW 320i F30 LCI</h4><span class="font-technical-data text-body-sm text-text-secondary">B 3021 RFS</span></div><button class="px-2.5 py-1 rounded bg-surface-nested hover:bg-surface-pill border border-border-default text-text-primary font-label-md text-label-md flex items-center gap-1 transition-colors"><span>View Notes</span><span class="material-symbols-outlined text-[14px]">chevron_right</span></button></div><div class="text-body-sm text-text-secondary pt-0.5"><span>Ignition Coil #3 Replacement</span></div></div><div class="w-full bg-surface-card rounded-xl p-3.5 shadow-sm border border-border-default flex flex-col gap-2"><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="font-technical-data text-body-sm font-bold text-text-primary">SO-2026-0140</span><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-status-success/15 text-status-success border border-status-success/30">QC Ready</span></div><span class="font-technical-data text-[11px] text-text-muted">09:45 AM</span></div><div class="flex items-center justify-between"><div class="flex flex-col"><h4 class="font-title-md text-title-md text-text-primary font-semibold">Subaru WRX STI</h4><span class="font-technical-data text-body-sm text-text-secondary">B 1555 ZT</span></div><span class="material-symbols-outlined text-status-success text-[20px]">check_circle</span></div><div class="text-body-sm text-text-secondary pt-0.5"><span>Transmission Gear Oil Flush</span></div></div></div></div>
+<!-- 5. Quick Access Shortcuts -->
+<div class="w-full pt-1 flex flex-col gap-2">
+<span class="font-label-md text-label-md uppercase text-text-muted tracking-wider">Operational Quick Tools</span>
+<div class="grid grid-cols-3 gap-2">
+<!-- Shortcut 1: My Tasks -->
+<a class="bg-surface-card p-3 rounded-xl border border-border-default shadow-sm flex flex-col items-center justify-center text-center gap-1.5 hover:bg-surface-nested active:bg-surface-nested transition-colors" href="#">
+<div class="w-10 h-10 rounded-lg bg-surface-nested border border-border-default/60 flex items-center justify-center text-text-primary">
+<span class="material-symbols-outlined text-[20px]">checklist</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-[12px] font-semibold text-text-primary leading-tight">My Tasks</span>
+<span class="font-label-md text-[10px] text-text-muted mt-0.5 leading-none">Specs &amp; Torques</span>
+</div>
+</a>
+<!-- Shortcut 2: Parts Requests -->
+<a class="bg-surface-card p-3 rounded-xl border border-border-default shadow-sm flex flex-col items-center justify-center text-center gap-1.5 hover:bg-surface-nested active:bg-surface-nested transition-colors relative" href="#">
+<div class="w-10 h-10 rounded-lg bg-surface-nested border border-border-default/60 flex items-center justify-center text-text-primary">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+</div>
+<span class="absolute top-2.5 right-2.5 px-1.5 py-0.2 rounded-full bg-accent-red text-white font-technical-data text-[9px] font-bold shadow-sm">1</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-[12px] font-semibold text-text-primary leading-tight">Parts Reqs</span>
+<span class="font-label-md text-[10px] text-text-muted mt-0.5 leading-none">1 Pending</span>
+</div>
+</a>
+<!-- Shortcut 3: Work History -->
+<a class="bg-surface-card p-3 rounded-xl border border-border-default shadow-sm flex flex-col items-center justify-center text-center gap-1.5 hover:bg-surface-nested active:bg-surface-nested transition-colors" href="#">
+<div class="w-10 h-10 rounded-lg bg-surface-nested border border-border-default/60 flex items-center justify-center text-text-primary">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-[12px] font-semibold text-text-primary leading-tight">Work History</span>
+<span class="font-label-md text-[10px] text-text-muted mt-0.5 leading-none">Logs &amp; Pay</span>
+</div>
+</a>
+</div>
+</div>
+</div>
+<script>
+  // Filter pill interaction
+  document.querySelectorAll('button[class*="rounded-full"]').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('button[class*="rounded-full"]').forEach((p) => {
+        p.classList.remove('bg-accent-red', 'text-white', 'border-accent-red');
+        p.classList.add('bg-surface-card', 'text-text-secondary', 'border-border-default');
+      });
+      pill.classList.remove('bg-surface-card', 'text-text-secondary', 'border-border-default');
+      pill.classList.add('bg-accent-red', 'text-white', 'border-accent-red');
+    });
+  });
+</script></main><nav class="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto bg-surface-card/95 backdrop-blur-xl border border-border-default rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.5)] px-2 py-1.5" data-active-classes="text-accent-red font-semibold"><div class="flex items-center justify-between w-full"><div class="flex-1 flex justify-around items-center gap-0.5"><a aria-current="page" class="flex flex-col items-center justify-center gap-0.5 min-w-[50px] py-1 transition-colors text-accent-red font-semibold" data-path="my-work" href="#"><span class="material-symbols-outlined text-[20px]">assignment</span><span class="font-label-md text-[9px] tracking-tight uppercase">My Work</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[50px] py-1 text-text-secondary hover:text-text-primary transition-colors" data-path="tasks" href="#"><span class="material-symbols-outlined text-[20px]">checklist</span><span class="font-label-md text-[9px] tracking-tight uppercase">Tasks</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[50px] py-1 text-text-secondary hover:text-text-primary transition-colors" data-path="parts" href="#"><span class="material-symbols-outlined text-[20px]">handyman</span><span class="font-label-md text-[9px] tracking-tight uppercase">Parts</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[50px] py-1 text-text-secondary hover:text-text-primary transition-colors" data-path="history" href="#"><span class="material-symbols-outlined text-[20px]">history</span><span class="font-label-md text-[9px] tracking-tight uppercase">History</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[50px] py-1 text-text-secondary hover:text-text-primary transition-colors" data-path="profile" href="#"><span class="material-symbols-outlined text-[20px]">account_circle</span><span class="font-label-md text-[9px] tracking-tight uppercase">Profile</span></a></div></div></nav></body></html>

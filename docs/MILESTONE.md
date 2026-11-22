@@ -1,9 +1,9 @@
 # Milestones — PitMate
 
-> **Current milestone:** M0 — Project Preparation  
-> **Overall status:** Planning Complete / Implementation Not Started  
+> **Current milestone:** M0 Completed — Preparing for M1  
+> **Overall status:** M0 Complete / M1 Ready  
 > **Version:** 2.0  
-> **Last updated:** 2026-11-20  
+> **Last updated:** 2026-11-22  
 > **Deadline:** To be confirmed
 
 ---
@@ -51,8 +51,8 @@ Initialize the new repository and validate the critical technical assumptions be
 
 | ID | Milestone | Outcome | Status |
 |---|---|---|---|
-| M0 | Project Preparation | Verified development foundation | Not started |
-| M1 | Application Foundation | Authentication and role-based application | Not started |
+| M0 | Project Preparation | Verified development foundation | Complete |
+| M1 | Application Foundation | Authentication and role-based application | Next |
 | M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Not started |
 | M3 | Workshop Operations | Dispatch and mechanic execution | Not started |
 | M4 | Inventory & Cost Management | Operational stock and service costing | Not started |
@@ -70,43 +70,43 @@ Initialize the new repository and validate the critical technical assumptions be
 
 ### Tasks
 
-- [ ] Confirm new project directory.
-- [ ] Initialize Git repository.
-- [ ] Create Flutter application.
-- [ ] Verify Flutter and Dart versions.
-- [ ] Verify Android development environment.
-- [ ] Configure Flutter Web development.
-- [ ] Create new Supabase development project.
-- [ ] Confirm separation from previous Supabase project.
-- [ ] Configure Supabase CLI.
-- [ ] Establish local development environment.
-- [ ] Configure environment variables/build-time configuration.
-- [ ] Install approved dependencies.
-- [ ] Commit dependency lockfile.
-- [ ] Establish initial directory structure.
-- [ ] Add `README.md`.
-- [ ] Add `AGENTS.md`.
-- [ ] Add documentation directory.
-- [ ] Establish Git branching conventions.
-- [ ] Establish Antigravity agent workflow.
-- [ ] Create initial testing structure.
+- [x] Confirm new project directory.
+- [x] Initialize Git repository.
+- [x] Create Flutter application.
+- [x] Verify Flutter and Dart versions.
+- [x] Verify Android development environment.
+- [x] Configure Flutter Web development.
+- [x] Create new Supabase development project.
+- [x] Confirm separation from previous Supabase project.
+- [x] Configure Supabase CLI.
+- [x] Establish local development environment.
+- [x] Configure environment variables/build-time configuration.
+- [x] Install approved dependencies.
+- [x] Commit dependency lockfile.
+- [x] Establish initial directory structure.
+- [x] Add `README.md`.
+- [x] Add `AGENTS.md`.
+- [x] Add documentation directory.
+- [x] Establish Git branching conventions.
+- [x] Establish Antigravity agent workflow.
+- [x] Create initial testing structure.
 
 ### Technical validation
 
-- [ ] Flutter Android application launches.
-- [ ] Flutter Web application launches.
-- [ ] Supabase connection works.
-- [ ] Local Supabase database can be started, if local development is selected.
-- [ ] Clean database migration process works.
-- [ ] Git working tree is clean after initial setup.
+- [x] Flutter Android application launches.
+- [x] Flutter Web application launches.
+- [x] Supabase connection works.
+- [x] Local Supabase database can be started, if local development is selected.
+- [x] Clean database migration process works.
+- [x] Git working tree is clean after initial setup.
 
 ### Required documentation
 
-- [ ] `README.md`
-- [ ] `AGENTS.md`
-- [ ] `ARCHITECTURE.md`
-- [ ] `DATABASE_SCHEMA.md`
-- [ ] `TESTING.md`
+- [x] `README.md`
+- [x] `AGENTS.md`
+- [x] `ARCHITECTURE.md`
+- [x] `DATABASE_SCHEMA.md`
+- [x] `TESTING.md`
 
 ### Exit criteria
 

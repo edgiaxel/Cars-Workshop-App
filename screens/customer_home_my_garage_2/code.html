@@ -1,0 +1,322 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,600&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100%;margin:0;padding:0;background-color:#F4F5F6;color:#17191C;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary-fixed": "#ffdad5", "primary": "#b2221c", "primary-fixed-dim": "#ffb4aa", "surface-container-high": "#e3e8f3", "text-primary": "#17191C", "inverse-surface": "#2b3139", "surface-tint": "#b5251e", "on-tertiary": "#ffffff", "secondary": "#5d5e62", "surface-bright": "#f8f9ff", "on-secondary-fixed-variant": "#45474a", "surface-container": "#e9eef8", "accent-red": "#E5483B", "graphite-primary": "#17191C", "on-surface-variant": "#5a403d", "on-tertiary-container": "#fdfcff", "status-danger": "#D44343", "inverse-primary": "#ffb4aa", "graphite-secondary": "#24282D", "tertiary-container": "#71757b", "on-secondary-fixed": "#1a1c1f", "text-secondary": "#737982", "on-error": "#ffffff", "border-divider": "#DFE2E5", "error-container": "#ffdad6", "secondary-fixed": "#e2e2e6", "status-warning": "#D28A26", "outline-variant": "#e3beb9", "on-primary": "#ffffff", "text-muted": "#9BA1A8", "on-tertiary-fixed-variant": "#43474c", "on-error-container": "#93000a", "on-primary-fixed": "#410001", "status-success": "#25845A", "surface-container-highest": "#dde3ed", "on-primary-container": "#fffbff", "surface-container-low": "#eef4fe", "inverse-on-surface": "#ecf1fb", "surface-dim": "#d5dae4", "tertiary-fixed": "#e0e2e9", "background": "#f8f9ff", "on-tertiary-fixed": "#181c21", "on-primary-fixed-variant": "#920408", "status-info": "#3479B8", "secondary-fixed-dim": "#c6c6ca", "on-surface": "#161c23", "on-secondary": "#ffffff", "tertiary": "#585c62", "secondary-container": "#dfdfe3", "background-primary": "#F4F5F6", "surface": "#FFFFFF", "on-secondary-container": "#616266", "on-background": "#161c23", "error": "#ba1a1a", "surface-elevated": "#ECEEF0", "primary-container": "#d53c31", "accent-red-hover": "#C9362B", "surface-variant": "#dde3ed", "outline": "#8e706c", "tertiary-fixed-dim": "#c3c7cd", "surface-container-lowest": "#ffffff" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, spacing: { "space-lg": "1.5rem", "margin-desktop": "2rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "gutter": "1rem", "margin": "1rem", "gutter-desktop": "1.5rem", "space-md": "1rem", "space-xl": "2rem" }, fontFamily: { "headline-md": ["Barlow Condensed"], "body-md": ["Inter"], "label-md": ["Inter"], "technical-metric": ["Barlow Condensed"], "display-lg": ["Barlow Condensed"], "technical-data": ["JetBrains Mono"], "headline-lg": ["Barlow Condensed"], "display-lg-mobile": ["Barlow Condensed"], "body-lg": ["Inter"], "body-sm": ["Inter"], "headline-sm": ["Barlow Condensed"], "label-lg": ["Inter"], "title-md": ["Inter"] }, fontSize: { "headline-md": ["24px", { lineHeight: "28px", letterSpacing: "0.01em", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "label-md": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }], "technical-metric": ["28px", { lineHeight: "28px", letterSpacing: "0.01em", fontWeight: "700" }], "display-lg": ["48px", { lineHeight: "52px", letterSpacing: "0.02em", fontWeight: "700" }], "technical-data": ["13px", { lineHeight: "16px", letterSpacing: "-0.01em", fontWeight: "500" }], "headline-lg": ["32px", { lineHeight: "36px", letterSpacing: "0.01em", fontWeight: "600" }], "display-lg-mobile": ["36px", { lineHeight: "40px", letterSpacing: "0.02em", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "headline-sm": ["20px", { lineHeight: "24px", letterSpacing: "0.02em", fontWeight: "600" }], "label-lg": ["13px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "title-md": ["16px", { lineHeight: "22px", fontWeight: "600" }] } } } };</script></head><body class="bg-background-primary font-body-md text-body-md text-text-primary flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter flex items-center justify-between"><div class="flex items-center gap-2.5"><img src="https://lh3.googleusercontent.com/aida/ALJJyrDRc5VkTej3eyUWdSN0yiWeaYxQmZXCaVy7PDOYilp1Q6L0kbD9w18wfGyRtyCcADbiogv9GKVYm2hk4Nixe0-oCosCBFI_7HUmCQ76LjFLb4xNKdMA1Yv_Tbz1thuSmxa_w5JnwrF8hBKhZfTLH8-1INNSqSEB7jMpqF8WHLwn3Wz9Au6_J4GBkjp684GAx5npxHwi8aLw34L0-zMlkegJCllHlkZNsSyOtbl1gqHG4Q" alt="PitMate Logo" class="h-6 w-auto object-contain"><span class="font-technical-data text-[11px] font-bold text-text-muted px-1.5 py-0.5 rounded bg-surface-container tracking-wider uppercase">Portal</span></div><div class="flex items-center gap-space-xs"><button aria-label="Notifications" class="w-11 h-11 relative rounded-xl flex items-center justify-center text-graphite-primary hover:bg-surface-elevated transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-accent-red"></span></button><div class="flex items-center gap-space-xs pl-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-28 bg-background-primary"><div class="flex flex-col w-full pb-8">
+<!-- Top Section: Welcome Greeting & Quick Booking Target -->
+<div class="px-gutter pt-4 pb-2 flex items-center justify-between gap-space-sm"><div class="flex flex-col min-w-0"><h1 class="font-headline-md text-headline-md text-text-primary tracking-tight truncate">Welcome back, Adrian</h1><span class="font-body-sm text-body-sm text-text-muted mt-0.5">2 performance vehicles registered in garage</span></div><button aria-label="Book a Service" class="shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-accent-red hover:bg-accent-red-hover text-on-primary shadow-sm transition-colors min-h-[44px]" type="button"><span class="material-symbols-outlined text-[18px]">calendar_add_on</span><span class="font-label-lg text-label-lg tracking-wide whitespace-nowrap">Book Service</span></button></div>
+<!-- Main Body Content Stack -->
+<div class="px-gutter flex flex-col gap-5 mt-2">
+<!-- Active Workshop Service Card (Hero Utility) -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex flex-col gap-3.5">
+<!-- Header / Status Banner -->
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-status-info font-technical-data text-technical-data font-bold tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-status-info animate-pulse"></span>
+              REPAIR UNDERWAY
+            </span>
+<span class="font-technical-data text-technical-data text-text-muted">SO-2026-0143</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-text-primary mt-1 tracking-wide">Honda Civic Type R (FL5)</h2>
+</div>
+<div class="text-right shrink-0">
+<span class="inline-block px-2 py-0.5 rounded bg-surface-elevated font-technical-data text-technical-data font-bold text-graphite-primary">B 9912 SPO</span>
+<span class="block font-label-md text-label-md text-text-muted mt-0.5">Bay 02 • 2023</span>
+</div>
+</div>
+<!-- Scope Description -->
+<div class="bg-surface-elevated rounded-lg p-2.5 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-accent-red text-[20px] mt-0.5 shrink-0">build</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md uppercase tracking-wider text-text-secondary">Current Authorized Work</span>
+<span class="font-body-md text-body-md text-text-primary font-medium leading-snug">Brake Rotor &amp; Pad Bedding + High-Temp Brake Fluid Flush</span>
+</div>
+</div>
+<!-- Linear Multi-Step Tracker -->
+<div class="pt-1">
+<div class="flex items-center justify-between text-center relative">
+<!-- Connecting Track -->
+<div class="absolute top-3 left-4 right-4 h-0.5 bg-surface-container-highest -z-0">
+<div class="h-full bg-accent-red w-2/3"></div>
+</div>
+<!-- Step 1: Checked In (Complete) -->
+<div class="relative z-10 flex flex-col items-center flex-1">
+<div class="w-6 h-6 rounded-full bg-graphite-primary text-surface flex items-center justify-center text-[12px]">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<span class="font-label-md text-label-md text-text-primary mt-1.5 leading-tight">Check-In</span>
+<span class="font-technical-data text-[10px] text-text-muted">08:30 AM</span>
+</div>
+<!-- Step 2: Inspection (Complete) -->
+<div class="relative z-10 flex flex-col items-center flex-1">
+<div class="w-6 h-6 rounded-full bg-graphite-primary text-surface flex items-center justify-center text-[12px]">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<span class="font-label-md text-label-md text-text-primary mt-1.5 leading-tight">Inspection</span>
+<span class="font-technical-data text-[10px] text-text-muted">09:15 AM</span>
+</div>
+<!-- Step 3: Repair in Progress (Current Active) -->
+<div class="relative z-10 flex flex-col items-center flex-1">
+<div class="w-6 h-6 rounded-full bg-accent-red text-on-primary flex items-center justify-center ring-4 ring-accent-red/20 shadow-sm">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+</div>
+<span class="font-label-md text-label-md text-accent-red font-bold mt-1.5 leading-tight">In Progress</span>
+<span class="font-technical-data text-[10px] text-accent-red font-semibold">Active</span>
+</div>
+<!-- Step 4: QA & Handover (Upcoming) -->
+<div class="relative z-10 flex flex-col items-center flex-1">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest text-text-muted flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">flag</span>
+</div>
+<span class="font-label-md text-label-md text-text-muted mt-1.5 leading-tight">QA / Ready</span>
+<span class="font-technical-data text-[10px] text-text-muted">Est. 12:45</span>
+</div>
+</div>
+</div>
+<!-- Workshop Live Log Update -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center justify-between text-text-secondary">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-status-success">engineering</span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-text-secondary">Lead Tech Update</span>
+</div>
+<span class="font-technical-data text-technical-data text-text-muted">10:15 AM Today</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-primary">
+          Technician Dian S. completed pad bedding procedure. Preparing system for pressure bleeding.
+        </p>
+</div>
+<!-- Card CTA -->
+<button class="w-full py-2.5 px-4 rounded-lg bg-graphite-primary hover:bg-graphite-secondary text-surface flex items-center justify-center gap-2 font-label-lg text-label-lg tracking-wide transition-colors min-h-[44px]" type="button">
+<span>Track Service Details</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+<!-- Quick Operational Action Shortcuts -->
+<div class="grid grid-cols-3 gap-2">
+<button class="flex flex-col items-start p-3 rounded-lg bg-surface hover:bg-surface-elevated shadow-sm transition-colors text-left min-h-[76px]" type="button">
+<div class="w-7 h-7 rounded bg-accent-red/10 text-accent-red flex items-center justify-center mb-1.5">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+</div>
+<span class="font-title-md text-[13px] leading-tight text-text-primary font-semibold">Book Service</span>
+<span class="font-body-sm text-[11px] text-text-muted mt-0.5 truncate w-full">Schedule visit</span>
+</button>
+<button class="flex flex-col items-start p-3 rounded-lg bg-surface hover:bg-surface-elevated shadow-sm transition-colors text-left min-h-[76px]" type="button">
+<div class="w-7 h-7 rounded bg-surface-elevated text-graphite-primary flex items-center justify-center mb-1.5">
+<span class="material-symbols-outlined text-[18px]">directions_car</span>
+</div>
+<span class="font-title-md text-[13px] leading-tight text-text-primary font-semibold">My Vehicles</span>
+<span class="font-body-sm text-[11px] text-text-muted mt-0.5 truncate w-full">Specs &amp; records</span>
+</button>
+<button class="flex flex-col items-start p-3 rounded-lg bg-surface hover:bg-surface-elevated shadow-sm transition-colors text-left min-h-[76px]" type="button">
+<div class="w-7 h-7 rounded bg-surface-elevated text-graphite-primary flex items-center justify-center mb-1.5">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</div>
+<span class="font-title-md text-[13px] leading-tight text-text-primary font-semibold">Service History</span>
+<span class="font-body-sm text-[11px] text-text-muted mt-0.5 truncate w-full">Past invoices</span>
+</button>
+</div>
+<!-- My Vehicles Section -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-text-primary uppercase tracking-wide">My Vehicles</h2>
+<span class="px-1.5 py-0.5 rounded bg-surface-elevated text-text-secondary font-technical-data text-technical-data font-bold">2</span>
+</div>
+<button class="flex items-center gap-1 font-label-lg text-label-lg text-accent-red hover:text-accent-red-hover min-h-[44px] px-1" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Add Vehicle</span>
+</button>
+</div>
+<!-- Vehicle Card 1: Honda Civic Type R (FL5) -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex flex-col gap-3">
+<div class="flex items-start justify-between gap-3">
+<div class="w-16 h-16 rounded-lg bg-surface-elevated overflow-hidden shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="Championship white Honda Civic Type R FL5 sports car parked inside clean technical automotive workshop garage under sharp white LED bay lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7_DwJxsIw8EjVaWmIXx4rV6YgGlLpr3pxlCDArz6kMpG5lnNYwVDylAXIMi-5PbSWvK_JMkJqwN0eOM2kG6wKa8Iy9YC55EBTZdnpkTWHTfFOCWEMHIkgEuZafjvz5UX1vC1oEjGxtUjTJF-3mIqEsIcR8oh3KpzZ7ApNm7mdbSrgjSCuclbiU68gGk4JWzIvi9JYfj2kcLLaZvR743HqC4GdNIYTvFq5P3fcrHhO">
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary truncate">Honda Civic Type R (FL5)</span>
+<span class="font-technical-data text-technical-data font-bold text-graphite-primary px-1.5 py-0.5 bg-surface-elevated rounded ml-1 shrink-0">B 9912 SPO</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary truncate mt-0.5">2023 • 2.0L Turbo 6MT • Championship White</span>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-status-info font-technical-data text-[11px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-info"></span>
+                In Workshop (Bay 02)
+              </span>
+<span class="font-technical-data text-technical-data text-text-secondary">14,250 km</span>
+</div>
+</div>
+</div>
+<div class="pt-2 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">Active Work: SO-2026-0143</span>
+<button class="font-label-lg text-label-lg text-graphite-primary hover:text-accent-red flex items-center gap-1 min-h-[36px]" type="button">
+<span>View Vehicle Details</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Vehicle Card 2: Toyota GR Yaris -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex flex-col gap-3">
+<div class="flex items-start justify-between gap-3">
+<div class="w-16 h-16 rounded-lg bg-surface-elevated overflow-hidden shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="Precious black Toyota GR Yaris hot hatchback exterior profile detailed in immaculate clean condition inside enthusiast performance garage with technical workshop floor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGL2O_ssLMQyna9sYBK-6N5GcnAGL9c4HTCsOnZkeXv2wavJ79-6DoDlgmmkBDBgod3ZWqxjR_VIwghF-vI4DBI4bJgzGlg-zWbifM62Yrhi-hnEKSqAYOhJOSo0WpTxKPev6U-pqgJQRwTSEJ5Smb5BggEszodt135THxGR6Y2Zgy_I_YPEJd8PAbWNSwbbvCj3yxR9q30ROlBXt8BV1sYT26cF_u5XPydCzbzaNu">
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-text-primary truncate">Toyota GR Yaris</span>
+<span class="font-technical-data text-technical-data font-bold text-graphite-primary px-1.5 py-0.5 bg-surface-elevated rounded ml-1 shrink-0">B 2044 RFS</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary truncate mt-0.5">2022 • 1.6L AWD 6MT • Precious Black</span>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-elevated text-status-success font-technical-data text-[11px] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-success"></span>
+                Ready / Up to Date
+              </span>
+<span class="font-technical-data text-technical-data text-text-secondary">28,600 km</span>
+</div>
+</div>
+</div>
+<!-- Next Service Diagnostic Indicator -->
+<div class="p-2.5 rounded-lg bg-surface-elevated flex items-center justify-between">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-[18px] text-status-warning shrink-0">notifications_active</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-text-secondary uppercase">Next Recommended Service</span>
+<span class="font-body-sm text-body-sm text-text-primary font-medium truncate">10,000 km Service (Due in 1,400 km)</span>
+</div>
+</div>
+<button class="shrink-0 px-2.5 py-1.5 rounded bg-surface text-accent-red font-label-md text-label-md uppercase tracking-wider hover:bg-surface-elevated shadow-sm transition-colors" type="button">
+            Book
+          </button>
+</div>
+<div class="pt-1 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-muted">Last service at 20,000 km</span>
+<button class="font-label-lg text-label-lg text-graphite-primary hover:text-accent-red flex items-center gap-1 min-h-[36px]" type="button">
+<span>View Vehicle Details</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Maintenance Reminders Section -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-text-primary uppercase tracking-wide">Maintenance Reminders</h2>
+<span class="font-technical-data text-technical-data text-text-muted">2 Alerts</span>
+</div>
+<!-- Reminder 1: Active Alert for GR Yaris -->
+<div class="bg-surface rounded-xl p-4 shadow-sm flex flex-col gap-2.5">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-surface-elevated font-technical-data text-technical-data font-bold text-graphite-primary">B 2044 RFS</span>
+<span class="font-label-md text-label-md text-text-secondary uppercase">Toyota GR Yaris</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-elevated text-status-warning font-technical-data text-technical-data font-bold uppercase">Upcoming</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-[17px] text-text-primary font-semibold">Scheduled 10,000 km Routine Service</span>
+<p class="font-body-sm text-body-sm text-text-secondary mt-1">
+            Due by 30,000 km or Dec 15, 2026 (~1,400 km remaining). Comprehensive engine oil flush, spark plugs replacement, and driveline inspection.
+          </p>
+</div>
+<div class="pt-2 flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-text-muted font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>Est. 2.5 hrs labor</span>
+</div>
+<button class="px-3.5 py-1.5 rounded-lg bg-accent-red hover:bg-accent-red-hover text-on-primary font-label-lg text-label-lg tracking-wide transition-colors min-h-[38px]" type="button">
+            Book Now
+          </button>
+</div>
+</div>
+<!-- Reminder 2: In-Progress Resolution for Civic Type R -->
+<div class="bg-surface rounded-xl p-3.5 shadow-sm flex items-start gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-elevated text-status-info flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-[14px] text-text-primary">Brake Fluid Renewal</span>
+<span class="font-technical-data text-[11px] text-status-info font-bold uppercase">In Workshop</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary mt-0.5">
+            Honda Civic Type R (B 9912 SPO) • Addressed in Current Service Order (<span class="font-technical-data text-text-primary">SO-2026-0143</span>).
+          </span>
+</div>
+</div>
+</div>
+<!-- Recent Service History -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-text-primary uppercase tracking-wide">Recent Service History</h2>
+<a class="font-label-lg text-label-lg text-accent-red hover:text-accent-red-hover flex items-center gap-0.5 min-h-[44px]" href="#">
+<span>View All</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+<!-- History Item 1 -->
+<div class="bg-surface rounded-xl p-3.5 shadow-sm flex flex-col gap-2.5">
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-technical-data text-technical-data text-text-muted">SO-2026-0118</span>
+<span class="font-technical-data text-technical-data font-bold text-graphite-primary px-1.5 py-0.5 bg-surface-elevated rounded">B 9912 SPO</span>
+</div>
+<span class="font-title-md text-[15px] text-text-primary font-semibold mt-1">Honda Civic Type R (FL5)</span>
+<span class="font-body-sm text-body-sm text-text-secondary mt-0.5">Track Inspection &amp; High-Performance Wheel Alignment</span>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-elevated text-status-success font-technical-data text-technical-data font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+            Completed
+          </span>
+</div>
+<div class="pt-1 flex items-center justify-between text-body-sm text-body-sm">
+<span class="font-technical-data text-text-muted">October 14, 2026</span>
+<button class="font-label-lg text-label-lg text-graphite-primary hover:text-accent-red flex items-center gap-1 min-h-[36px]" type="button">
+<span class="material-symbols-outlined text-[16px]">description</span>
+<span>View Receipt &amp; Report</span>
+</button>
+</div>
+</div>
+<!-- History Item 2 -->
+<div class="bg-surface rounded-xl p-3.5 shadow-sm flex flex-col gap-2.5">
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-technical-data text-technical-data text-text-muted">SO-2026-0092</span>
+<span class="font-technical-data text-technical-data font-bold text-graphite-primary px-1.5 py-0.5 bg-surface-elevated rounded">B 2044 RFS</span>
+</div>
+<span class="font-title-md text-[15px] text-text-primary font-semibold mt-1">Toyota GR Yaris</span>
+<span class="font-body-sm text-body-sm text-text-secondary mt-0.5">20,000 km Comprehensive Service &amp; Differential Fluid</span>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-elevated text-status-success font-technical-data text-technical-data font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+            Completed
+          </span>
+</div>
+<div class="pt-1 flex items-center justify-between text-body-sm text-body-sm">
+<span class="font-technical-data text-text-muted">July 22, 2026</span>
+<button class="font-label-lg text-label-lg text-graphite-primary hover:text-accent-red flex items-center gap-1 min-h-[36px]" type="button">
+<span class="material-symbols-outlined text-[16px]">description</span>
+<span>View Receipt &amp; Report</span>
+</button>
+</div>
+</div>
+</div>
+<!-- PitMate Service Guarantee Card -->
+<div class="p-3.5 rounded-xl bg-surface-elevated flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface text-accent-red flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">verified</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-[13px] text-text-primary font-bold uppercase tracking-wide">Motorsport Engineered Standards</span>
+<span class="font-body-sm text-[12px] text-text-secondary leading-snug">All procedures executed with calibrated digital torque wrenches and documented digital inspection logs.</span>
+</div>
+</div>
+</div>
+</div></main><nav class="fixed bottom-4 left-4 right-4 z-50 bg-surface/95 backdrop-blur-xl border border-border-divider rounded-full shadow-lg px-3 py-2 flex items-center justify-between gap-1" data-active-classes="text-accent-red font-semibold"><div class="flex-1 flex items-center justify-around"><a aria-current="page" class="flex flex-col items-center justify-center min-h-[44px] px-1 py-1 transition-colors text-accent-red font-semibold" data-path="home" href="#"><span class="material-symbols-outlined text-[20px]">garage_home</span><span class="font-label-md text-[10px] tracking-wide mt-0.5">Garage</span></a><a class="flex flex-col items-center justify-center min-h-[44px] px-1 py-1 text-text-secondary hover:text-text-primary transition-colors" data-path="my-vehicles" href="#"><span class="material-symbols-outlined text-[20px]">directions_car</span><span class="font-label-md text-[10px] tracking-wide mt-0.5">Vehicles</span></a><a class="flex flex-col items-center justify-center min-h-[44px] px-1 py-1 text-text-secondary hover:text-text-primary transition-colors" data-path="bookings" href="#"><span class="material-symbols-outlined text-[20px]">calendar_month</span><span class="font-label-md text-[10px] tracking-wide mt-0.5">Bookings</span></a><a class="flex flex-col items-center justify-center min-h-[44px] px-1 py-1 text-text-secondary hover:text-text-primary transition-colors" data-path="history" href="#"><span class="material-symbols-outlined text-[20px]">history</span><span class="font-label-md text-[10px] tracking-wide mt-0.5">History</span></a><a class="flex flex-col items-center justify-center min-h-[44px] px-1 py-1 text-text-secondary hover:text-text-primary transition-colors" data-path="profile" href="#"><span class="material-symbols-outlined text-[20px]">manage_accounts</span><span class="font-label-md text-[10px] tracking-wide mt-0.5">Profile</span></a></div></nav>
+
+
+
+</body></html>

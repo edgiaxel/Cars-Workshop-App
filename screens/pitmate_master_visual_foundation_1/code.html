@@ -1,0 +1,450 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>PitMate — Master Visual Foundation &amp; Design System</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            appBg: '#111417',
+            surface: '#191E23',
+            surfaceElevated: '#242B32',
+            surfaceSecondaryElevated: '#2B333B',
+            borderDefault: '#343C44',
+            borderStrong: '#46515B',
+            textPrimary: '#F1F3F5',
+            textSecondary: '#A5ADB6',
+            textMuted: '#7D8791',
+            textInverted: '#17191C',
+            accent: '#F05A4F',
+            accentHover: '#FF7166',
+            graphiteHighContrast: '#E8EAED',
+            statusSuccess: '#55B889',
+            statusWarning: '#E6B45A',
+            statusDanger: '#F07171',
+            statusInfo: '#72A9DE',
+          },
+          fontFamily: {
+            display: ['"Barlow Condensed"', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          borderRadius: {
+            'pm-sm': '6px',
+            'pm-md': '8px',
+            'pm-lg': '10px',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #111417;
+      color: #F1F3F5;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .token-chip {
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+  </style>
+</head>
+<body class="p-3 sm:p-5 max-w-[420px] mx-auto min-h-screen bg-appBg text-textPrimary">
+<!-- ==================== HEADER SPECIMEN ==================== -->
+<header class="bg-surface border border-borderDefault rounded-pm-md px-3.5 py-3 mb-4 flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-2">
+<!-- Dark mode optimized brand emblem & wordmark matching IMAGE_14 structure -->
+<div class="flex items-center">
+<svg class="h-6 w-auto" fill="none" viewBox="0 0 160 40" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(4, 6)">
+<path d="M4 2 L22 2 L28 14 L22 26 L4 26 Z" fill="#2B333B" stroke="#46515B" stroke-width="1"></path>
+<path d="M4 2 L16 2 L20 10 L16 18 L4 18 Z" fill="#F05A4F"></path>
+<rect fill="#FFFFFF" height="5" width="5" x="8" y="7"></rect>
+<circle cx="23" cy="20" fill="#F05A4F" r="2.5"></circle>
+</g>
+<text fill="#F1F3F5" font-family="'Barlow Condensed', sans-serif" font-size="22" font-weight="800" letter-spacing="1.5" x="38" y="27">PIT<tspan fill="#F05A4F">MATE</tspan></text>
+<text fill="#A5ADB6" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="600" letter-spacing="0.5" x="122" y="16">OS-2</text>
+<rect fill="#F05A4F" height="2" width="22" x="122" y="20"></rect>
+</svg>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-surfaceElevated border border-borderDefault text-textSecondary uppercase tracking-wider">Design System Reference</span>
+</header>
+<!-- ==================== PAGE TITLE PATTERN ==================== -->
+<div class="mb-5 px-1">
+<div class="text-[11px] font-mono text-textSecondary uppercase tracking-wider mb-0.5">Automotive Workshop Platform</div>
+<h1 class="font-display font-bold text-2xl uppercase tracking-wide text-textPrimary leading-tight">Master Visual Foundation</h1>
+<p class="text-xs text-textSecondary mt-0.5">Reusable specification reference for Flutter client implementation.</p>
+</div>
+<main class="space-y-4">
+<!-- 1. COLOR TOKENS -->
+<section class="bg-surface border border-borderDefault rounded-pm-md p-3.5">
+<div class="flex items-center justify-between pb-2 mb-3 border-b border-borderDefault">
+<h2 class="font-display font-bold text-base uppercase text-textPrimary tracking-wide">01. Color Palette</h2>
+</div>
+<div class="grid grid-cols-2 gap-2 text-xs">
+<!-- Background -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Background</div>
+<div class="font-mono text-[10px] text-textSecondary">#111417</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#111417] border border-borderDefault"></div>
+</div>
+<!-- Surface -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Surface</div>
+<div class="font-mono text-[10px] text-textSecondary">#191E23</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#191E23] border border-borderDefault"></div>
+</div>
+<!-- Elevated Surface -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Elevated</div>
+<div class="font-mono text-[10px] text-textSecondary">#242B32</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#242B32] border border-borderDefault"></div>
+</div>
+<!-- Secondary Elevated -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Sec. Elevated</div>
+<div class="font-mono text-[10px] text-textSecondary">#2B333B</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#2B333B] border border-borderDefault"></div>
+</div>
+<!-- Primary Text -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Primary Text</div>
+<div class="font-mono text-[10px] text-textSecondary">#F1F3F5</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#F1F3F5] border border-borderDefault"></div>
+</div>
+<!-- Secondary Text -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Secondary Text</div>
+<div class="font-mono text-[10px] text-textSecondary">#A5ADB6</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#A5ADB6] border border-borderDefault"></div>
+</div>
+<!-- Default Border -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Default Border</div>
+<div class="font-mono text-[10px] text-textSecondary">#343C44</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#343C44] border border-borderStrong"></div>
+</div>
+<!-- Strong Border -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Strong Border</div>
+<div class="font-mono text-[10px] text-textSecondary">#46515B</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#46515B] border border-borderDefault"></div>
+</div>
+<!-- Primary Accent -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Accent Red</div>
+<div class="font-mono text-[10px] text-textSecondary">#F05A4F</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#F05A4F]"></div>
+</div>
+<!-- Accent Hover -->
+<div class="p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault flex items-center justify-between">
+<div>
+<div class="font-semibold text-[11px] text-textPrimary">Accent Hover</div>
+<div class="font-mono text-[10px] text-textSecondary">#FF7166</div>
+</div>
+<div class="w-5 h-5 rounded-pm-sm bg-[#FF7166]"></div>
+</div>
+</div>
+<!-- Semantic States -->
+<div class="mt-3 pt-2.5 border-t border-borderDefault grid grid-cols-4 gap-1.5 text-center">
+<div class="p-1.5 bg-[#55B889]/15 border border-[#55B889]/35 rounded-pm-sm">
+<div class="text-[10px] font-semibold text-[#55B889]">Success</div>
+<div class="text-[9px] font-mono text-[#55B889]">#55B889</div>
+</div>
+<div class="p-1.5 bg-[#E6B45A]/15 border border-[#E6B45A]/35 rounded-pm-sm">
+<div class="text-[10px] font-semibold text-[#E6B45A]">Warning</div>
+<div class="text-[9px] font-mono text-[#E6B45A]">#E6B45A</div>
+</div>
+<div class="p-1.5 bg-[#F07171]/15 border border-[#F07171]/35 rounded-pm-sm">
+<div class="text-[10px] font-semibold text-[#F07171]">Danger</div>
+<div class="text-[9px] font-mono text-[#F07171]">#F07171</div>
+</div>
+<div class="p-1.5 bg-[#72A9DE]/15 border border-[#72A9DE]/35 rounded-pm-sm">
+<div class="text-[10px] font-semibold text-[#72A9DE]">Info</div>
+<div class="text-[9px] font-mono text-[#72A9DE]">#72A9DE</div>
+</div>
+</div>
+</section>
+<!-- 2. TYPOGRAPHY SPECIMEN -->
+<section class="bg-surface border border-borderDefault rounded-pm-md p-3.5">
+<div class="flex items-center justify-between pb-2 mb-3 border-b border-borderDefault">
+<h2 class="font-display font-bold text-base uppercase text-textPrimary tracking-wide">02. Typography</h2>
+</div>
+<div class="space-y-3">
+<!-- Display font -->
+<div class="p-2.5 bg-surfaceElevated rounded-pm-sm border border-borderDefault">
+<div class="flex justify-between items-center text-[10px] font-mono text-textSecondary mb-1">
+<span>HEADINGS &amp; METRICS</span>
+<span>Barlow Condensed Bold</span>
+</div>
+<div class="font-display font-bold text-xl uppercase tracking-wider text-textPrimary leading-tight">
+            BRAKE OVERHAUL DISPATCH
+          </div>
+<div class="font-display font-bold text-2xl text-accent leading-none mt-0.5">
+            4.8 BAR <span class="text-textSecondary text-sm font-normal">SPEC: 5.0</span>
+</div>
+</div>
+<!-- Body font -->
+<div class="p-2.5 bg-surfaceElevated rounded-pm-sm border border-borderDefault">
+<div class="flex justify-between items-center text-[10px] font-mono text-textSecondary mb-1">
+<span>BODY &amp; LABELS</span>
+<span>Inter Regular / SemiBold</span>
+</div>
+<p class="text-xs text-textPrimary leading-relaxed">
+            Secondary caliper pin inspected for premature oxidation and torqued to manufacturer manual tolerance.
+          </p>
+</div>
+<!-- Technical Monospace -->
+<div class="p-2.5 bg-surfaceElevated rounded-pm-sm border border-borderDefault">
+<div class="flex justify-between items-center text-[10px] font-mono text-textSecondary mb-1">
+<span>IDENTIFIERS &amp; TIMESTAMPS</span>
+<span>JetBrains Mono Medium</span>
+</div>
+<div class="font-mono text-xs text-textPrimary space-y-0.5">
+<div>ORDER: <span class="font-semibold text-accent">SO-2026-0819</span></div>
+<div>VIN: <span class="text-textSecondary">JM1BM1W760120938</span></div>
+<div>STAMP: <span class="text-textSecondary">2026-11-20T14:22:08Z</span></div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. BUTTONS & ACTIONS -->
+<section class="bg-surface border border-borderDefault rounded-pm-md p-3.5">
+<div class="flex items-center justify-between pb-2 mb-3 border-b border-borderDefault">
+<h2 class="font-display font-bold text-base uppercase text-textPrimary tracking-wide">03. Buttons &amp; Actions</h2>
+</div>
+<div class="space-y-2">
+<!-- Primary Action -->
+<div class="flex items-center gap-2">
+<button class="flex-1 bg-accent hover:bg-accentHover text-white font-medium text-xs py-2 px-3 rounded-pm-sm flex items-center justify-center gap-1.5 transition-colors shadow-sm">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Primary Action (Active)
+          </button>
+<span class="text-[10px] font-mono text-textSecondary w-16 text-right">#F05A4F</span>
+</div>
+<!-- Secondary Graphite / High-Contrast Action -->
+<div class="flex items-center gap-2">
+<button class="flex-1 bg-graphiteHighContrast hover:bg-white text-textInverted font-semibold text-xs py-2 px-3 rounded-pm-sm flex items-center justify-center gap-1.5 transition-colors">
+<svg class="w-3.5 h-3.5 text-textInverted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Secondary Action
+          </button>
+<span class="text-[10px] font-mono text-textSecondary w-16 text-right">#E8EAED</span>
+</div>
+<!-- Outlined Action -->
+<div class="flex items-center gap-2">
+<button class="flex-1 bg-surfaceElevated hover:bg-surfaceSecondaryElevated border border-borderStrong text-textPrimary font-medium text-xs py-2 px-3 rounded-pm-sm flex items-center justify-center gap-1.5 transition-colors">
+            Tertiary / Outline Action
+          </button>
+<span class="text-[10px] font-mono text-textSecondary w-16 text-right">Border</span>
+</div>
+<!-- Destructive Action -->
+<div class="flex items-center gap-2">
+<button class="flex-1 bg-[#F07171]/15 hover:bg-[#F07171]/25 border border-[#F07171]/35 text-[#F07171] font-medium text-xs py-1.5 px-3 rounded-pm-sm flex items-center justify-center gap-1.5 transition-colors">
+            Destructive Reject
+          </button>
+<span class="text-[10px] font-mono text-textSecondary w-16 text-right">Danger</span>
+</div>
+</div>
+</section>
+<!-- 4. FORM & INPUT CONTROLS -->
+<section class="bg-surface border border-borderDefault rounded-pm-md p-3.5">
+<div class="flex items-center justify-between pb-2 mb-3 border-b border-borderDefault">
+<h2 class="font-display font-bold text-base uppercase text-textPrimary tracking-wide">04. Form Controls</h2>
+</div>
+<div class="space-y-3">
+<!-- Search Input -->
+<div>
+<label class="block text-[11px] font-medium text-textSecondary mb-1">Search Component</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-textMuted">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</span>
+<input class="w-full pl-8 pr-3 py-1.5 text-xs bg-surfaceSecondaryElevated border border-borderDefault rounded-pm-sm text-textPrimary placeholder:text-textMuted focus:outline-none focus:border-accent" placeholder="Search VIN, plate, customer..." readonly="" type="text" value="B 1284 KDA">
+</div>
+</div>
+<!-- Numeric Measurement Field -->
+<div class="grid grid-cols-2 gap-2">
+<div>
+<label class="block text-[11px] font-medium text-textSecondary mb-1">Torque Value</label>
+<div class="flex bg-surfaceSecondaryElevated border border-borderDefault rounded-pm-sm overflow-hidden">
+<input class="w-full px-2.5 py-1.5 text-xs font-mono bg-transparent text-textPrimary focus:outline-none" readonly="" type="text" value="120">
+<span class="px-2 py-1.5 text-[10px] font-mono text-textSecondary bg-borderDefault/40 flex items-center border-l border-borderDefault">NM</span>
+</div>
+</div>
+<div>
+<label class="block text-[11px] font-medium text-textSecondary mb-1">Status Selector</label>
+<div class="relative">
+<select class="w-full px-2.5 py-1.5 text-xs bg-surfaceSecondaryElevated border border-borderDefault rounded-pm-sm text-textPrimary appearance-none focus:outline-none pr-6 font-medium" disabled="">
+<option>Active Repair</option>
+</select>
+<span class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-textSecondary">
+<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</span>
+</div>
+</div>
+</div>
+<!-- Interactive State Row (Checkbox & Switch) -->
+<div class="pt-2 border-t border-borderDefault flex items-center justify-between text-xs">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="rounded border-borderStrong bg-surfaceSecondaryElevated text-accent focus:ring-0 w-3.5 h-3.5" disabled="" type="checkbox">
+<span class="text-xs text-textPrimary">Torque inspection signed</span>
+</label>
+<div class="flex items-center gap-2">
+<span class="text-[11px] text-textSecondary">Bay Sync</span>
+<div class="w-7 h-4 bg-statusSuccess rounded-full p-0.5 flex items-center justify-end">
+<div class="w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. STATUS BADGES & SIGNALS -->
+<section class="bg-surface border border-borderDefault rounded-pm-md p-3.5">
+<div class="flex items-center justify-between pb-2 mb-3 border-b border-borderDefault">
+<h2 class="font-display font-bold text-base uppercase text-textPrimary tracking-wide">05. Status Badges</h2>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div class="flex items-center justify-between p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault">
+<span class="text-[11px] text-textSecondary">Completed</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#55B889]/15 text-[#55B889] border border-[#55B889]/30">
+            PASSED
+          </span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault">
+<span class="text-[11px] text-textSecondary">In Progress</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#72A9DE]/15 text-[#72A9DE] border border-[#72A9DE]/30">
+            ACTIVE
+          </span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault">
+<span class="text-[11px] text-textSecondary">Awaiting</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#E6B45A]/15 text-[#E6B45A] border border-[#E6B45A]/30">
+            PENDING QC
+          </span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-pm-sm bg-surfaceElevated border border-borderDefault">
+<span class="text-[11px] text-textSecondary">Blocked</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-[#F07171]/15 text-[#F07171] border border-[#F07171]/30">
+            CRITICAL
+          </span>
+</div>
+</div>
+</section>
+<!-- 6. SHARED LIST & DATA ROW PATTERNS -->
+<section class="bg-surface border border-borderDefault rounded-pm-md p-3.5">
+<div class="flex items-center justify-between pb-2 mb-2 border-b border-borderDefault">
+<h2 class="font-display font-bold text-base uppercase text-textPrimary tracking-wide">06. List &amp; Data Row</h2>
+</div>
+<div class="divide-y divide-borderDefault text-xs">
+<!-- Row Item 1 -->
+<div class="py-2.5 flex items-center justify-between">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-mono text-[11px] font-semibold text-textPrimary">SO-2026-0142</span>
+<span class="px-1 py-0.2 rounded text-[9px] font-mono bg-surfaceSecondaryElevated border border-borderDefault text-textSecondary">BAY 01</span>
+</div>
+<div class="font-medium text-textPrimary text-xs">Toyota Avanza 1.5G • Scheduled Service</div>
+</div>
+<div class="text-right">
+<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#55B889]/15 text-[#55B889] border border-[#55B889]/30">72% COMPLETE</span>
+<div class="text-[10px] font-mono text-textSecondary mt-0.5">Marcus T.</div>
+</div>
+</div>
+<!-- Row Item 2 -->
+<div class="py-2.5 flex items-center justify-between">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-mono text-[11px] font-semibold text-textPrimary">SO-2026-0143</span>
+<span class="px-1 py-0.2 rounded text-[9px] font-mono bg-surfaceSecondaryElevated border border-borderDefault text-textSecondary">BAY 02</span>
+</div>
+<div class="font-medium text-textPrimary text-xs">Honda Civic Type R • Brake Rotor Inspection</div>
+</div>
+<div class="text-right">
+<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#E6B45A]/15 text-[#E6B45A] border border-[#E6B45A]/30">AWAIT QC</span>
+<div class="text-[10px] font-mono text-textSecondary mt-0.5">Dian S.</div>
+</div>
+</div>
+<!-- Row Item 3 (Inventory Item) -->
+<div class="py-2.5 flex items-center justify-between">
+<div class="space-y-0.5">
+<div class="font-medium text-textPrimary text-xs">Motul 300V Chrono 10W-40 (4L)</div>
+<div class="font-mono text-[10px] text-textSecondary">SKU: MOT-300V-4L • 28 In Stock</div>
+</div>
+<div class="text-right">
+<div class="font-mono font-semibold text-xs text-textPrimary">$84.50</div>
+<div class="text-[10px] text-statusSuccess font-mono">Available</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 7. APPLICATION FEEDBACK & STATES -->
+<section class="bg-surface border border-borderDefault rounded-pm-md p-3.5">
+<div class="flex items-center justify-between pb-2 mb-3 border-b border-borderDefault">
+<h2 class="font-display font-bold text-base uppercase text-textPrimary tracking-wide">07. System States</h2>
+</div>
+<div class="space-y-2">
+<!-- Alert Box -->
+<div class="p-2.5 rounded-pm-sm bg-[#E6B45A]/15 border border-[#E6B45A]/35 flex items-start gap-2">
+<svg class="w-4 h-4 text-[#E6B45A] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<div class="text-xs">
+<div class="font-semibold text-[#E6B45A]">Low Stock Threshold Alert</div>
+<div class="text-[11px] text-textSecondary mt-0.5">DOT4 Brake Fluid reservoir below 3 units. Reorder triggered.</div>
+</div>
+</div>
+<!-- Empty State Specimen -->
+<div class="p-3 rounded-pm-sm bg-surfaceElevated border border-dashed border-borderDefault text-center">
+<div class="text-[11px] font-semibold text-textPrimary">No Pending Customer Invoices</div>
+<div class="text-[10px] text-textSecondary mt-0.5">All active service orders settled or scheduled for QC sign-off.</div>
+</div>
+</div>
+</section>
+</main>
+<!-- ==================== SHARED BOTTOM NAVIGATION SPECIMEN ==================== -->
+<footer class="mt-6 pt-3 border-t border-borderDefault text-center">
+<div class="text-[10px] font-mono text-textSecondary uppercase tracking-widest mb-2">SHARED NAVIGATION ANCHOR</div>
+<nav class="bg-surface border border-borderDefault rounded-pm-md p-1.5 flex items-center justify-around shadow-sm">
+<a class="flex flex-col items-center gap-0.5 py-1 px-3 text-accent font-semibold text-[10px]" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>Overview</span>
+</a>
+<a class="flex flex-col items-center gap-0.5 py-1 px-3 text-textSecondary hover:text-textPrimary text-[10px]" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>Bays</span>
+</a>
+<a class="flex flex-col items-center gap-0.5 py-1 px-3 text-textSecondary hover:text-textPrimary text-[10px]" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>Orders</span>
+</a>
+<a class="flex flex-col items-center gap-0.5 py-1 px-3 text-textSecondary hover:text-textPrimary text-[10px]" href="#">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>Stock</span>
+</a>
+</nav>
+</footer>
+</body></html>

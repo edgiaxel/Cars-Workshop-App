@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-background":"#161c23","on-secondary-fixed-variant":"#45474a","surface-container-low":"#eef4fe","primary-container":"#d53c31","surface-container-lowest":"#ffffff","tertiary-fixed":"#e0e2e9","on-secondary":"#ffffff","on-error":"#ffffff","background":"#f8f9ff","on-surface-variant":"#5a403d","text-muted":"#9BA1A8","graphite-secondary":"#24282D","status-warning":"#D28A26","surface-elevated":"#ECEEF0","tertiary":"#585c62","primary":"#b2221c","surface-container":"#e9eef8","on-error-container":"#93000a","status-danger":"#D44343","on-secondary-fixed":"#1a1c1f","text-secondary":"#737982","secondary-fixed":"#e2e2e6","outline":"#8e706c","tertiary-fixed-dim":"#c3c7cd","border-divider":"#DFE2E5","on-tertiary":"#ffffff","secondary":"#5d5e62","on-primary-fixed":"#410001","inverse-primary":"#ffb4aa","outline-variant":"#e3beb9","error":"#ba1a1a","accent-red-hover":"#C9362B","on-tertiary-fixed-variant":"#43474c","surface-bright":"#f8f9ff","error-container":"#ffdad6","on-primary":"#ffffff","surface":"#FFFFFF","on-primary-container":"#fffbff","graphite-primary":"#17191C","primary-fixed":"#ffdad5","surface-dim":"#d5dae4","on-primary-fixed-variant":"#920408","on-secondary-container":"#616266","inverse-surface":"#2b3139","surface-container-highest":"#dde3ed","status-success":"#25845A","secondary-container":"#dfdfe3","surface-tint":"#b5251e","tertiary-container":"#71757b","secondary-fixed-dim":"#c6c6ca","text-primary":"#17191C","accent-red":"#E5483B","on-tertiary-fixed":"#181c21","on-tertiary-container":"#fdfcff","background-primary":"#F4F5F6","status-info":"#3479B8","on-surface":"#161c23","surface-variant":"#dde3ed","primary-fixed-dim":"#ffb4aa","inverse-on-surface":"#ecf1fb","surface-container-high":"#e3e8f3"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"space-sm":"0.5rem","space-md":"1rem","gutter-desktop":"1.5rem","margin-desktop":"2rem",margin:"1rem","space-xs":"0.25rem",gutter:"1rem","space-xl":"2rem","space-lg":"1.5rem"},fontFamily:{"body-sm":["Inter"],"title-md":["Inter"],"technical-metric":["Barlow Condensed"],"body-lg":["Inter"],"label-md":["Inter"],"label-lg":["Inter"],"technical-data":["JetBrains Mono"],"display-lg-mobile":["Barlow Condensed"],"display-lg":["Barlow Condensed"],"body-md":["Inter"],"headline-md":["Barlow Condensed"],"headline-sm":["Barlow Condensed"],"headline-lg":["Barlow Condensed"]},fontSize:{"body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],"title-md":["16px",{lineHeight:"22px",fontWeight:"600"}],"technical-metric":["28px",{lineHeight:"28px",letterSpacing:"0.01em",fontWeight:"700"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"label-md":["11px",{lineHeight:"14px",letterSpacing:"0.04em",fontWeight:"600"}],"label-lg":["13px",{lineHeight:"16px",letterSpacing:"0.02em",fontWeight:"600"}],"technical-data":["13px",{lineHeight:"16px",letterSpacing:"-0.01em",fontWeight:"500"}],"display-lg-mobile":["36px",{lineHeight:"40px",letterSpacing:"0.02em",fontWeight:"700"}],"display-lg":["48px",{lineHeight:"52px",letterSpacing:"0.02em",fontWeight:"700"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-md":["24px",{lineHeight:"28px",letterSpacing:"0.01em",fontWeight:"600"}],"headline-sm":["20px",{lineHeight:"24px",letterSpacing:"0.02em",fontWeight:"600"}],"headline-lg":["32px",{lineHeight:"36px",letterSpacing:"0.01em",fontWeight:"600"}]}}}}</script></head><body class="bg-background-primary text-text-primary font-body-md text-body-md antialiased selection:bg-accent-red selection:text-white"><aside class="fixed left-0 top-0 h-full w-60 bg-surface z-50 flex flex-col justify-between border-r border-border-divider"><div class="flex flex-col"><div class="h-14 px-space-md flex items-center justify-between border-b border-border-divider bg-surface"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-accent-red text-[20px]">grid_view</span><span class="font-headline-sm text-headline-sm uppercase tracking-wider text-graphite-primary">PitMate<span class="text-accent-red font-bold">.UI</span></span></div><span class="px-space-xs py-0.5 bg-surface-elevated font-technical-data text-[10px] text-text-secondary rounded">V2.4</span></div><div class="p-space-md"><span class="font-label-md text-label-md uppercase text-text-muted tracking-widest block mb-space-sm px-space-xs">Component Spec</span><nav class="flex flex-col gap-1" data-active-classes="bg-graphite-primary text-white font-semibold"><a class="flex items-center gap-space-sm px-space-sm py-2 rounded text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors font-label-lg text-label-lg" data-path="overview-and-primitives" href="#"><span class="material-symbols-outlined text-[18px]">layers</span>Overview &amp; Primitives</a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors font-label-lg text-label-lg" data-path="modal-dialogs" href="#"><span class="material-symbols-outlined text-[18px]">open_in_new</span>Modal Dialogs</a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors font-label-lg text-label-lg" data-path="operational-confirmations" href="#"><span class="material-symbols-outlined text-[18px]">emergency</span>Operational Confirmations</a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors font-label-lg text-label-lg" data-path="bottom-sheets-and-drawers" href="#"><span class="material-symbols-outlined text-[18px]">vertical_align_top</span>Bottom Sheets &amp; Drawers</a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded text-text-secondary hover:bg-surface-elevated hover:text-text-primary transition-colors font-label-lg text-label-lg" data-path="notification-templates" href="#"><span class="material-symbols-outlined text-[18px]">notifications_active</span>Notification Templates</a></nav></div></div><div class="p-space-md border-t border-border-divider bg-surface"><div class="p-space-sm bg-surface-elevated rounded flex items-center justify-between"><div class="flex items-center gap-space-xs"><span class="inline-block w-2 h-2 rounded-full bg-status-success"></span><span class="font-technical-data text-body-sm text-graphite-secondary uppercase">Pit Lane Telemetry</span></div><span class="font-technical-data text-[10px] text-text-muted">RUNNING</span></div></div></aside><div class="pl-60"><header class="fixed top-0 left-60 right-0 h-14 bg-surface z-40 border-b border-border-divider"><div class="h-14 px-gutter-desktop flex items-center justify-between"><div class="flex items-center gap-space-md"><img alt="PitMate technical automotive workshop brand mark with geometric mechanical emblem and bold condensed typography." class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrDRc5VkTej3eyUWdSN0yiWeaYxQmZXCaVy7PDOYilp1Q6L0kbD9w18wfGyRtyCcADbiogv9GKVYm2hk4Nixe0-oCosCBFI_7HUmCQ76LjFLb4xNKdMA1Yv_Tbz1thuSmxa_w5JnwrF8hBKhZfTLH8-1INNSqSEB7jMpqF8WHLwn3Wz9Au6_J4GBkjp684GAx5npxHwi8aLw34L0-zMlkegJCllHlkZNsSyOtbl1gqHG4Q"/><div class="h-4 w-px bg-border-divider"></div><nav class="flex items-center gap-space-lg" data-active-classes="text-text-primary font-bold"><a class="font-label-lg text-label-lg text-text-secondary hover:text-text-primary transition-colors" data-path="overview-and-primitives" href="#">Design Primitives</a><a class="font-label-lg text-label-lg text-text-secondary hover:text-text-primary transition-colors" data-path="modal-dialogs" href="#">Modals</a><a class="font-label-lg text-label-lg text-text-secondary hover:text-text-primary transition-colors" data-path="bottom-sheets-and-drawers" href="#">Drawers</a><a class="font-label-lg text-label-lg text-text-secondary hover:text-text-primary transition-colors" data-path="notification-templates" href="#">Toasts &amp; Alerts</a></nav></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs border border-border-divider px-space-sm py-1 rounded bg-surface-elevated text-text-secondary font-technical-data text-body-sm"><span class="material-symbols-outlined text-[16px]">tune</span><span>ENV: PRODUCTION-SPEC</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-14 bg-background-primary min-h-screen"><div class="flex flex-col w-full">
+<!-- SECTION HEADER & METRIC STRIP -->
+<section class="px-margin-desktop py-space-lg flex flex-col gap-space-md">
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md pb-space-md">
+<div>
+<div class="flex items-center gap-space-xs font-technical-data text-body-sm text-text-secondary uppercase">
+<span class="inline-block w-2 h-2 rounded-full bg-accent-red"></span>
+<span>PITMATE DESIGN SYSTEM // REF: DOC-SYS-05</span>
+<span class="text-text-muted">|</span>
+<span>MOTORSPORT GARAGE SPEC</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg uppercase text-graphite-primary mt-space-xs tracking-tight">
+          Dialogs, Overlays &amp; Notification Engine
+        </h1>
+<p class="font-body-md text-body-md text-text-secondary max-w-3xl mt-space-xs">
+          Comprehensive production-grade specification for contextual overlays, operational confirmations, garage-floor bottom sheets, and multi-tier telemetry alerts.
+        </p>
+</div>
+<!-- Quick Nav Jump Pills -->
+<div class="flex flex-wrap items-center gap-space-xs font-technical-data text-body-sm">
+<a class="px-space-sm py-1 rounded bg-surface-elevated text-graphite-primary hover:bg-graphite-primary hover:text-white transition-colors" href="#primitives">01. Primitives</a>
+<a class="px-space-sm py-1 rounded bg-surface-elevated text-graphite-primary hover:bg-graphite-primary hover:text-white transition-colors" href="#crud-modals">02. Form Dialogs</a>
+<a class="px-space-sm py-1 rounded bg-surface-elevated text-graphite-primary hover:bg-graphite-primary hover:text-white transition-colors" href="#operational-alerts">03. Operational Safety</a>
+<a class="px-space-sm py-1 rounded bg-surface-elevated text-graphite-primary hover:bg-graphite-primary hover:text-white transition-colors" href="#bottom-sheets">04. Drawers &amp; Sheets</a>
+<a class="px-space-sm py-1 rounded bg-surface-elevated text-graphite-primary hover:bg-graphite-primary hover:text-white transition-colors" href="#notifications">05. Toasts &amp; Alerts</a>
+</div>
+</div>
+<!-- Quick Stats Telemetry Well -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-space-md">
+<div class="p-space-md rounded bg-surface shadow-sm">
+<span class="font-technical-data text-[11px] text-text-secondary uppercase block mb-1">Standard Backdrop</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-graphite-primary">60%</span>
+<span class="font-technical-data text-body-sm text-text-muted">RGBA(#17191C, 0.6)</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary mt-1 block">Full modal isolation barrier</span>
+</div>
+<div class="p-space-md rounded bg-surface shadow-sm">
+<span class="font-technical-data text-[11px] text-text-secondary uppercase block mb-1">Desktop Elevation</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-graphite-primary">8PX</span>
+<span class="font-technical-data text-body-sm text-text-muted">RADIUS / LEVEL 1</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary mt-1 block">Planar white work surface</span>
+</div>
+<div class="p-space-md rounded bg-surface shadow-sm">
+<span class="font-technical-data text-[11px] text-text-secondary uppercase block mb-1">Mobile Bottom Sheet</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-graphite-primary">16PX</span>
+<span class="font-technical-data text-body-sm text-text-muted">TOP ARCH / 36x4 PILL</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary mt-1 block">Mechanic thumb reachable zone</span>
+</div>
+<div class="p-space-md rounded bg-surface shadow-sm">
+<span class="font-technical-data text-[11px] text-text-secondary uppercase block mb-1">Alert Hierarchy</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-accent-red">4 TIERS</span>
+<span class="font-technical-data text-body-sm text-text-muted">ERR / WARN / OK / INFO</span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary mt-1 block">High-contrast pit lane statuses</span>
+</div>
+</div>
+</section>
+<!-- SECTION 1: PRIMITIVES & OVERLAY TOKENS -->
+<section class="px-margin-desktop py-space-xl flex flex-col gap-space-lg" id="primitives">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="font-technical-data text-body-sm px-space-xs py-0.5 rounded bg-graphite-primary text-white font-semibold">01</span>
+<h2 class="font-headline-md text-headline-md uppercase text-graphite-primary">Component System Primitives &amp; Overlay Tokens</h2>
+</div>
+<span class="font-technical-data text-body-sm text-text-secondary uppercase">LAYOUT MATRICES &amp; TOKENS</span>
+</div>
+<!-- Visualizer Canvas & Token Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- Dimensions Matrix -->
+<div class="lg:col-span-8 p-space-lg bg-surface rounded shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-sm">
+<div>
+<h3 class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Dialog Dimensional Standard</h3>
+<p class="font-body-sm text-body-sm text-text-secondary">Fixed layout max-widths enforcing strict visual hierarchy and scan speed under pressure.</p>
+</div>
+<span class="font-technical-data text-body-sm text-text-muted">GRID: 8PX ANCHORED</span>
+</div>
+<!-- Tier Blueprint Strip -->
+<div class="flex flex-col gap-space-sm pt-space-xs">
+<!-- Small: 400px -->
+<div class="p-space-md bg-surface-elevated rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md">
+<span class="w-8 h-8 rounded bg-graphite-primary text-white font-technical-data text-body-sm flex items-center justify-center font-bold">SM</span>
+<div>
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary block">Small Confirmations / Single Prompt</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Unsaved drafts, delete confirmations, toggle overrides</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-technical-data text-body-sm font-bold text-graphite-primary bg-surface px-space-sm py-1 rounded">400px</span>
+<span class="font-technical-data text-body-sm text-text-muted">r: 8px</span>
+</div>
+</div>
+<!-- Standard: 520px -->
+<div class="p-space-md bg-surface-elevated rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md">
+<span class="w-8 h-8 rounded bg-graphite-primary text-white font-technical-data text-body-sm flex items-center justify-center font-bold">MD</span>
+<div>
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary block">Standard Operational Dialog</span>
+<span class="font-body-sm text-body-sm text-text-secondary">QC inspection veto, inventory reordering, diagnostic assignment</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-technical-data text-body-sm font-bold text-graphite-primary bg-surface px-space-sm py-1 rounded">520px</span>
+<span class="font-technical-data text-body-sm text-text-muted">r: 8px</span>
+</div>
+</div>
+<!-- Extended Form: 640px -->
+<div class="p-space-md bg-surface-elevated rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md">
+<span class="w-8 h-8 rounded bg-graphite-primary text-white font-technical-data text-body-sm flex items-center justify-center font-bold">LG</span>
+<div>
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary block">Extended Form / Vehicle Admission</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Multi-parameter admission, part specification update, billing setup</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-technical-data text-body-sm font-bold text-graphite-primary bg-surface px-space-sm py-1 rounded">640px</span>
+<span class="font-technical-data text-body-sm text-text-muted">r: 8px</span>
+</div>
+</div>
+<!-- Mobile Sheet: 100% max 480px -->
+<div class="p-space-md bg-surface-elevated rounded flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md">
+<span class="w-8 h-8 rounded bg-accent-red text-white font-technical-data text-body-sm flex items-center justify-center font-bold">MS</span>
+<div>
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary block">Mobile Bottom Sheet / Mechanic Drawer</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Touch-optimized mechanic floor sheet, instant bay dispatch drawer</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-technical-data text-body-sm font-bold text-graphite-primary bg-surface px-space-sm py-1 rounded">100% (max 480px)</span>
+<span class="font-technical-data text-body-sm text-text-muted">r: 16px top</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Backdrop Specs & Mechanics -->
+<div class="lg:col-span-4 p-space-lg bg-surface rounded shadow-sm flex flex-col justify-between gap-space-md">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Overlay Tokens</h3>
+<span class="font-technical-data text-[10px] text-accent-red font-bold uppercase">WCAG AAA</span>
+</div>
+<div class="relative h-28 rounded overflow-hidden flex items-center justify-center bg-graphite-primary">
+<!-- Simulated background telemetry strip -->
+<div class="absolute inset-0 opacity-20 flex flex-col justify-around p-2 font-technical-data text-[9px] text-white">
+<span>TELEMETRY_ROW_001 [PRESSURE: 2.32 BAR] [TEMP: 88.4 C]</span>
+<span>TELEMETRY_ROW_002 [BAY_03: CALIBRATING HYDRAULICS]</span>
+<span>TELEMETRY_ROW_003 [HOIST_A: ACTIVE OCCUPIED BY VIN-9418]</span>
+</div>
+<!-- Standard Overlay Curtain -->
+<div class="absolute inset-0 bg-[#17191C]/60 backdrop-blur-[1px]"></div>
+<div class="relative z-10 px-space-md py-1 rounded bg-surface font-technical-data text-body-sm text-graphite-primary font-bold shadow-md">
+              BACKDROP: #17191C (60%)
+            </div>
+</div>
+<ul class="flex flex-col gap-2 pt-2 text-body-sm font-body-sm text-text-secondary">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-status-success mt-0.5">check_circle</span>
+<span>Zero ambient decorative glows; strict 1px planar demarcation</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-status-success mt-0.5">check_circle</span>
+<span>ESC key binds directly to Dismiss event with clean unmount</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-status-success mt-0.5">check_circle</span>
+<span>Body scroll locks automatically (`overscroll-behavior: contain`)</span>
+</li>
+</ul>
+</div>
+<div class="p-space-sm rounded bg-surface-elevated font-technical-data text-[11px] text-text-secondary">
+<span class="text-graphite-primary font-semibold">CSS SPEC:</span> overlay { background: rgba(23, 25, 28, 0.6); z-index: 50; }
+        </div>
+</div>
+</div>
+</section>
+<!-- SECTION 2: CRUD & FORM MODALS -->
+<section class="px-margin-desktop py-space-xl bg-background-primary flex flex-col gap-space-lg" id="crud-modals">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="font-technical-data text-body-sm px-space-xs py-0.5 rounded bg-graphite-primary text-white font-semibold">02</span>
+<h2 class="font-headline-md text-headline-md uppercase text-graphite-primary">CRUD &amp; Form Modals</h2>
+</div>
+<span class="font-technical-data text-body-sm text-text-secondary uppercase">HIGH-DENSITY DATA ENTRY</span>
+</div>
+<!-- Live Rendered Interactive / High-Fidelity Dialog Previews -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-space-xl items-start">
+<!-- MODAL A: Add Vehicle / Walk-in Admission (640px) -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-space-xs">
+<span class="font-technical-data text-body-sm text-graphite-secondary uppercase font-bold">TYPE A: EXTENDED FORM DIALOG (640PX)</span>
+<span class="font-technical-data text-body-sm text-text-muted">FORM ID: MODAL-ADM-01</span>
+</div>
+<!-- Rendered Dialog Container -->
+<div class="w-full max-w-[640px] mx-auto bg-surface rounded shadow-xl overflow-hidden flex flex-col">
+<!-- Dialog Header -->
+<div class="px-space-lg py-space-md bg-surface flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded bg-accent-red"></span>
+<div>
+<h3 class="font-headline-md text-headline-md uppercase text-graphite-primary tracking-tight">Admit Walk-in Vehicle</h3>
+<span class="font-technical-data text-[11px] text-text-muted">INITIAL SERVICE DISPATCH // TRACK-READY LOGGING</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded bg-surface-elevated text-text-secondary hover:text-graphite-primary hover:bg-surface-elevated flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Dialog Body Form -->
+<div class="p-space-lg flex flex-col gap-space-md">
+<!-- Row 1: Plate Number + Make & Model -->
+<div class="grid grid-cols-1 sm:grid-cols-12 gap-space-md">
+<div class="sm:col-span-5 flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">License Plate *</label>
+<div class="relative">
+<input class="w-full h-10 px-space-sm bg-surface rounded text-graphite-primary font-technical-data text-body-md focus:bg-surface-elevated outline-none uppercase font-bold" type="text" value="B 1234 XYZ"/>
+<span class="absolute right-2.5 top-2.5 text-status-success material-symbols-outlined text-[18px]">verified</span>
+</div>
+</div>
+<div class="sm:col-span-7 flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Make &amp; Model Selector *</label>
+<div class="relative">
+<select class="w-full h-10 px-space-sm bg-surface rounded text-graphite-primary font-body-md focus:bg-surface-elevated outline-none appearance-none pr-8">
+<option>Porsche 911 GT3 (992) Cup - 4.0L</option>
+<option>BMW M4 GT4 (G82) - 3.0T</option>
+<option>Audi R8 LMS GT3 Evo II</option>
+<option>Honda Civic Type R (FL5) TCR</option>
+</select>
+<span class="absolute right-2.5 top-2.5 text-text-secondary material-symbols-outlined text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Row 2: Odometer + Bay Allocation -->
+<div class="grid grid-cols-1 sm:grid-cols-12 gap-space-md">
+<div class="sm:col-span-5 flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Odometer Reading *</label>
+<div class="flex items-center h-10 bg-surface rounded overflow-hidden">
+<input class="w-full px-space-sm font-technical-data text-body-md text-right text-graphite-primary focus:outline-none" type="number" value="18450"/>
+<span class="px-space-sm py-2 bg-surface-elevated font-technical-data text-body-sm text-text-secondary uppercase">KM</span>
+</div>
+</div>
+<div class="sm:col-span-7 flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Bay Allocation *</label>
+<div class="grid grid-cols-5 gap-1.5">
+<button class="h-10 rounded font-technical-data text-body-sm font-bold bg-accent-red text-white flex flex-col items-center justify-center" type="button">
+<span>B-01</span>
+<span class="text-[9px] font-normal leading-none">FREE</span>
+</button>
+<button class="h-10 rounded font-technical-data text-body-sm font-bold bg-surface-elevated text-graphite-primary hover:bg-surface-dim flex flex-col items-center justify-center" type="button">
+<span>B-02</span>
+<span class="text-[9px] text-text-muted leading-none">FREE</span>
+</button>
+<button class="h-10 rounded font-technical-data text-body-sm font-bold bg-surface-elevated text-text-muted opacity-60 cursor-not-allowed flex flex-col items-center justify-center" disabled="" type="button">
+<span>B-03</span>
+<span class="text-[9px] text-status-danger leading-none">BUSY</span>
+</button>
+<button class="h-10 rounded font-technical-data text-body-sm font-bold bg-surface-elevated text-graphite-primary hover:bg-surface-dim flex flex-col items-center justify-center" type="button">
+<span>B-04</span>
+<span class="text-[9px] text-text-muted leading-none">FREE</span>
+</button>
+<button class="h-10 rounded font-technical-data text-body-sm font-bold bg-surface-elevated text-graphite-primary hover:bg-surface-dim flex flex-col items-center justify-center" type="button">
+<span>B-05</span>
+<span class="text-[9px] text-text-muted leading-none">FREE</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Row 3: Lead Technician Dropdown -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Lead Mechanical Tech Assigned</label>
+<div class="relative">
+<select class="w-full h-10 px-space-sm bg-surface rounded text-graphite-primary font-body-md focus:bg-surface-elevated outline-none appearance-none pr-8">
+<option>Dian S. (Master Powertrain Tech - Bay 01 Lead)</option>
+<option>Marcus Vance (Telemetry &amp; Suspension Specialist)</option>
+<option>Elena Rossi (Braking &amp; Chassis Alignment)</option>
+</select>
+<span class="absolute right-2.5 top-2.5 text-text-secondary material-symbols-outlined text-[18px] pointer-events-none">engineering</span>
+</div>
+</div>
+<!-- Row 4: Customer Complaint Textarea -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Customer Reported Complaint</label>
+<span class="font-technical-data text-[10px] text-text-muted">RECORDED INTAKE</span>
+</div>
+<textarea class="w-full p-space-sm bg-surface rounded text-graphite-primary font-body-md focus:bg-surface-elevated outline-none resize-none" rows="3">Customer reported front vibration under high-speed threshold braking (Turn 4 approach). Check left front rotor bedding and control arm bushings for play.</textarea>
+</div>
+<!-- Recessed Telemetry Context Pill -->
+<div class="p-space-sm rounded bg-surface-elevated flex items-center justify-between">
+<div class="flex items-center gap-space-xs font-technical-data text-body-sm text-text-secondary">
+<span class="material-symbols-outlined text-[18px] text-status-info">speed</span>
+<span>SYSTEM PRIORITY: HIGH (SCHEDULED TRACK TEST AT 15:30)</span>
+</div>
+<span class="font-technical-data text-body-sm font-bold text-graphite-primary">EST: 2.5 HRS</span>
+</div>
+</div>
+<!-- Dialog Footer Actions -->
+<div class="px-space-lg py-space-md bg-surface-elevated flex items-center justify-between">
+<span class="font-technical-data text-[11px] text-text-muted uppercase">SO-2026-AUTO-ASSIGN</span>
+<div class="flex items-center gap-space-sm">
+<button class="px-space-md py-2 rounded text-graphite-primary hover:bg-surface-dim font-label-lg text-label-lg transition-colors">
+                Cancel
+              </button>
+<button class="px-space-lg py-2 rounded bg-accent-red hover:bg-accent-red-hover text-white font-label-lg text-label-lg transition-colors flex items-center gap-space-xs shadow-sm">
+<span class="material-symbols-outlined text-[18px]">assignment_turned_in</span>
+<span>Admit &amp; Create SO</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- MODAL B: Edit Spare Part & Costing (520px) -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-space-xs">
+<span class="font-technical-data text-body-sm text-graphite-secondary uppercase font-bold">TYPE B: INVENTORY EDIT DIALOG (520PX)</span>
+<span class="font-technical-data text-body-sm text-text-muted">FORM ID: MODAL-PRT-02</span>
+</div>
+<div class="w-full max-w-[520px] mx-auto bg-surface rounded shadow-xl overflow-hidden flex flex-col">
+<!-- Header -->
+<div class="px-space-lg py-space-md bg-surface flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded bg-graphite-primary"></span>
+<div>
+<h3 class="font-headline-md text-headline-md uppercase text-graphite-primary tracking-tight">Edit Spare Part Details</h3>
+<span class="font-technical-data text-[11px] text-text-muted">SKU: SP-BRK-092 // BRAKE FRICTION ASSEMBLY</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded bg-surface-elevated text-text-secondary hover:text-graphite-primary hover:bg-surface-elevated flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Body -->
+<div class="p-space-lg flex flex-col gap-space-md">
+<!-- Part Identification Banner -->
+<div class="p-space-sm bg-surface-elevated rounded flex items-center justify-between">
+<div>
+<span class="font-technical-data text-[10px] text-text-muted block">CATALOG ITEM</span>
+<span class="font-headline-sm text-headline-sm text-graphite-primary uppercase">Ferodo Racing DS3.12 Front Pad Set</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-success/15 text-status-success font-technical-data text-body-sm font-bold">ACTIVE STOCK</span>
+</div>
+<!-- SKU + Part Name -->
+<div class="grid grid-cols-1 sm:grid-cols-12 gap-space-md">
+<div class="sm:col-span-5 flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">SKU Code</label>
+<input class="w-full h-10 px-space-sm bg-surface-elevated rounded text-graphite-primary font-technical-data text-body-md font-semibold cursor-not-allowed outline-none" readonly="" type="text" value="SP-BRK-092"/>
+</div>
+<div class="sm:col-span-7 flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Part Classification</label>
+<input class="w-full h-10 px-space-sm bg-surface rounded text-graphite-primary font-body-md outline-none" type="text" value="Brake System / Race Compounds"/>
+</div>
+</div>
+<!-- Financials / Costing Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Selling Price (USD)</label>
+<div class="flex items-center h-10 bg-surface rounded overflow-hidden">
+<span class="px-space-sm font-technical-data text-body-sm text-text-secondary">$</span>
+<input class="w-full px-space-xs font-technical-data text-body-md text-graphite-primary font-bold focus:outline-none" step="0.01" type="number" value="485.00"/>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Weighted Avg Cost (WAC)</label>
+<div class="flex items-center h-10 bg-surface rounded overflow-hidden">
+<span class="px-space-sm font-technical-data text-body-sm text-text-secondary">$</span>
+<input class="w-full px-space-xs font-technical-data text-body-md text-graphite-primary focus:outline-none" step="0.01" type="number" value="312.40"/>
+</div>
+</div>
+</div>
+<!-- Stock Control -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Current Stock Qty</label>
+<div class="flex items-center h-10 bg-surface-elevated rounded px-space-sm justify-between">
+<span class="font-technical-data text-body-md font-bold text-graphite-primary">4 SETS</span>
+<span class="font-technical-data text-body-sm text-status-warning font-semibold">REORDER SOON</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Min Stock Alert Threshold</label>
+<div class="flex items-center h-10 bg-surface rounded overflow-hidden">
+<input class="w-full px-space-sm font-technical-data text-body-md text-graphite-primary focus:outline-none" type="number" value="3"/>
+<span class="px-space-sm font-technical-data text-body-sm text-text-muted">MIN</span>
+</div>
+</div>
+</div>
+<!-- Reason Field -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Audit / Price Adjustment Reason *</label>
+<input class="w-full h-10 px-space-sm bg-surface rounded text-graphite-primary font-body-md outline-none" placeholder="e.g., Supplier rate adjustment Q1-2026 shipment" type="text"/>
+</div>
+</div>
+<!-- Footer -->
+<div class="px-space-lg py-space-md bg-surface-elevated flex items-center justify-between">
+<span class="font-technical-data text-[11px] text-text-muted uppercase">AUDITED TRANSACTION</span>
+<div class="flex items-center gap-space-sm">
+<button class="px-space-md py-2 rounded text-graphite-primary hover:bg-surface-dim font-label-lg text-label-lg transition-colors">
+                Dismiss
+              </button>
+<button class="px-space-lg py-2 rounded bg-graphite-primary hover:bg-graphite-secondary text-white font-label-lg text-label-lg transition-colors flex items-center gap-space-xs shadow-sm">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>Save Changes</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 3: OPERATIONAL CONFIRMATIONS & DESTRUCTIVE ALERTS -->
+<section class="px-margin-desktop py-space-xl flex flex-col gap-space-lg" id="operational-alerts">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="font-technical-data text-body-sm px-space-xs py-0.5 rounded bg-status-danger text-white font-semibold">03</span>
+<h2 class="font-headline-md text-headline-md uppercase text-graphite-primary">Operational Confirmations &amp; Safety Overrides</h2>
+</div>
+<span class="font-technical-data text-body-sm text-text-secondary uppercase">DESTRUCTIVE ACTIONS &amp; QC VETO</span>
+</div>
+<!-- Alert Dialogs Showcase Matrix -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-lg items-start">
+<!-- Alert 1: Destructive Delete Dialog -->
+<div class="w-full bg-surface rounded shadow-xl overflow-hidden flex flex-col">
+<div class="p-space-lg flex flex-col gap-space-md">
+<!-- Critical Hazard Header -->
+<div class="flex items-start gap-space-md">
+<div class="w-12 h-12 rounded bg-status-danger/10 text-status-danger flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[28px]">warning</span>
+</div>
+<div>
+<span class="font-technical-data text-[10px] text-status-danger font-bold uppercase tracking-wider block">CRITICAL DESTRUCTIVE ACTION</span>
+<h3 class="font-headline-sm text-headline-sm uppercase text-graphite-primary mt-0.5">Delete Customer Record</h3>
+</div>
+</div>
+<!-- Description Text -->
+<p class="font-body-md text-body-md text-text-secondary">
+            Are you sure you want to permanently delete customer <span class="font-bold text-graphite-primary">Adrian W.</span> and associated fleet records? This action cannot be reversed and immediately purges telemetry logs.
+          </p>
+<!-- Warning Well -->
+<div class="p-space-sm rounded bg-error-container text-on-error-container font-technical-data text-body-sm flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px]">lock_reset</span>
+<span>3 linked Active Work Orders will be terminated.</span>
+</div>
+</div>
+<!-- Action Strip -->
+<div class="px-space-lg py-space-md bg-surface-elevated flex items-center justify-end gap-space-sm">
+<button class="px-space-md py-2 rounded text-graphite-primary bg-surface hover:bg-surface-dim font-label-lg text-label-lg transition-colors">
+            Keep Record
+          </button>
+<button class="px-space-md py-2 rounded bg-status-danger hover:bg-red-700 text-white font-label-lg text-label-lg transition-colors flex items-center gap-space-xs shadow-sm">
+<span class="material-symbols-outlined text-[16px]">delete_forever</span>
+<span>Delete Record</span>
+</button>
+</div>
+</div>
+<!-- Alert 2: QC Rejection Dialog -->
+<div class="w-full bg-surface rounded shadow-xl overflow-hidden flex flex-col">
+<div class="p-space-lg flex flex-col gap-space-md">
+<!-- QC Veto Header -->
+<div class="flex items-start gap-space-md">
+<div class="w-12 h-12 rounded bg-status-warning/10 text-status-warning flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[28px]">rule</span>
+</div>
+<div>
+<span class="font-technical-data text-[10px] text-status-warning font-bold uppercase tracking-wider block">INSPECTION VETO GATEWAY</span>
+<h3 class="font-headline-sm text-headline-sm uppercase text-graphite-primary mt-0.5">Reject Quality Inspection</h3>
+</div>
+</div>
+<!-- Notice -->
+<div class="p-space-sm rounded bg-surface-elevated text-text-secondary font-body-sm text-body-sm">
+            Failing QC will return <strong class="text-graphite-primary font-technical-data">Operation #2 (Brake Rotor Bedding)</strong> to <strong class="text-graphite-primary font-technical-data">Bay 02</strong> for immediate technician remediation.
+          </div>
+<!-- Required Veto Reason Field -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Veto Reason / Defect Detail *</label>
+<input class="w-full h-10 px-space-sm bg-surface rounded text-graphite-primary font-technical-data text-body-sm outline-none font-medium" type="text" value="Lateral runout exceeds 0.04mm limit on LH front disk."/>
+</div>
+</div>
+<!-- Action Strip -->
+<div class="px-space-lg py-space-md bg-surface-elevated flex items-center justify-end gap-space-sm">
+<button class="px-space-md py-2 rounded text-graphite-primary bg-surface hover:bg-surface-dim font-label-lg text-label-lg transition-colors">
+            Cancel
+          </button>
+<button class="px-space-md py-2 rounded bg-status-danger hover:bg-red-700 text-white font-label-lg text-label-lg transition-colors flex items-center gap-space-xs shadow-sm">
+<span class="material-symbols-outlined text-[16px]">assignment_late</span>
+<span>Reject &amp; Flag Repair</span>
+</button>
+</div>
+</div>
+<!-- Alert 3: Compact Unsaved Changes / Discard Draft (400px) -->
+<div class="w-full bg-surface rounded shadow-xl overflow-hidden flex flex-col">
+<div class="p-space-lg flex flex-col gap-space-md">
+<div class="flex items-start gap-space-md">
+<div class="w-12 h-12 rounded bg-graphite-primary text-white flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">drafts</span>
+</div>
+<div>
+<span class="font-technical-data text-[10px] text-text-muted font-bold uppercase tracking-wider block">STATE PRESERVATION</span>
+<h3 class="font-headline-sm text-headline-sm uppercase text-graphite-primary mt-0.5">Discard Unsaved Draft?</h3>
+</div>
+</div>
+<p class="font-body-md text-body-md text-text-secondary">
+            You have unsaved diagnostic telemetry inputs in Task #4. Discarding will revert values back to previous baseline.
+          </p>
+<div class="p-space-sm rounded bg-surface-elevated flex items-center justify-between font-technical-data text-body-sm">
+<span class="text-text-secondary">MODIFIED: 4 FIELDS</span>
+<span class="text-accent-red font-bold">UNSAVED</span>
+</div>
+</div>
+<div class="px-space-lg py-space-md bg-surface-elevated flex items-center justify-end gap-space-sm">
+<button class="px-space-md py-2 rounded bg-graphite-primary text-white hover:bg-graphite-secondary font-label-lg text-label-lg transition-colors">
+            Continue Editing
+          </button>
+<button class="px-space-md py-2 rounded bg-surface hover:bg-surface-dim text-status-danger font-label-lg text-label-lg transition-colors">
+            Discard Changes
+          </button>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 4: MOBILE BOTTOM SHEETS & DRAWERS -->
+<section class="px-margin-desktop py-space-xl bg-background-primary flex flex-col gap-space-lg" id="bottom-sheets">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="font-technical-data text-body-sm px-space-xs py-0.5 rounded bg-graphite-primary text-white font-semibold">04</span>
+<h2 class="font-headline-md text-headline-md uppercase text-graphite-primary">Mobile Bottom Sheets &amp; Drawers</h2>
+</div>
+<span class="font-technical-data text-body-sm text-text-secondary uppercase">MECHANIC FLOOR TOUCH INTERFACES</span>
+</div>
+<!-- Mobile Viewport Mockup Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-xl items-start">
+<!-- MOBILE SHEET 1: Quick Dispatch Bottom Sheet -->
+<div class="flex flex-col gap-space-xs items-center">
+<div class="w-full max-w-[420px] flex items-center justify-between px-space-xs">
+<span class="font-technical-data text-body-sm text-graphite-secondary uppercase font-bold">DRAWER A: QUICK DISPATCH SHEET</span>
+<span class="font-technical-data text-body-sm text-text-muted">MOBILE 390PX VIEWPORT</span>
+</div>
+<!-- Phone Shell Outline -->
+<div class="w-full max-w-[420px] bg-graphite-primary p-2.5 rounded-[24px] shadow-2xl">
+<!-- Inner Phone Screen -->
+<div class="w-full bg-[#17191C]/75 rounded-[18px] overflow-hidden flex flex-col justify-end min-h-[540px] relative">
+<!-- Simulated App Underneath (Dimmed) -->
+<div class="absolute inset-0 p-space-md opacity-30 flex flex-col gap-space-sm text-white font-technical-data text-[10px]">
+<div class="flex justify-between items-center py-1">
+<span>PIT LANE MONITOR</span>
+<span>14:28:19 UTC</span>
+</div>
+<div class="h-20 bg-surface/10 rounded"></div>
+<div class="h-20 bg-surface/10 rounded"></div>
+<div class="h-20 bg-surface/10 rounded"></div>
+</div>
+<!-- Bottom Sheet Container (16px top rounded) -->
+<div class="relative z-10 w-full bg-surface rounded-t-[16px] shadow-2xl flex flex-col overflow-hidden">
+<!-- Drag Grab Handle -->
+<div class="w-full py-2.5 flex items-center justify-center">
+<div class="w-9 h-1 rounded-full bg-border-divider"></div>
+</div>
+<!-- Sheet Header -->
+<div class="px-space-md pb-space-sm flex items-center justify-between">
+<div>
+<h4 class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Quick Dispatch Vehicle</h4>
+<span class="font-technical-data text-[11px] text-text-muted">CHASSIS #992-GT3-2041</span>
+</div>
+<button class="w-7 h-7 rounded-full bg-surface-elevated text-text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Action Items List -->
+<div class="px-space-md py-space-sm flex flex-col gap-2">
+<!-- Action 1 -->
+<button class="w-full p-space-sm bg-surface-elevated hover:bg-surface-dim rounded flex items-center justify-between transition-colors">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-graphite-primary text-white flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">garage</span>
+</div>
+<div class="text-left">
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary block leading-tight">Assign Hoist Bay</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Current: Unassigned // Available: Bay 01, 04</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-secondary text-[20px]">chevron_right</span>
+</button>
+<!-- Action 2 -->
+<button class="w-full p-space-sm bg-surface-elevated hover:bg-surface-dim rounded flex items-center justify-between transition-colors">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-graphite-primary text-white flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">badge</span>
+</div>
+<div class="text-left">
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary block leading-tight">Reassign Technician</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Shift duty to Marcus V. (Suspension)</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-secondary text-[20px]">chevron_right</span>
+</button>
+<!-- Action 3 -->
+<button class="w-full p-space-sm bg-surface-elevated hover:bg-surface-dim rounded flex items-center justify-between transition-colors">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-status-success/15 text-status-success flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">fact_check</span>
+</div>
+<div class="text-left">
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary block leading-tight">Mark QC Ready</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Notify workshop inspector for final signoff</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-secondary text-[20px]">chevron_right</span>
+</button>
+<!-- Action 4 -->
+<button class="w-full p-space-sm bg-surface-elevated hover:bg-surface-dim rounded flex items-center justify-between transition-colors">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-surface text-graphite-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</div>
+<div class="text-left">
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary block leading-tight">Print Job Sheet</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Send barcode payload to Bay 01 Thermal Printer</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-secondary text-[20px]">chevron_right</span>
+</button>
+</div>
+<!-- Sheet Footer Primary Dismiss -->
+<div class="p-space-md bg-surface">
+<button class="w-full py-2.5 rounded bg-surface-elevated text-graphite-primary font-label-lg text-label-lg hover:bg-surface-dim transition-colors uppercase font-bold tracking-wider">
+                  Dismiss Sheet
+                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- MOBILE SHEET 2: Spare Part Request Bottom Sheet (Mechanic Flow) -->
+<div class="flex flex-col gap-space-xs items-center">
+<div class="w-full max-w-[420px] flex items-center justify-between px-space-xs">
+<span class="font-technical-data text-body-sm text-graphite-secondary uppercase font-bold">DRAWER B: MECHANIC REQUISITION SHEET</span>
+<span class="font-technical-data text-body-sm text-text-muted">FAST COUNTER &amp; URGENCY</span>
+</div>
+<div class="w-full max-w-[420px] bg-graphite-primary p-2.5 rounded-[24px] shadow-2xl">
+<div class="w-full bg-[#17191C]/75 rounded-[18px] overflow-hidden flex flex-col justify-end min-h-[540px] relative">
+<div class="absolute inset-0 p-space-md opacity-30 flex flex-col gap-space-sm text-white font-technical-data text-[10px]">
+<div class="flex justify-between items-center py-1">
+<span>BAY 02 WORK ORDER</span>
+<span>JOB ID #2041-A</span>
+</div>
+<div class="h-32 bg-surface/10 rounded"></div>
+</div>
+<!-- Bottom Sheet -->
+<div class="relative z-10 w-full bg-surface rounded-t-[16px] shadow-2xl flex flex-col overflow-hidden">
+<div class="w-full py-2.5 flex items-center justify-center">
+<div class="w-9 h-1 rounded-full bg-border-divider"></div>
+</div>
+<!-- Header -->
+<div class="px-space-md pb-space-sm flex items-center justify-between">
+<div>
+<h4 class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Request Spare Part</h4>
+<span class="font-technical-data text-[11px] text-text-muted">BAY 02 DISPATCH LINK</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-accent-red text-white font-technical-data text-[10px] font-bold">TRACK-URGENT</span>
+</div>
+<!-- Content Form -->
+<div class="px-space-md py-space-sm flex flex-col gap-space-md">
+<!-- Part Lookup Input -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Part SKU / Lookup Search</label>
+<div class="relative">
+<input class="w-full h-10 pl-space-sm pr-10 bg-surface-elevated rounded text-graphite-primary font-technical-data text-body-sm font-semibold outline-none" type="text" value="SP-FLUID-DOT4 (Castrol SRF Brake Fluid 1L)"/>
+<span class="material-symbols-outlined text-text-secondary absolute right-2.5 top-2.5 text-[18px]">search</span>
+</div>
+</div>
+<!-- Quantity Stepper Counter -->
+<div class="flex items-center justify-between p-space-sm bg-surface-elevated rounded">
+<div>
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary block">Quantity Units</span>
+<span class="font-technical-data text-[11px] text-text-secondary">2 Bottles Available in Vault</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface rounded p-1">
+<button class="w-8 h-8 rounded bg-surface-elevated hover:bg-surface-dim text-graphite-primary font-bold flex items-center justify-center transition-colors">
+                      -
+                    </button>
+<span class="w-8 text-center font-technical-data text-headline-sm font-bold text-graphite-primary">2</span>
+<button class="w-8 h-8 rounded bg-surface-elevated hover:bg-surface-dim text-graphite-primary font-bold flex items-center justify-center transition-colors">
+                      +
+                    </button>
+</div>
+</div>
+<!-- Urgency Selector -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md uppercase text-text-secondary tracking-wider">Urgency Level</label>
+<div class="grid grid-cols-2 gap-space-sm">
+<button class="py-2 px-space-sm rounded bg-surface-elevated font-technical-data text-body-sm text-text-secondary hover:text-graphite-primary font-semibold flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>Standard Re-stock</span>
+</button>
+<button class="py-2 px-space-sm rounded bg-status-danger text-white font-technical-data text-body-sm font-bold flex items-center justify-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">emergency_home</span>
+<span>Critical Stoppage</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer CTA -->
+<div class="p-space-md bg-surface">
+<button class="w-full py-3 rounded bg-accent-red hover:bg-accent-red-hover text-white font-label-lg text-label-lg transition-colors flex items-center justify-center gap-space-xs shadow-sm uppercase font-bold tracking-wider">
+<span class="material-symbols-outlined text-[18px]">send</span>
+<span>Submit Request to Admin</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 5: NOTIFICATION TEMPLATES (TOASTS, SNACKBARS & NOTIFICATION FEED) -->
+<section class="px-margin-desktop py-space-xl flex flex-col gap-space-lg" id="notifications">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="font-technical-data text-body-sm px-space-xs py-0.5 rounded bg-graphite-primary text-white font-semibold">05</span>
+<h2 class="font-headline-md text-headline-md uppercase text-graphite-primary">System Notification Templates</h2>
+</div>
+<span class="font-technical-data text-body-sm text-text-secondary uppercase">TOASTS, BANNERS &amp; ROLE-BASED FEED</span>
+</div>
+<!-- 4 Tiers of Snackbars / In-App Toasts -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- 1. SUCCESS TOAST -->
+<div class="p-space-md bg-surface rounded shadow-md flex items-start gap-space-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-status-success"></div>
+<div class="w-8 h-8 rounded bg-status-success/15 text-status-success flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+</div>
+<div class="flex flex-col gap-0.5 flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Service Order Created</span>
+<span class="font-technical-data text-[10px] text-text-muted">JUST NOW</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary leading-snug">
+            Service Order <strong class="text-graphite-primary font-technical-data">SO-2026-0143</strong> created successfully. Assigned to Bay 02.
+          </p>
+</div>
+</div>
+<!-- 2. WARNING TOAST -->
+<div class="p-space-md bg-surface rounded shadow-md flex items-start gap-space-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-status-warning"></div>
+<div class="w-8 h-8 rounded bg-status-warning/15 text-status-warning flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">warning_amber</span>
+</div>
+<div class="flex flex-col gap-0.5 flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Low Stock Warning</span>
+<span class="font-technical-data text-[10px] text-text-muted">2M AGO</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary leading-snug">
+<strong class="text-graphite-primary font-technical-data">DOT4 Synthetic Fluid</strong> below minimum threshold (2 units remaining).
+          </p>
+</div>
+</div>
+<!-- 3. ERROR TOAST -->
+<div class="p-space-md bg-surface rounded shadow-md flex items-start gap-space-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-status-danger"></div>
+<div class="w-8 h-8 rounded bg-status-danger/15 text-status-danger flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">error</span>
+</div>
+<div class="flex flex-col gap-0.5 flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Inventory Reservation Failed</span>
+<span class="font-technical-data text-[10px] text-text-muted">4M AGO</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary leading-snug">
+            Failed to reserve parts: <strong class="text-graphite-primary font-technical-data">Brake Pads FL5</strong> currently out of stock.
+          </p>
+</div>
+</div>
+<!-- 4. INFO TOAST -->
+<div class="p-space-md bg-surface rounded shadow-md flex items-start gap-space-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-status-info"></div>
+<div class="w-8 h-8 rounded bg-status-info/15 text-status-info flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</div>
+<div class="flex flex-col gap-0.5 flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Progress Updated</span>
+<span class="font-technical-data text-[10px] text-text-muted">8M AGO</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-secondary leading-snug">
+            Lead Tech <strong class="text-graphite-primary">Dian S.</strong> updated job progress on Bay 01 to 60%.
+          </p>
+</div>
+</div>
+</div>
+<!-- NOTIFICATION CENTER CARDS: ROLE SPECIFIC DEMONSTRATION -->
+<div class="p-space-lg bg-surface rounded shadow-sm flex flex-col gap-space-md mt-space-md">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm pb-space-sm">
+<div>
+<h3 class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Role-Specific Notification Center Feed</h3>
+<p class="font-body-sm text-body-sm text-text-secondary">Simulated multi-tier dispatch center cards showing unread badges, timestamps, and direct CTA hooks.</p>
+</div>
+<div class="flex items-center gap-space-xs font-technical-data text-body-sm">
+<span class="px-2 py-0.5 rounded bg-accent-red text-white font-bold">3 UNREAD</span>
+<span class="text-text-muted">|</span>
+<button class="text-graphite-primary hover:text-accent-red font-medium">Mark All Read</button>
+</div>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- CARD 1: ADMIN ROLE -->
+<div class="p-space-md rounded bg-surface-elevated flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
+<div class="flex items-start gap-space-md">
+<div class="relative shrink-0">
+<div class="w-10 h-10 rounded bg-graphite-primary text-white flex items-center justify-center font-technical-data font-bold text-body-sm">
+                ADM
+              </div>
+<span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-accent-red"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-technical-data text-[10px] px-1.5 py-0.5 rounded bg-graphite-primary text-white font-bold">ROLE: ADMINISTRATOR</span>
+<span class="font-technical-data text-body-sm font-bold text-graphite-primary">CRITICAL REQUISITION APPROVAL NEEDED</span>
+<span class="text-text-muted text-[11px] font-technical-data">• 12m ago</span>
+</div>
+<p class="font-body-md text-body-md text-text-secondary mt-1">
+                Technician Marcus V. filed emergency bay stoppage requisition for <strong class="text-graphite-primary font-technical-data">2x Castrol SRF (Bay 02)</strong>. Approval required to release locked vault inventory.
+              </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0 w-full md:w-auto justify-end">
+<button class="px-space-md py-1.5 rounded bg-surface text-graphite-primary hover:bg-surface-dim font-label-lg text-label-lg transition-colors">
+              Review Requisition
+            </button>
+<button class="px-space-md py-1.5 rounded bg-accent-red hover:bg-accent-red-hover text-white font-label-lg text-label-lg transition-colors font-bold shadow-sm">
+              Instant Authorize
+            </button>
+</div>
+</div>
+<!-- CARD 2: MECHANIC ROLE -->
+<div class="p-space-md rounded bg-surface-elevated flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md">
+<div class="flex items-start gap-space-md">
+<div class="relative shrink-0">
+<div class="w-10 h-10 rounded bg-accent-red text-white flex items-center justify-center font-technical-data font-bold text-body-sm">
+                MEC
+              </div>
+<span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-accent-red"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-technical-data text-[10px] px-1.5 py-0.5 rounded bg-accent-red text-white font-bold">ROLE: LEAD MECHANIC</span>
+<span class="font-technical-data text-body-sm font-bold text-graphite-primary">QC INSPECTION REJECTED - RE-WORK REQUIRED</span>
+<span class="text-text-muted text-[11px] font-technical-data">• 24m ago</span>
+</div>
+<p class="font-body-md text-body-md text-text-secondary mt-1">
+                QC Inspector Elena R. flagged <strong class="text-graphite-primary font-technical-data">Job #SO-0139 (Bay 01)</strong>. Reason: Front LH rotor runout 0.04mm exceeds tolerance. Return vehicle to hoist.
+              </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0 w-full md:w-auto justify-end">
+<button class="px-space-md py-1.5 rounded bg-surface text-graphite-primary hover:bg-surface-dim font-label-lg text-label-lg transition-colors">
+              View Defect Telemetry
+            </button>
+<button class="px-space-md py-1.5 rounded bg-graphite-primary hover:bg-graphite-secondary text-white font-label-lg text-label-lg transition-colors">
+              Accept Re-work
+            </button>
+</div>
+</div>
+<!-- CARD 3: CLIENT / CUSTOMER ROLE -->
+<div class="p-space-md rounded bg-surface-elevated flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md opacity-90">
+<div class="flex items-start gap-space-md">
+<div class="relative shrink-0">
+<div class="w-10 h-10 rounded bg-surface text-graphite-primary flex items-center justify-center font-technical-data font-bold text-body-sm">
+                CLI
+              </div>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-technical-data text-[10px] px-1.5 py-0.5 rounded bg-surface-elevated text-graphite-primary font-bold">ROLE: FLEET CLIENT</span>
+<span class="font-technical-data text-body-sm font-semibold text-graphite-primary">VEHICLE READY FOR TRACKSIDE PICKUP</span>
+<span class="text-text-muted text-[11px] font-technical-data">• 1h ago</span>
+</div>
+<p class="font-body-md text-body-md text-text-secondary mt-1">
+                Porsche 911 GT3 (B 1234 XYZ) has cleared all post-service dynamometer calibrations and quality verification. Digital invoice ready for settlement.
+              </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0 w-full md:w-auto justify-end">
+<button class="px-space-md py-1.5 rounded bg-surface text-graphite-primary hover:bg-surface-dim font-label-lg text-label-lg transition-colors">
+              Download PDF Report
+            </button>
+<button class="px-space-md py-1.5 rounded bg-status-success text-white hover:bg-green-700 font-label-lg text-label-lg transition-colors font-semibold">
+              Settle Invoice ($1,480.00)
+            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- IMPLEMENTATION REFERENCE & CODE GUIDELINES STRIP -->
+<footer class="px-margin-desktop py-space-xl bg-surface flex flex-col gap-space-md">
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md pb-space-sm">
+<div>
+<h4 class="font-headline-sm text-headline-sm uppercase text-graphite-primary">Design System Implementation Standard</h4>
+<span class="font-technical-data text-body-sm text-text-secondary">FRAMEWORK COMPATIBILITY: REACT / TAILWIND CSS / PITMATE RUNTIME</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-technical-data text-[11px] text-text-muted">SYSTEM STATUS: APPROVED FOR SPRINT 14</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md font-body-sm text-body-sm text-text-secondary">
+<div class="p-space-sm bg-surface-elevated rounded flex flex-col gap-1">
+<span class="font-technical-data text-[11px] text-graphite-primary font-bold">1. FOCUS TRAPPING &amp; ACCESSIBILITY</span>
+<p>All dialogs must trap keyboard focus, bind <code class="font-technical-data text-[12px] bg-surface px-1">Esc</code> to dismiss, and set <code class="font-technical-data text-[12px] bg-surface px-1">aria-modal="true"</code> on mounting.</p>
+</div>
+<div class="p-space-sm bg-surface-elevated rounded flex flex-col gap-1">
+<span class="font-technical-data text-[11px] text-graphite-primary font-bold">2. DESTRUCTIVE ACTIONS DOUBLE-GATE</span>
+<p>Actions involving records or telemetry deletions require an explicit confirmation button and cannot rely on simple prompt defaults.</p>
+</div>
+<div class="p-space-sm bg-surface-elevated rounded flex flex-col gap-1">
+<span class="font-technical-data text-[11px] text-graphite-primary font-bold">3. AUTO-DISMISS TOAST TIMINGS</span>
+<p>Success toasts auto-dismiss after 4000ms. Critical error and inventory reservation alerts persist until manually acknowledged.</p>
+</div>
+</div>
+</footer>
+</div></main></div></body></html>
