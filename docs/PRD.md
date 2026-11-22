@@ -5,7 +5,7 @@
 > **Status:** Draft — Pending Approval  
 > **Date:** 2026-11-20  
 > **Project Mode:** Complete application redesign  
-> **Deployment Target:** Android, iOS (future), responsive web/desktop admin  
+> **Deployment Target:** Android, responsive web/desktop admin. Testing will be done using localhost web and deployment will be used in Redmi Note 14 Pro+ 5G.  
 > **Workshop Model:** Single physical workshop, five service bays
 
 ---
@@ -115,12 +115,13 @@ ACT-005 may initially use the Admin role. Separate owner permissions are a futur
 ## 3.1 Authentication
 
 - Admin and mechanics use authenticated accounts.
-- Customers can register independently.
-- Customer registration uses Supabase Auth with email OTP verification and password setup.
-- Admin can create customer records for walk-in visitors.
-- Guest customers do not require accounts.
-- Existing guest records can later be linked to verified customer accounts through an authorized process.
-- Role assignment is controlled by authorized administration, not self-selected during public registration.
+- Customers can register independently via Email and Password.
+- Following sign-up, customer must verify email using a 6-digit OTP sent to their email.
+- Unverified customers have restricted access: they cannot book appointments or submit service requests until email OTP verification is complete.
+- Admin can create customer records for walk-in visitors without requiring an initial online account (Guest Customer).
+- Guest customers do not require accounts upfront.
+- Existing guest records can later be linked to verified customer accounts through an authorized phone/email matching process.
+- Role assignment is strictly controlled server-side; public sign-up automatically assigns `customer` role and cannot self-elevate to admin or mechanic.
 
 ---
 
@@ -220,6 +221,7 @@ If the customer rejects all work, the service order follows the inspection-fee/d
 - Admin, mechanic and customer roles.
 - OTP customer registration.
 - Login, logout and password recovery.
+- Password recovery using OTP sent to email.
 - Guest customer intake.
 - Admin customer creation and management.
 - Vehicle registration and management.
@@ -340,16 +342,20 @@ If the customer rejects all work, the service order follows the inspection-fee/d
 
 **Priority:** P0
 
-- Admin and mechanics must authenticate.
-- Customers can self-register using email OTP.
+- Admin and mechanics must authenticate with assigned credentials.
+- Customers can self-register using Email and Password.
+- Mandatory 6-digit email OTP verification activates full customer privileges.
+- Unverified customer accounts cannot create bookings or request services (booking gate).
 - Public registration cannot create admin or mechanic privileges.
 - Role permissions are enforced server-side.
-- Password recovery is supported.
-- Sessions are handled securely.
+- Password recovery via email OTP is supported.
+- Sessions are handled securely via Supabase Auth.
 
 **Acceptance criteria:**
 - [ ] Users can log in and log out.
-- [ ] Customers can register and verify their email.
+- [ ] Customers can sign up with Email and Password.
+- [ ] Customers receive and verify 6-digit email OTP.
+- [ ] Unverified accounts cannot create bookings.
 - [ ] Unauthorized users cannot access another role's data.
 - [ ] Role changes cannot be performed by customers.
 - [ ] Expired sessions are handled correctly.

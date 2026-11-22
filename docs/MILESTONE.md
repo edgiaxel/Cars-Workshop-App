@@ -1,10 +1,18 @@
 # Milestones — PitMate
 
-> **Current milestone:** M0 Completed — Preparing for M1  
-> **Overall status:** M0 Complete / M1 Ready  
+> **Current milestone:** M0 — Project Preparation  
+> **Overall status:** Planning Complete / Implementation Not Started  
 > **Version:** 2.0  
-> **Last updated:** 2026-11-22  
+> **Last updated:** 2026-11-20  
 > **Deadline:** To be confirmed
+
+```
+[caveman](slashCommand;caveman) [antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) 
+
+[/goal](slashCommand;goal) 
+
+Read docs/ and necessary documents and sync to be updated. Read the existing project code before continuing. 
+```
 
 ---
 
@@ -51,8 +59,8 @@ Initialize the new repository and validate the critical technical assumptions be
 
 | ID | Milestone | Outcome | Status |
 |---|---|---|---|
-| M0 | Project Preparation | Verified development foundation | Complete |
-| M1 | Application Foundation | Authentication and role-based application | Next |
+| M0 | Project Preparation | Verified development foundation | Not started |
+| M1 | Application Foundation | Authentication and role-based application | Not started |
 | M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Not started |
 | M3 | Workshop Operations | Dispatch and mechanic execution | Not started |
 | M4 | Inventory & Cost Management | Operational stock and service costing | Not started |
@@ -90,6 +98,7 @@ Initialize the new repository and validate the critical technical assumptions be
 - [x] Establish Git branching conventions.
 - [x] Establish Antigravity agent workflow.
 - [x] Create initial testing structure.
+- [x] Create .env to store all env variables like supabase and URLs.
 
 ### Technical validation
 

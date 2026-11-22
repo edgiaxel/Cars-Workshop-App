@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <!-- PitMate Shield Emblem Favicon (Dark Background) -->
+  <rect width="32" height="32" rx="6" fill="#111417"/>
+  <g transform="translate(1, 1)">
+    <path d="M4 3 L22 3 L28 15 L22 27 L4 27 Z" fill="#242B32" stroke="#343C44" stroke-width="1"/>
+    <path d="M4 3 L16 3 L20 11 L16 19 L4 19 Z" fill="#F05A4F"/>
+    <rect x="8" y="8" width="5" height="5" fill="#FFFFFF"/>
+    <circle cx="23" cy="21" r="2.5" fill="#F05A4F"/>
+  </g>
+</svg>
