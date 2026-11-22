@@ -26,32 +26,28 @@ Do not record planned functionality as completed.
 
 Changes currently under development.
 
+---
+
+# [1.1.0-m2] — 2026-11-23
+
 ### Added
 
-- Database schema specification for Milestone M2: `bookings`, `service_orders`, `inspections`, `inspection_findings`, `estimates`, `estimate_items`, `estimate_authorizations`.
-- Playwright CLI end-to-end verification procedures in `TESTING.md`.
-- Multi-agent worktree execution plan for Milestone M2 (VS-04 Booking Management, VS-05 Walk-in Intake, VS-06 Inspection & Diagnosis, VS-07 Estimate & Authorization).
-
-### Changed
-
-- Synced `MILESTONE.md` marking M1 complete and advancing M2 to Active Planning.
-- Updated `DATABASE_SCHEMA.md` with M2 tables, enums, RPC contracts, and RLS policies.
-
-### Fixed
-
-- Pending implementation.
+- **VS-04 Booking Management:** Complete customer appointment request, admin review, approval, reschedule, and cancellation flows.
+- **VS-05 Walk-in Intake:** Physical intake modal with odometer recording, guest/registered customer support, and atomic service order creation.
+- **VS-06 Inspection & Diagnosis:** Category-based digital inspection workspace, severity evaluation, urgent finding flags, and submission validation.
+- **VS-07 Estimate & Authorization:** Admin estimate builder with parts and labor items, 11% PPN integer tax calculation, revision management, and customer digital authorization.
+- **Database Schema & RPCs:** Migration `20261123000000_m2_customer_intake_diagnosis.sql` with tables `bookings`, `service_orders`, `inspections`, `inspection_findings`, `estimates`, `estimate_items`, `estimate_authorizations`, and RPC functions `create_service_order_intake`, `submit_inspection`, and `authorize_estimate`.
+- **E2E Playwright Suite:** Full automated multi-role localhost verification using Playwright CLI against live remote Supabase PostgreSQL.
 
 ### Security
 
-- Pending implementation.
-
-### Infrastructure
-
-- Pending implementation.
+- Enforced Row Level Security (RLS) on all M2 tables isolating customer data, mechanic assignments, and admin permissions.
+- Unique partial PostgreSQL index `idx_service_orders_single_active_vehicle` preventing concurrent active service orders for a single vehicle.
 
 ### Documentation
 
-- Pending implementation.
+- Created detailed E2E Walkthrough artifact with 13 visual proof screenshots.
+- Updated `DATABASE_SCHEMA.md`, `MILESTONE.md`, and `TESTING.md`.
 
 ---
 

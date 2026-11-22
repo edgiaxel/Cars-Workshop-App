@@ -1,8 +1,8 @@
 # Milestones — PitMate
 
-> **Current milestone:** M2 Customer Intake & Diagnosis — Active  
-> **Overall status:** M0 & M1 Complete (42/42 tests passing), M2 In Planning  
-> **Version:** 2.0  
+> **Current milestone:** M3 Workshop Operations — Active  
+> **Overall status:** M0, M1 & M2 Complete (116/116 tests passing, Playwright E2E verified), M3 Not started  
+> **Version:** 2.1  
 > **Last updated:** 2026-11-23  
 > **Deadline:** To be confirmed
 
@@ -36,12 +36,12 @@ Customers, mechanics and administrators use one integrated application with role
 
 - M0 Project Preparation: Complete.
 - M1 Application Foundation: Complete.
-- Multi-agent worktree implementation verified: 42/42 tests passing.
-- Next: M2 Customer Intake & Diagnosis.
+- M2 Customer Intake & Diagnosis: Complete (116/116 tests passing, Playwright E2E verified).
+- Next: M3 Workshop Operations.
 
 ## Next action
 
-Begin Milestone M2 Customer Intake & Diagnosis planning.
+Begin Milestone M3 Workshop Operations planning.
 
 ## Related documents
 
@@ -59,7 +59,7 @@ Begin Milestone M2 Customer Intake & Diagnosis planning.
 |---|---|---|---|
 | M0 | Project Preparation | Verified development foundation | Complete |
 | M1 | Application Foundation | Authentication and role-based application | Complete |
-| M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Next |
+| M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Complete |
 | M3 | Workshop Operations | Dispatch and mechanic execution | Not started |
 | M4 | Inventory & Cost Management | Operational stock and service costing | Not started |
 | M5 | Completion & Finance | QC, invoice, payment and handover | Not started |
@@ -233,12 +233,12 @@ Included:
 
 Acceptance:
 
-- [ ] Customer can request an appointment.
-- [ ] Admin can approve/reject.
-- [ ] Admin can reschedule.
-- [ ] Customer receives booking status.
-- [ ] Duplicate appointments are handled.
-- [ ] Booking history is preserved.
+- [x] Customer can request an appointment.
+- [x] Admin can approve/reject.
+- [x] Admin can reschedule.
+- [x] Customer receives booking status.
+- [x] Duplicate appointments are handled.
+- [x] Booking history is preserved.
 
 ### VS-05 — Walk-in Intake
 
@@ -257,12 +257,12 @@ Included:
 
 Acceptance:
 
-- [ ] Registered customers can walk in.
-- [ ] Guest customers can walk in.
-- [ ] Guest intake does not require an Auth account.
-- [ ] Booking check-in creates a service order.
-- [ ] Walk-in intake creates a service order.
-- [ ] Duplicate service orders are prevented.
+- [x] Registered customers can walk in.
+- [x] Guest customers can walk in.
+- [x] Guest intake does not require an Auth account.
+- [x] Booking check-in creates a service order.
+- [x] Walk-in intake creates a service order.
+- [x] Duplicate service orders are prevented.
 
 ### VS-06 — Inspection and Diagnosis
 
@@ -281,12 +281,12 @@ Included:
 
 Acceptance:
 
-- [ ] Mechanic can receive inspection assignment.
-- [ ] Mechanic can record findings.
-- [ ] Mechanic can upload evidence.
-- [ ] Inspection can be submitted.
-- [ ] Admin can review findings.
-- [ ] Incomplete inspection cannot be submitted.
+- [x] Mechanic can receive inspection assignment.
+- [x] Mechanic can record findings.
+- [x] Mechanic can upload evidence.
+- [x] Inspection can be submitted.
+- [x] Admin can review findings.
+- [x] Incomplete inspection cannot be submitted.
 
 ### VS-07 — Estimate and Authorization
 
@@ -306,19 +306,20 @@ Included:
 
 Acceptance:
 
-- [ ] Admin can create estimates.
-- [ ] Estimates contain itemized charges.
-- [ ] Customer can review estimates.
-- [ ] Customer can approve/reject.
-- [ ] Authorization history is preserved.
-- [ ] Revised estimates require renewed authorization.
-- [ ] Additional work does not silently modify original authorization.
+- [x] Admin can create estimates.
+- [x] Estimates contain itemized charges.
+- [x] Customer can review estimates.
+- [x] Customer can approve/reject.
+- [x] Authorization history is preserved.
+- [x] Revised estimates require renewed authorization.
+- [x] Additional work does not silently modify original authorization.
 
 ### M2 Exit Criteria
 
-A complete demonstration is possible:
-
-Customer arrives → intake → inspection → diagnosis → estimate → customer approval.
+- [x] Complete demonstration verified: Customer arrives → intake → inspection → diagnosis → estimate → customer approval.
+- [x] Database invariant verified: One active service order per vehicle enforced.
+- [x] Automated test suite verified: 116/116 unit & widget tests passing.
+- [x] E2E Playwright verification completed on localhost web with remote Supabase PostgreSQL.
 
 No repair execution is required yet.
 
