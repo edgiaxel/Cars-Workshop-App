@@ -12,6 +12,7 @@ class RoutePaths {
   // Admin subsystem paths
   static const String admin = '/admin';
   static const String adminCustomers = '/admin/customers';
+  static const String adminEstimateBuilder = '/admin/estimates';
 
   // Mechanic subsystem paths
   static const String mechanic = '/mechanic';
@@ -19,4 +20,5 @@ class RoutePaths {
   // Customer subsystem paths
   static const String customer = '/customer';
   static const String customerGarage = '/customer/garage';
+  static const String customerEstimateApproval = '/customer/estimates';
 }
