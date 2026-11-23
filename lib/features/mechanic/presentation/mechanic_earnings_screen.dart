@@ -55,7 +55,6 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
                 baseSalaryCents: 5000000,
                 incentivePercentage: 10.0,
                 defaultLeadSharePercentage: 70.0,
-                createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
                 mechanicName: 'Max Verstappen',
               ),

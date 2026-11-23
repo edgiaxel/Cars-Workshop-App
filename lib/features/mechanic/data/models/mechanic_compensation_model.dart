@@ -5,7 +5,6 @@ class MechanicCompensationProfile {
   final int baseSalaryCents;
   final double incentivePercentage;
   final double defaultLeadSharePercentage;
-  final DateTime createdAt;
   final DateTime updatedAt;
 
   // Joined profile fields
@@ -16,8 +15,7 @@ class MechanicCompensationProfile {
     required this.mechanicId,
     required this.baseSalaryCents,
     required this.incentivePercentage,
-    required this.defaultLeadSharePercentage,
-    required this.createdAt,
+    this.defaultLeadSharePercentage = 70.0,
     required this.updatedAt,
     this.mechanicName,
     this.mechanicEmail,
@@ -32,14 +30,20 @@ class MechanicCompensationProfile {
       email = p['email'] as String?;
     }
 
+    final rawSalary = json['monthly_base_salary_cents'] ?? json['base_salary_cents'];
+    final salary = (rawSalary as num?)?.toInt() ?? 5000000;
+
+    final rawIncentive = json['standard_incentive_percent'] ?? json['incentive_percentage'];
+    final incentive = rawIncentive is num ? rawIncentive.toDouble() : (double.tryParse(rawIncentive?.toString() ?? '') ?? 10.0);
+
+    final rawSplit = json['default_lead_share_percentage'];
+    final split = rawSplit is num ? rawSplit.toDouble() : (double.tryParse(rawSplit?.toString() ?? '') ?? 70.0);
+
     return MechanicCompensationProfile(
       mechanicId: json['mechanic_id'] as String? ?? '',
-      baseSalaryCents: (json['base_salary_cents'] as num?)?.toInt() ?? 0,
-      incentivePercentage: (json['incentive_percentage'] as num?)?.toDouble() ?? 10.0,
-      defaultLeadSharePercentage: (json['default_lead_share_percentage'] as num?)?.toDouble() ?? 70.0,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
+      baseSalaryCents: salary,
+      incentivePercentage: incentive,
+      defaultLeadSharePercentage: split,
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : DateTime.now(),
@@ -90,12 +94,15 @@ class MechanicEarningAllocation {
       }
     }
 
+    final rawSplit = json['split_percentage'] ?? json['share_percentage'];
+    final splitVal = rawSplit is num ? rawSplit.toDouble() : (double.tryParse(rawSplit?.toString() ?? '') ?? 0.0);
+
     return MechanicEarningAllocation(
       id: json['id'] as String? ?? '',
       earningId: json['earning_id'] as String? ?? '',
       mechanicId: json['mechanic_id'] as String? ?? '',
       allocatedCents: (json['allocated_cents'] as num?)?.toInt() ?? 0,
-      sharePercentage: (json['share_percentage'] as num?)?.toDouble() ?? 0.0,
+      sharePercentage: splitVal,
       roleInTask: json['role_in_task'] as String? ?? 'lead',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
@@ -137,13 +144,16 @@ class MechanicPayrollAdjustment {
       name = json['profiles']['full_name'] as String?;
     }
 
+    final rawAmount = (json['amount_cents'] as num?)?.toInt() ?? 0;
+    final type = json['adjustment_type'] as String? ?? (rawAmount >= 0 ? 'bonus' : 'deduction');
+
     return MechanicPayrollAdjustment(
       id: json['id'] as String? ?? '',
       mechanicId: json['mechanic_id'] as String? ?? '',
-      amountCents: (json['amount_cents'] as num?)?.toInt() ?? 0,
-      adjustmentType: json['adjustment_type'] as String? ?? 'adjustment',
+      amountCents: rawAmount.abs(),
+      adjustmentType: type,
       reason: json['reason'] as String? ?? '',
-      authorizedBy: json['authorized_by'] as String?,
+      authorizedBy: (json['adjusted_by'] ?? json['authorized_by']) as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),

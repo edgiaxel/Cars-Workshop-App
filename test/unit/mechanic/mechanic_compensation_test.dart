@@ -3,28 +3,24 @@ import 'package:pitmate/features/mechanic/data/models/mechanic_compensation_mode
 
 void main() {
   group('MechanicCompensationProfile Model Tests', () {
-    test('Deserializes compensation profile JSON properly', () {
+    test('Deserializes compensation profile JSON properly with standard database columns', () {
       final json = {
         'mechanic_id': 'mech-1',
-        'base_salary_cents': 6000000,
-        'incentive_percentage': 12.5,
-        'default_lead_share_percentage': 75.0,
-        'created_at': '2026-11-23T08:00:00Z',
+        'monthly_base_salary_cents': 850000000,
+        'standard_incentive_percent': '15.00',
         'updated_at': '2026-11-23T08:30:00Z',
         'profiles': {
           'full_name': 'Max Verstappen',
-          'email': 'max@pitmate.com',
         },
       };
 
       final profile = MechanicCompensationProfile.fromJson(json);
 
       expect(profile.mechanicId, equals('mech-1'));
-      expect(profile.baseSalaryCents, equals(6000000));
-      expect(profile.incentivePercentage, equals(12.5));
-      expect(profile.defaultLeadSharePercentage, equals(75.0));
+      expect(profile.baseSalaryCents, equals(850000000));
+      expect(profile.incentivePercentage, equals(15.0));
+      expect(profile.defaultLeadSharePercentage, equals(70.0));
       expect(profile.mechanicName, equals('Max Verstappen'));
-      expect(profile.mechanicEmail, equals('max@pitmate.com'));
     });
   });
 

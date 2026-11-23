@@ -13,8 +13,8 @@ class MechanicCompensationRepository {
   Future<List<MechanicCompensationProfile>> fetchProfiles() async {
     final response = await _supabase
         .from('mechanic_compensation_profiles')
-        .select('*, profiles(full_name, email)')
-        .order('created_at', ascending: true);
+        .select('*, profiles!mechanic_id(full_name)')
+        .order('updated_at', ascending: true);
 
     return (response as List)
         .map((row) => MechanicCompensationProfile.fromJson(row as Map<String, dynamic>))
@@ -30,9 +30,8 @@ class MechanicCompensationRepository {
   }) async {
     await _supabase.from('mechanic_compensation_profiles').upsert({
       'mechanic_id': mechanicId,
-      'base_salary_cents': baseSalaryCents,
-      'incentive_percentage': incentivePercentage,
-      'default_lead_share_percentage': defaultLeadSharePercentage,
+      'monthly_base_salary_cents': baseSalaryCents,
+      'standard_incentive_percent': incentivePercentage,
       'updated_at': DateTime.now().toIso8601String(),
     });
   }
@@ -41,7 +40,7 @@ class MechanicCompensationRepository {
   Future<List<MechanicEarningAllocation>> fetchAllocationsForMechanic(String mechanicId) async {
     final response = await _supabase
         .from('mechanic_earning_allocations')
-        .select('*, mechanic_earnings(task_id, service_order_id, service_orders(order_number), service_order_tasks(title))')
+        .select('*, mechanic_earnings!earning_id(task_id, service_order_id, service_orders!service_order_id(order_number), service_order_tasks!task_id(title))')
         .eq('mechanic_id', mechanicId)
         .order('created_at', ascending: false);
 
@@ -74,12 +73,12 @@ class MechanicCompensationRepository {
     required String type,
     required String reason,
   }) async {
+    final effectiveAmount = type == 'deduction' ? -amountCents.abs() : amountCents.abs();
     final response = await _supabase.rpc(
       'adjust_mechanic_compensation',
       params: {
         'p_mechanic_id': mechanicId,
-        'p_amount_cents': amountCents,
-        'p_type': type,
+        'p_amount_cents': effectiveAmount,
         'p_reason': reason,
       },
     );
