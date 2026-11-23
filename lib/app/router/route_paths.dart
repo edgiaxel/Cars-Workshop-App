@@ -15,10 +15,12 @@ class RoutePaths {
   static const String adminBookings = '/admin/bookings';
   static const String adminInspectionReview = '/admin/inspection-review';
   static const String adminEstimateBuilder = '/admin/estimates';
+  static const String adminWorkshopFloor = '/admin/floor';
 
   // Mechanic subsystem paths
   static const String mechanic = '/mechanic';
   static const String mechanicInspection = '/mechanic/inspection';
+  static const String mechanicOperation = '/mechanic/operation';
 
   // Customer subsystem paths
   static const String customer = '/customer';

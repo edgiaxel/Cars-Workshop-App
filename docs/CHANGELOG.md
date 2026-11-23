@@ -22,9 +22,14 @@ Do not record planned functionality as completed.
 
 ---
 
-# [Unreleased]
+# [1.2.0-m3] — 2026-11-23
 
-Changes currently under development.
+### Added
+- **VS-08 Workshop Floor & Scheduling:** Live 5-bay console (`AdminWorkshopFloorScreen`), bay conflict prevention, real-time bay telemetry, and vehicle allocation.
+- **VS-09 Service Operations:** Operation tasks, sequential dependency enforcement, checklist management, and atomic dispatch via `dispatch_order_operations` RPC.
+- **VS-10 Mechanic Workspace:** Live mechanic execution console (`OperationWorkspaceScreen`), start, pause/resume with reasons, assistance requests, and additional finding reporting.
+- **Database Schema & RPCs:** Migration `20261123000001_m3_workshop_operations.sql` with tables `workshop_bays`, `service_order_tasks`, `task_checklists`, `mechanic_assignments`, `task_assistance_requests`, `service_order_additional_findings`, and RPCs `assign_vehicle_bay`, `dispatch_order_operations`, `start_task_operation`, `pause_task_operation`, `resume_task_operation`, `complete_task_operation`, `request_task_assistance`, and `report_additional_finding`.
+- **E2E Playwright Suite:** Full multi-role web localhost E2E verification with 11 screenshot proofs.
 
 ---
 

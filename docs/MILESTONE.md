@@ -1,8 +1,8 @@
 # Milestones — PitMate
 
-> **Current milestone:** M3 Workshop Operations — Active  
-> **Overall status:** M0, M1 & M2 Complete (116/116 tests passing, Playwright E2E verified), M3 Not started  
-> **Version:** 2.1  
+> **Current milestone:** M3 Workshop Operations — Complete  
+> **Overall status:** M0, M1, M2 & M3 Complete (123/123 tests passing, Playwright E2E verified), M4 Next  
+> **Version:** 2.3  
 > **Last updated:** 2026-11-23  
 > **Deadline:** To be confirmed
 
@@ -11,13 +11,14 @@
 ```
 [antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) 
 
-[caveman](slashCommand;caveman) be brief
+[caveman](slashCommand;caveman)[ultracave](slashCommand;ultracave) be brief, use less token.
 
 Read docs/ with necessary documents then update and sync them. Read the existing project code before continuing. 
 
 We are using multiagent workflow with different worktree
-You as the orchestrator your job is to review the work, merge them and make sure the code works to real app, no mockup no hardcode, connect the real workflow to database and backend logic everything and run playwright CLI to test in localhost and do the testing that everything has worked
+You as the orchestrator your job is to review the work, merge them and make sure the code works to real app, no mockup no hardcode, connect the real workflow to database and backend logic everything and run playwright CLI to test in localhost and do the testing that everything has worked. And make sure no mock/hardcoded data.
 ```
+
 ---
 
 # 1. Project at a Glance
@@ -37,11 +38,12 @@ Customers, mechanics and administrators use one integrated application with role
 - M0 Project Preparation: Complete.
 - M1 Application Foundation: Complete.
 - M2 Customer Intake & Diagnosis: Complete (116/116 tests passing, Playwright E2E verified).
-- Next: M3 Workshop Operations.
+- M3 Workshop Operations: Complete (123/123 tests passing, Playwright E2E verified).
+- Next: M4 Inventory & Cost Management.
 
 ## Next action
 
-Begin Milestone M3 Workshop Operations planning.
+Begin Milestone M4 Inventory & Cost Management planning.
 
 ## Related documents
 
@@ -60,7 +62,7 @@ Begin Milestone M3 Workshop Operations planning.
 | M0 | Project Preparation | Verified development foundation | Complete |
 | M1 | Application Foundation | Authentication and role-based application | Complete |
 | M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Complete |
-| M3 | Workshop Operations | Dispatch and mechanic execution | Not started |
+| M3 | Workshop Operations | Dispatch and mechanic execution | Complete |
 | M4 | Inventory & Cost Management | Operational stock and service costing | Not started |
 | M5 | Completion & Finance | QC, invoice, payment and handover | Not started |
 | M6 | Communication & Customer Portal | Real-time notifications and reminders | Not started |
@@ -346,12 +348,12 @@ Included:
 
 Acceptance:
 
-- [ ] Five bays are configurable.
-- [ ] Vehicles can be assigned to bays.
-- [ ] Bay conflicts are detected.
-- [ ] Mechanics and workloads are visible.
-- [ ] Admin can assign and reassign mechanics.
-- [ ] Workshop status updates are synchronized.
+- [x] Five bays are configurable.
+- [x] Vehicles can be assigned to bays.
+- [x] Bay conflicts are detected.
+- [x] Mechanics and workloads are visible.
+- [x] Admin can assign and reassign mechanics.
+- [x] Workshop status updates are synchronized.
 
 ### VS-09 — Service Operations
 
@@ -370,11 +372,11 @@ Included:
 
 Acceptance:
 
-- [ ] Service order supports multiple operations.
-- [ ] Operations can execute in parallel when allowed.
-- [ ] Sequential dependencies are enforced.
-- [ ] Completion updates the appropriate workflow.
-- [ ] Invalid transitions are rejected.
+- [x] Service order supports multiple operations.
+- [x] Operations can execute in parallel when allowed.
+- [x] Sequential dependencies are enforced.
+- [x] Completion updates the appropriate workflow.
+- [x] Invalid transitions are rejected.
 
 ### VS-10 — Mechanic Workspace
 
@@ -393,18 +395,19 @@ Included:
 
 Acceptance:
 
-- [ ] Mechanic sees assigned work.
-- [ ] Mechanic can start and pause work.
-- [ ] Mechanic can complete tasks.
-- [ ] Mechanic can report findings.
-- [ ] Mechanic can request assistance.
-- [ ] Admin sees updates without manual refresh.
+- [x] Mechanic sees assigned work.
+- [x] Mechanic can start and pause work.
+- [x] Mechanic can complete tasks.
+- [x] Mechanic can report findings.
+- [x] Mechanic can request assistance.
+- [x] Admin sees updates without manual refresh.
 
 ### M3 Exit Criteria
 
-A vehicle can move from approved estimate to active workshop execution.
-
-Multiple mechanics can work on one vehicle with independently tracked operations.
+- [x] A vehicle can move from approved estimate to active workshop execution.
+- [x] Multiple mechanics can work on one vehicle with independently tracked operations.
+- [x] 123/123 tests passing with zero static analysis issues.
+- [x] Playwright CLI multi-role E2E verification complete on localhost web with remote Supabase PostgreSQL.
 
 ---
 

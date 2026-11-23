@@ -4,6 +4,8 @@ import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/features/admin/presentation/admin_bookings_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_customers_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_estimate_builder_screen.dart';
+import 'package:pitmate/features/admin/presentation/admin_workshop_floor_screen.dart';
+import 'package:pitmate/features/mechanic/presentation/operation_workspace_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_inspection_review_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_overview_screen.dart';
 import 'package:pitmate/features/auth/domain/user_role.dart';
@@ -100,6 +102,10 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: RoutePaths.adminWorkshopFloor,
+      builder: (context, state) => const AdminWorkshopFloorScreen(),
+    ),
+    GoRoute(
       path: RoutePaths.mechanic,
       builder: (context, state) => const MechanicHomeScreen(),
     ),
@@ -112,6 +118,13 @@ final GoRouter appRouter = GoRouter(
           serviceOrderId: orderId,
           inspectionId: inspectionId,
         );
+      },
+    ),
+    GoRoute(
+      path: RoutePaths.mechanicOperation,
+      builder: (context, state) {
+        final taskId = state.uri.queryParameters['taskId'] ?? '';
+        return OperationWorkspaceScreen(taskId: taskId);
       },
     ),
     GoRoute(

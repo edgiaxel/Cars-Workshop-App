@@ -537,8 +537,9 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
 
           // Action Buttons
           ElevatedButton.icon(
+            key: const Key('btn_open_active_job_workspace'),
             onPressed: () {
-              context.push('${RoutePaths.mechanicInspection}?orderId=SO-2026-0143');
+              context.push(RoutePaths.mechanicOperation);
             },
             icon: const Icon(Icons.arrow_forward, size: 18),
             label: const Text('OPEN ACTIVE JOB WORKSPACE'),

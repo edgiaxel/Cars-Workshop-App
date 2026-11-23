@@ -30,8 +30,8 @@ Tables and schema migrations are introduced incrementally per milestone based on
 | Milestone | Target Domain | Key Tables / Objects | Status |
 |---|---|---|---|
 | **M1** | Auth & Identity | `user_role` enum, `profiles`, `customer_type` enum, `customers`, `vehicles`, RLS policies, auth trigger | **Implemented** |
-| **M2** | Customer Intake & Diagnosis | `bookings`, `service_orders`, `inspections`, `inspection_findings`, `estimates`, `estimate_items`, `estimate_authorizations` | **In Progress / Specified** |
-| **M3** | Workshop Operations | `workshop_bays`, `service_order_tasks`, `mechanic_assignments` | Planned |
+| **M2** | Customer Intake & Diagnosis | `bookings`, `service_orders`, `inspections`, `inspection_findings`, `estimates`, `estimate_items`, `estimate_authorizations` | **Implemented** |
+| **M3** | Workshop Operations | `workshop_bays`, `service_order_tasks`, `mechanic_assignments`, `task_checklists`, `task_assistance_requests`, `service_order_additional_findings` | **Specified / In Progress** |
 | **M4** | Inventory & Costing | `parts`, `inventory_transactions`, `part_requests` | Planned |
 | **M5** | Invoicing & Finance | `invoices`, `invoice_items`, `payments` | Planned |
 | **M6** | Customer Portal & Notifications | `notifications`, `maintenance_reminders` | Planned |
@@ -468,4 +468,159 @@ Atomic customer authorization:
 - Records immutable `estimate_authorizations` entry.
 - Updates estimate status (`'approved'`, `'partially_approved'`, `'rejected'`).
 - If approved, updates service order status to `'estimate_approved'`.
+
+---
+
+# 6. Milestone M3: Workshop Operations Schema Specification
+
+## 6.1 Enums
+
+### `public.bay_status`
+Defines operational physical bay states:
+- `'available'`: Ready to receive vehicle.
+- `'occupied'`: Active vehicle currently positioned in bay.
+- `'maintenance'`: Bay equipment undergoing calibration or repair.
+
+### `public.task_status`
+Defines operation lifecycle status:
+- `'pending'`: Created, waiting for assignment or prerequisite.
+- `'assigned'`: Mechanic assigned, ready to start.
+- `'in_progress'`: Mechanic currently executing operation.
+- `'paused'`: Temporarily suspended (waiting for parts, tools, assistance).
+- `'completed'`: All tasks and checklists finished.
+- `'blocked'`: Blocked by dependency or reported issue.
+
+### `public.task_priority`
+- `'low'`, `'medium'`, `'high'`, `'urgent'`
+
+### `public.assistance_status`
+- `'pending'`, `'accepted'`, `'resolved'`
+
+---
+
+## 6.2 Tables
+
+### 6.2.1 `public.workshop_bays`
+Physical service bays (5 fixed bays in workshop MVP).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Bay ID |
+| `bay_number` | `INT` | `NOT NULL UNIQUE CHECK (bay_number BETWEEN 1 AND 5)` | Physical bay number (1-5) |
+| `name` | `TEXT` | `NOT NULL` | Bay label (e.g., 'Bay 01 - Express') |
+| `status` | `public.bay_status` | `NOT NULL DEFAULT 'available'` | Operational status |
+| `current_service_order_id` | `UUID` | `REFERENCES public.service_orders(id) ON DELETE SET NULL` | Occupying service order |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Last updated timestamp |
+
+### 6.2.2 `public.service_order_tasks`
+Discrete executable operations attached to a service order.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Task ID |
+| `service_order_id` | `UUID` | `NOT NULL REFERENCES public.service_orders(id) ON DELETE CASCADE` | Service order reference |
+| `estimate_item_id` | `UUID` | `REFERENCES public.estimate_items(id) ON DELETE SET NULL` | Originating authorized estimate line |
+| `title` | `TEXT` | `NOT NULL` | Operation title (e.g., 'Front Brake Pad Replacement') |
+| `description` | `TEXT` | `NULL` | Work instructions and torque specifications |
+| `estimated_duration_minutes` | `INT` | `NOT NULL DEFAULT 60` | Estimated execution time in minutes |
+| `actual_duration_minutes` | `INT` | `NOT NULL DEFAULT 0` | Elapsed execution time in minutes |
+| `priority` | `public.task_priority` | `NOT NULL DEFAULT 'medium'` | Priority level |
+| `status` | `public.task_status` | `NOT NULL DEFAULT 'pending'` | Current task status |
+| `sequence_order` | `INT` | `NOT NULL DEFAULT 1` | Execution sequence |
+| `depends_on_task_id` | `UUID` | `REFERENCES public.service_order_tasks(id) ON DELETE SET NULL` | Prerequisite task dependency |
+| `assigned_mechanic_id` | `UUID` | `REFERENCES public.profiles(id) ON DELETE SET NULL` | Assigned lead technician |
+| `pause_reason` | `TEXT` | `NULL` | Reason when status = `'paused'` |
+| `started_at` | `TIMESTAMPTZ` | `NULL` | Time work started |
+| `paused_at` | `TIMESTAMPTZ` | `NULL` | Time work was paused |
+| `completed_at` | `TIMESTAMPTZ` | `NULL` | Time work was completed |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Record creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Last updated timestamp |
+
+### 6.2.3 `public.task_checklists`
+Step-by-step technical items required to complete an operation.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Checklist item ID |
+| `task_id` | `UUID` | `NOT NULL REFERENCES public.service_order_tasks(id) ON DELETE CASCADE` | Task reference |
+| `item_description` | `TEXT` | `NOT NULL` | Action description (e.g. 'Torque lug nuts to 108 Nm') |
+| `is_completed` | `BOOLEAN` | `NOT NULL DEFAULT FALSE` | Completion checkbox state |
+| `completed_at` | `TIMESTAMPTZ` | `NULL` | Completion timestamp |
+| `completed_by` | `UUID` | `REFERENCES public.profiles(id) ON DELETE SET NULL` | Profile ID of completing mechanic |
+
+### 6.2.4 `public.mechanic_assignments`
+Assignment ledger linking mechanics to service orders and tasks.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Assignment ID |
+| `service_order_id` | `UUID` | `NOT NULL REFERENCES public.service_orders(id) ON DELETE CASCADE` | Service order reference |
+| `task_id` | `UUID` | `REFERENCES public.service_order_tasks(id) ON DELETE CASCADE` | Specific task (if task-level) |
+| `mechanic_id` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT` | Assigned mechanic profile |
+| `is_lead` | `BOOLEAN` | `NOT NULL DEFAULT FALSE` | Whether designated lead for the vehicle/order |
+| `role_description` | `TEXT` | `NULL` | Operational notes or incentive share notes |
+| `assigned_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Assignment timestamp |
+
+### 6.2.5 `public.task_assistance_requests`
+Mechanic assistance coordination.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Request ID |
+| `task_id` | `UUID` | `NOT NULL REFERENCES public.service_order_tasks(id) ON DELETE CASCADE` | Task requesting assistance |
+| `requested_by` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE` | Initiating mechanic |
+| `helper_mechanic_id` | `UUID` | `REFERENCES public.profiles(id) ON DELETE SET NULL` | Assigned helper |
+| `reason` | `TEXT` | `NOT NULL` | Assistance reason (e.g. 'Two-person bleeder operation') |
+| `status` | `public.assistance_status` | `NOT NULL DEFAULT 'pending'` | Request status |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+| `resolved_at` | `TIMESTAMPTZ` | `NULL` | Resolution timestamp |
+
+### 6.2.6 `public.service_order_additional_findings`
+Mechanic discovery during active repair execution.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Finding ID |
+| `service_order_id` | `UUID` | `NOT NULL REFERENCES public.service_orders(id) ON DELETE CASCADE` | Service order reference |
+| `task_id` | `UUID` | `REFERENCES public.service_order_tasks(id) ON DELETE SET NULL` | Related operation |
+| `reported_by` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE` | Reporting mechanic |
+| `title` | `TEXT` | `NOT NULL` | Finding title |
+| `description` | `TEXT` | `NOT NULL` | Finding details and observations |
+| `severity` | `public.severity_level` | `NOT NULL DEFAULT 'medium'` | Severity level |
+| `status` | `TEXT` | `NOT NULL DEFAULT 'reported'` | Status (`reported`, `reviewed`, `approved`) |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+
+---
+
+## 6.3 Database Functions & RPCs
+
+### 6.3.1 `public.assign_vehicle_bay(...)`
+Atomic bay allocation with conflict prevention:
+- Verifies target bay exists and is not occupied by another active order.
+- Releases previous bay held by the service order.
+- Sets bay status to `'occupied'` and updates `service_orders.assigned_bay`.
+
+### 6.3.2 `public.dispatch_order_operations(...)`
+Dispatches service order from `estimate_approved` to `in_progress`:
+- Generates `service_order_tasks` and child `task_checklists`.
+- Records lead and supporting mechanic assignments in `mechanic_assignments`.
+- Sets service order status to `'in_progress'`.
+
+### 6.3.3 `public.start_task_operation(...)`
+Atomic operation start with dependency validation:
+- Checks `depends_on_task_id`: if present, verifies dependency status is `'completed'`. Raises exception if prerequisite is incomplete.
+- Sets task status to `'in_progress'`, records `started_at`.
+
+### 6.3.4 `public.pause_task_operation(...)` & `resume_task_operation(...)`
+Transitions task status between `'in_progress'` and `'paused'` with audit reason.
+
+### 6.3.5 `public.complete_task_operation(...)`
+Atomic task completion:
+- Verifies all checklist items for the task are marked completed.
+- Sets task status to `'completed'` and records `completed_at`.
+- Checks if all tasks for the service order are finished. If all complete, updates `service_orders.status = 'qc_pending'`.
+
+### 6.3.6 `public.request_task_assistance(...)` & `report_additional_finding(...)`
+Records assistance requests and active repair discoveries.
 

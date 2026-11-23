@@ -23,9 +23,9 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
   static const List<RoleNavItem> _adminNavItems = [
     RoleNavItem(label: 'Workshop Overview', icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard),
     RoleNavItem(label: 'Customers & Fleet', icon: Icons.people_outline, selectedIcon: Icons.people),
-    RoleNavItem(label: 'Service Orders', icon: Icons.assignment_outlined, selectedIcon: Icons.assignment, badge: '4'),
-    RoleNavItem(label: 'Bay Schedule', icon: Icons.calendar_month_outlined, selectedIcon: Icons.calendar_month),
-    RoleNavItem(label: 'Inventory', icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2),
+    RoleNavItem(label: 'Inspection Review', icon: Icons.assignment_outlined, selectedIcon: Icons.assignment),
+    RoleNavItem(label: 'Workshop Floor', icon: Icons.garage_outlined, selectedIcon: Icons.garage),
+    RoleNavItem(label: 'Bookings', icon: Icons.calendar_month_outlined, selectedIcon: Icons.calendar_month),
   ];
 
   void _onNavChanged(int index) {
@@ -38,6 +38,10 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
       return;
     }
     if (index == 3) {
+      context.go(RoutePaths.adminWorkshopFloor);
+      return;
+    }
+    if (index == 4) {
       context.go(RoutePaths.adminBookings);
       return;
     }
@@ -76,6 +80,41 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Quick Navigation Banner to Workshop Floor
+                PitCard(
+                  accentBorderLeft: AppColors.accentRed,
+                  onTap: () => context.go(RoutePaths.adminWorkshopFloor),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.garage_outlined, color: AppColors.accentRed, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'WORKSHOP FLOOR & 5-BAY DISPATCH CONSOLE',
+                              style: AppTypography.labelLarge(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Monitor 5 physical bays, detect occupancy conflicts, and dispatch approved operations.',
+                              style: AppTypography.bodySmall(
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.accentRed),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
                 // Quick Navigation Banner to Customers
                 PitCard(
                   accentBorderLeft: AppColors.accentRed,
