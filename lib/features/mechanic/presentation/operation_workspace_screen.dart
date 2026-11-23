@@ -18,10 +18,7 @@ import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
 
 class OperationWorkspaceScreen extends ConsumerStatefulWidget {
-  const OperationWorkspaceScreen({
-    super.key,
-    required this.taskId,
-  });
+  const OperationWorkspaceScreen({super.key, required this.taskId});
 
   final String taskId;
 
@@ -74,7 +71,9 @@ class _OperationWorkspaceScreenState
       List<PartRequestModel> reqs = [];
       List<ServiceTaskPartConsumptionModel> cons = [];
       try {
-        final allReqs = await _partOpsRepo.fetchRequests(serviceOrderId: match.serviceOrderId);
+        final allReqs = await _partOpsRepo.fetchRequests(
+          serviceOrderId: match.serviceOrderId,
+        );
         reqs = allReqs.where((r) => r.taskId == match.id).toList();
         cons = await _partOpsRepo.fetchTaskConsumptions(match.id);
       } catch (_) {}
@@ -123,13 +122,17 @@ class _OperationWorkspaceScreenState
   }
 
   Future<void> _showPauseDialog() async {
-    final reasonController = TextEditingController(text: 'Waiting for parts inspection');
+    final reasonController = TextEditingController(
+      text: 'Waiting for parts inspection',
+    );
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        backgroundColor: isDark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight,
         title: const Text('PAUSE OPERATION'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -225,19 +228,25 @@ class _OperationWorkspaceScreenState
   }
 
   Future<void> _showAssistanceDialog() async {
-    final reasonController = TextEditingController(text: 'Need two-person caliper bleed procedure');
+    final reasonController = TextEditingController(
+      text: 'Need two-person caliper bleed procedure',
+    );
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        backgroundColor: isDark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight,
         title: const Text('REQUEST ASSISTANCE'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Notify lead technician or dispatch for physical assistance:'),
+            const Text(
+              'Notify lead technician or dispatch for physical assistance:',
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: reasonController,
@@ -254,7 +263,9 @@ class _OperationWorkspaceScreenState
             child: const Text('CANCEL'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentRed),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accentRed,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('DISPATCH REQUEST'),
           ),
@@ -270,7 +281,9 @@ class _OperationWorkspaceScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Assistance request dispatched to workshop director.'),
+            content: Text(
+              'Assistance request dispatched to workshop director.',
+            ),
             backgroundColor: AppColors.success,
           ),
         );
@@ -286,7 +299,9 @@ class _OperationWorkspaceScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        backgroundColor: isDark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight,
         title: const Text('REPORT ADDITIONAL FINDING'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -315,7 +330,9 @@ class _OperationWorkspaceScreenState
             child: const Text('CANCEL'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentRed),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accentRed,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('SUBMIT FINDING'),
           ),
@@ -333,7 +350,9 @@ class _OperationWorkspaceScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Additional finding recorded for admin estimate revision.'),
+            content: Text(
+              'Additional finding recorded for admin estimate revision.',
+            ),
             backgroundColor: AppColors.success,
           ),
         );
@@ -344,8 +363,9 @@ class _OperationWorkspaceScreenState
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor =
-        isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final textColor = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.graphitePrimary;
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Mechanic Telemetry',
@@ -354,7 +374,12 @@ class _OperationWorkspaceScreenState
       currentIndex: 1,
       showBackButton: true,
       onBack: () => context.go(RoutePaths.mechanic),
-      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.mechanicNavItems, i, currentIndex: 1),
+      onNavIndexChanged: (i) => RoleNavigation.navigate(
+        context,
+        RoleNavigation.mechanicNavItems,
+        i,
+        currentIndex: 1,
+      ),
       navItems: RoleNavigation.mechanicNavItems,
       telemetryNotice: 'OPERATION EXECUTION ONLINE',
       onLogout: () async {
@@ -371,53 +396,58 @@ class _OperationWorkspaceScreenState
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: AppColors.danger,
+                    size: 40,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(_errorMessage!, style: TextStyle(color: textColor)),
+                ],
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 18.0,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.error_outline,
-                          color: AppColors.danger, size: 40),
+                      // 1. Task Header Focal Card
+                      _buildTaskHeaderCard(isDark, textColor),
+                      const SizedBox(height: 16),
+
+                      // 2. Technical Checklists
+                      Text(
+                        'OPERATION TECHNICAL CHECKLIST',
+                        style: AppTypography.labelLarge(
+                          color: textColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text(_errorMessage!, style: TextStyle(color: textColor)),
+                      _buildChecklistSection(isDark, textColor),
+                      const SizedBox(height: 18),
+
+                      // 3. Parts & Materials Floor Management
+                      _buildPartsSection(isDark, textColor),
+                      const SizedBox(height: 18),
+
+                      // 4. Operational Action Controls
+                      _buildExecutionControls(isDark, textColor),
                     ],
                   ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 18.0),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 860),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 1. Task Header Focal Card
-                          _buildTaskHeaderCard(isDark, textColor),
-                          const SizedBox(height: 16),
-
-                          // 2. Technical Checklists
-                          Text(
-                            'OPERATION TECHNICAL CHECKLIST',
-                            style: AppTypography.labelLarge(
-                              color: textColor,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildChecklistSection(isDark, textColor),
-                          const SizedBox(height: 18),
-
-                          // 3. Parts & Materials Floor Management
-                          _buildPartsSection(isDark, textColor),
-                          const SizedBox(height: 18),
-
-                          // 4. Operational Action Controls
-                          _buildExecutionControls(isDark, textColor),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
+              ),
+            ),
     );
   }
 
@@ -437,9 +467,7 @@ class _OperationWorkspaceScreenState
             children: [
               Text(
                 'ACTIVE WORKSPACE • ${task.status.label.toUpperCase()}',
-                style: AppTypography.labelSmall(
-                  color: statusColor,
-                ),
+                style: AppTypography.labelSmall(color: statusColor),
               ),
               StatusBadge(
                 label: task.status.label.toUpperCase(),
@@ -465,7 +493,11 @@ class _OperationWorkspaceScreenState
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.timer_outlined, size: 16, color: AppColors.accentRed),
+              const Icon(
+                Icons.timer_outlined,
+                size: 16,
+                color: AppColors.accentRed,
+              ),
               const SizedBox(width: 4),
               Text(
                 'Est: ${task.estimatedDurationMinutes} MIN',
@@ -475,7 +507,11 @@ class _OperationWorkspaceScreenState
                 ),
               ),
               const SizedBox(width: 16),
-              const Icon(Icons.directions_car, size: 16, color: AppColors.textMutedDark),
+              const Icon(
+                Icons.directions_car,
+                size: 16,
+                color: AppColors.textMutedDark,
+              ),
               const SizedBox(width: 4),
               Text(
                 task.vehiclePlate ?? 'Vehicle FL5',
@@ -514,7 +550,11 @@ class _OperationWorkspaceScreenState
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Text(
             'No checklist items required for this operation.',
-            style: TextStyle(color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight),
+            style: TextStyle(
+              color: isDark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
           ),
         ),
       );
@@ -532,7 +572,9 @@ class _OperationWorkspaceScreenState
                 item.itemDescription,
                 style: AppTypography.labelMedium(
                   color: item.isCompleted
-                      ? (isDark ? AppColors.textMutedDark : AppColors.textMutedLight)
+                      ? (isDark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight)
                       : textColor,
                 ),
               ),
@@ -562,7 +604,8 @@ class _OperationWorkspaceScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (task.status == TaskStatus.pending || task.status == TaskStatus.assigned)
+        if (task.status == TaskStatus.pending ||
+            task.status == TaskStatus.assigned)
           ElevatedButton.icon(
             key: const Key('btn_start_operation'),
             style: ElevatedButton.styleFrom(
@@ -571,7 +614,10 @@ class _OperationWorkspaceScreenState
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             icon: const Icon(Icons.play_arrow),
-            label: const Text('START OPERATION', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: const Text(
+              'START OPERATION',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             onPressed: _handleStart,
           )
         else if (task.isInProgress) ...[
@@ -586,7 +632,10 @@ class _OperationWorkspaceScreenState
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   icon: const Icon(Icons.pause),
-                  label: const Text('PAUSE WORK', style: TextStyle(fontWeight: FontWeight.bold)),
+                  label: const Text(
+                    'PAUSE WORK',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   onPressed: _showPauseDialog,
                 ),
               ),
@@ -600,7 +649,10 @@ class _OperationWorkspaceScreenState
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   icon: const Icon(Icons.check_circle),
-                  label: const Text('COMPLETE WORK', style: TextStyle(fontWeight: FontWeight.bold)),
+                  label: const Text(
+                    'COMPLETE WORK',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   onPressed: _handleComplete,
                 ),
               ),
@@ -615,7 +667,10 @@ class _OperationWorkspaceScreenState
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             icon: const Icon(Icons.play_arrow),
-            label: const Text('RESUME OPERATION', style: TextStyle(fontWeight: FontWeight.bold)),
+            label: const Text(
+              'RESUME OPERATION',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             onPressed: _handleResume,
           ),
         ] else if (task.isCompleted) ...[
@@ -659,11 +714,7 @@ class _OperationWorkspaceScreenState
             if (isNarrow) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  assistBtn,
-                  const SizedBox(height: 10),
-                  findingBtn,
-                ],
+                children: [assistBtn, const SizedBox(height: 10), findingBtn],
               );
             }
 
@@ -709,11 +760,15 @@ class _OperationWorkspaceScreenState
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (_, setDialogState) => AlertDialog(
-          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          backgroundColor: isDark
+              ? AppColors.surfaceDark
+              : AppColors.surfaceLight,
           title: Text(
             'REQUEST FLOOR PART',
             style: AppTypography.headlineSmall(
-              color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+              color: isDark
+                  ? AppColors.textPrimaryDark
+                  : AppColors.graphitePrimary,
             ).copyWith(fontWeight: FontWeight.w700),
           ),
           content: SingleChildScrollView(
@@ -724,13 +779,17 @@ class _OperationWorkspaceScreenState
                 Text(
                   'Select Part from Warehouse Catalog:',
                   style: AppTypography.bodySmall(
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   initialValue: selectedPartId,
-                  dropdownColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                  dropdownColor: isDark
+                      ? AppColors.surfaceDark
+                      : AppColors.surfaceLight,
                   isExpanded: true,
                   items: catalog.map((p) {
                     final sku = p['sku'] ?? '';
@@ -738,10 +797,20 @@ class _OperationWorkspaceScreenState
                     final unit = p['unit_of_measurement'] ?? 'pcs';
                     int avail = 0;
                     if (p['inventory_balances'] != null) {
-                      if (p['inventory_balances'] is List && (p['inventory_balances'] as List).isNotEmpty) {
-                        avail = ((p['inventory_balances'] as List).first['quantity_available'] as num?)?.toInt() ?? 0;
+                      if (p['inventory_balances'] is List &&
+                          (p['inventory_balances'] as List).isNotEmpty) {
+                        avail =
+                            ((p['inventory_balances'] as List)
+                                        .first['quantity_available']
+                                    as num?)
+                                ?.toInt() ??
+                            0;
                       } else if (p['inventory_balances'] is Map) {
-                        avail = (p['inventory_balances']['quantity_available'] as num?)?.toInt() ?? 0;
+                        avail =
+                            (p['inventory_balances']['quantity_available']
+                                    as num?)
+                                ?.toInt() ??
+                            0;
                       }
                     }
                     return DropdownMenuItem<String>(
@@ -808,13 +877,17 @@ class _OperationWorkspaceScreenState
                     taskId: _task!.id,
                     partId: selectedPartId,
                     quantity: qty,
-                    notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
+                    notes: notesController.text.trim().isEmpty
+                        ? null
+                        : notesController.text.trim(),
                   );
                   if (!mounted) return;
                   _loadTask();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Part request dispatched to workshop inventory.'),
+                      content: Text(
+                        'Part request dispatched to workshop inventory.',
+                      ),
                       backgroundColor: AppColors.success,
                     ),
                   );
@@ -875,7 +948,8 @@ class _OperationWorkspaceScreenState
       showPitErrorDialog(
         context,
         title: 'NO PARTS ISSUED',
-        message: 'No parts have been fulfilled or issued for this operation yet.',
+        message:
+            'No parts have been fulfilled or issued for this operation yet.',
         hint: 'Submit a part request and wait for admin fulfillment first.',
       );
       return;
@@ -889,11 +963,15 @@ class _OperationWorkspaceScreenState
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (_, setDialogState) => AlertDialog(
-          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          backgroundColor: isDark
+              ? AppColors.surfaceDark
+              : AppColors.surfaceLight,
           title: Text(
             'RECORD CONSUMPTION & RETURN',
             style: AppTypography.headlineSmall(
-              color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+              color: isDark
+                  ? AppColors.textPrimaryDark
+                  : AppColors.graphitePrimary,
             ).copyWith(fontWeight: FontWeight.w700),
           ),
           content: SingleChildScrollView(
@@ -904,13 +982,17 @@ class _OperationWorkspaceScreenState
                 Text(
                   'Select Part:',
                   style: AppTypography.bodySmall(
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   initialValue: selectedPartId,
-                  dropdownColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                  dropdownColor: isDark
+                      ? AppColors.surfaceDark
+                      : AppColors.surfaceLight,
                   isExpanded: true,
                   items: eligibleParts.map((p) {
                     final sku = p['sku'] ?? '';
@@ -966,9 +1048,13 @@ class _OperationWorkspaceScreenState
                 foregroundColor: Colors.white,
               ),
               onPressed: () async {
-                final consumed = int.tryParse(consumedController.text.trim()) ?? -1;
-                final returned = int.tryParse(returnedController.text.trim()) ?? -1;
-                if (consumed < 0 || returned < 0 || (consumed == 0 && returned == 0)) {
+                final consumed =
+                    int.tryParse(consumedController.text.trim()) ?? -1;
+                final returned =
+                    int.tryParse(returnedController.text.trim()) ?? -1;
+                if (consumed < 0 ||
+                    returned < 0 ||
+                    (consumed == 0 && returned == 0)) {
                   showPitErrorDialog(
                     ctx,
                     title: 'INVALID QUANTITIES',
@@ -988,7 +1074,9 @@ class _OperationWorkspaceScreenState
                   _loadTask();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Recorded $consumed consumed, $returned returned.'),
+                      content: Text(
+                        'Recorded $consumed consumed, $returned returned.',
+                      ),
                       backgroundColor: AppColors.success,
                     ),
                   );
@@ -1022,9 +1110,8 @@ class _OperationWorkspaceScreenState
           children: [
             Text(
               'PARTS & MATERIALS',
-              style: AppTypography.labelLarge(
-                color: textColor,
-              ).copyWith(fontWeight: FontWeight.w700),
+              style: AppTypography.labelLarge(color: textColor)
+                  .copyWith(fontWeight: FontWeight.w700),
             ),
             Wrap(
               spacing: 8,
@@ -1033,13 +1120,19 @@ class _OperationWorkspaceScreenState
                 OutlinedButton.icon(
                   key: const Key('btn_open_part_request_dialog'),
                   icon: const Icon(Icons.add_shopping_cart, size: 14),
-                  label: const Text('REQUEST PART', style: TextStyle(fontSize: 12)),
+                  label: const Text(
+                    'REQUEST PART',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   onPressed: _openRequestPartDialog,
                 ),
                 OutlinedButton.icon(
                   key: const Key('btn_open_part_consumption_dialog'),
                   icon: const Icon(Icons.check_box_outlined, size: 14),
-                  label: const Text('RECORD USAGE', style: TextStyle(fontSize: 12)),
+                  label: const Text(
+                    'RECORD USAGE',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   onPressed: _openRecordConsumptionDialog,
                 ),
               ],
@@ -1054,7 +1147,9 @@ class _OperationWorkspaceScreenState
               child: Text(
                 'No parts requested or consumed for this operation.',
                 style: TextStyle(
-                  color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                  color: isDark
+                      ? AppColors.textMutedDark
+                      : AppColors.textMutedLight,
                 ),
               ),
             ),
@@ -1065,7 +1160,9 @@ class _OperationWorkspaceScreenState
             child: Text(
               'FLOOR REQUESTS',
               style: AppTypography.bodySmall(
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
@@ -1092,7 +1189,9 @@ class _OperationWorkspaceScreenState
                           Text(
                             'SKU: ${req.partSku ?? "—"} • Qty: ${req.quantityRequested} ${req.partUnit ?? "pcs"} (Fulfilled: ${req.quantityFulfilled})',
                             style: AppTypography.bodySmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           if (req.notes != null && req.notes!.isNotEmpty)
@@ -1101,7 +1200,9 @@ class _OperationWorkspaceScreenState
                               style: TextStyle(
                                 fontSize: 11,
                                 fontStyle: FontStyle.italic,
-                                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                                color: isDark
+                                    ? AppColors.textMutedDark
+                                    : AppColors.textMutedLight,
                               ),
                             ),
                         ],
@@ -1123,7 +1224,9 @@ class _OperationWorkspaceScreenState
             child: Text(
               'RECORDED CONSUMPTION',
               style: AppTypography.bodySmall(
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
@@ -1147,7 +1250,9 @@ class _OperationWorkspaceScreenState
                           Text(
                             'Consumed: ${c.quantityConsumed} ${c.partUnit ?? "pcs"} • Returned: ${c.quantityReturned} ${c.partUnit ?? "pcs"}',
                             style: AppTypography.bodySmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ],

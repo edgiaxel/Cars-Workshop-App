@@ -17,11 +17,14 @@ class MechanicEarningsScreen extends ConsumerStatefulWidget {
   const MechanicEarningsScreen({super.key});
 
   @override
-  ConsumerState<MechanicEarningsScreen> createState() => _MechanicEarningsScreenState();
+  ConsumerState<MechanicEarningsScreen> createState() =>
+      _MechanicEarningsScreenState();
 }
 
-class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen> {
-  final MechanicCompensationRepository _compRepo = MechanicCompensationRepository();
+class _MechanicEarningsScreenState
+    extends ConsumerState<MechanicEarningsScreen> {
+  final MechanicCompensationRepository _compRepo =
+      MechanicCompensationRepository();
 
   bool _isLoading = true;
   MechanicCompensationProfile? _profile;
@@ -30,8 +33,6 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
 
   // Default demo mechanic: Max Verstappen
   static const String _mechanicId = '7294334d-7144-4c14-9d28-5f90e48a5fbb';
-
-
 
   @override
   void initState() {
@@ -57,7 +58,9 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
               ),
       );
 
-      final allocations = await _compRepo.fetchAllocationsForMechanic(_mechanicId);
+      final allocations = await _compRepo.fetchAllocationsForMechanic(
+        _mechanicId,
+      );
       final adjustments = await _compRepo.fetchAdjustments(_mechanicId);
 
       if (mounted) {
@@ -78,7 +81,12 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
   }
 
   void _onNavChanged(int index) {
-    RoleNavigation.navigate(context, RoleNavigation.mechanicNavItems, index, currentIndex: 3);
+    RoleNavigation.navigate(
+      context,
+      RoleNavigation.mechanicNavItems,
+      index,
+      currentIndex: 3,
+    );
   }
 
   String _formatRp(int amount) {
@@ -88,11 +96,19 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final textColor = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.graphitePrimary;
 
     final baseSalary = _profile?.baseSalaryCents ?? 5000000;
-    final totalIncentives = _allocations.fold<int>(0, (sum, a) => sum + a.allocatedCents);
-    final netAdjustments = _adjustments.fold<int>(0, (sum, a) => sum + (a.isDeduction ? -a.amountCents : a.amountCents));
+    final totalIncentives = _allocations.fold<int>(
+      0,
+      (sum, a) => sum + a.allocatedCents,
+    );
+    final netAdjustments = _adjustments.fold<int>(
+      0,
+      (sum, a) => sum + (a.isDeduction ? -a.amountCents : a.amountCents),
+    );
     final estimatedTotal = baseSalary + totalIncentives + netAdjustments;
 
     return ResponsiveRoleScaffold(
@@ -119,7 +135,10 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 18.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 18.0,
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 960),
@@ -134,18 +153,24 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
                           children: [
                             Text(
                               'ESTIMATED MONTHLY EARNINGS',
-                              style: AppTypography.labelSmall(color: AppColors.success),
+                              style: AppTypography.labelSmall(
+                                color: AppColors.success,
+                              ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               _formatRp(estimatedTotal),
-                              style: AppTypography.headlineLarge(color: textColor).copyWith(fontWeight: FontWeight.w800),
+                              style: AppTypography.headlineLarge(
+                                color: textColor,
+                              ).copyWith(fontWeight: FontWeight.w800),
                             ),
                             const SizedBox(height: 12),
                             Text(
                               'Includes fixed base salary, job completion incentives, and audited performance adjustments.',
                               style: AppTypography.bodySmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -153,169 +178,206 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
                       ),
                       const SizedBox(height: 16),
 
-                          // 2. Telemetry Breakdown Cards
-                          LayoutBuilder(
-                            builder: (context, c) {
-                              final cardWidth = c.maxWidth < 600 ? c.maxWidth : (c.maxWidth - 24) / 3;
-                              return Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
+                      // 2. Telemetry Breakdown Cards
+                      LayoutBuilder(
+                        builder: (context, c) {
+                          final cardWidth = c.maxWidth < 600
+                              ? c.maxWidth
+                              : (c.maxWidth - 24) / 3;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              _buildMetricCard(
+                                'BASE SALARY',
+                                _formatRp(baseSalary),
+                                AppColors.info,
+                                cardWidth,
+                              ),
+                              _buildMetricCard(
+                                'ACCRUED INCENTIVES',
+                                _formatRp(totalIncentives),
+                                AppColors.success,
+                                cardWidth,
+                              ),
+                              _buildMetricCard(
+                                'NET ADJUSTMENTS',
+                                '${netAdjustments >= 0 ? "+" : ""}${_formatRp(netAdjustments)}',
+                                netAdjustments >= 0
+                                    ? AppColors.info
+                                    : AppColors.accentRed,
+                                cardWidth,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 3. Completed Operation Incentives
+                      Text(
+                        'OPERATION INCENTIVES LEDGER',
+                        style: AppTypography.labelLarge(color: textColor)
+                            .copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_allocations.isEmpty)
+                        PitCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(
+                              'No completed operation incentives accrued yet this billing period.',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppColors.textMutedDark
+                                    : AppColors.textMutedLight,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        ..._allocations.map(
+                          (a) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: PitCard(
+                              child: Row(
                                 children: [
-                                  _buildMetricCard(
-                                    'BASE SALARY',
-                                    _formatRp(baseSalary),
-                                    AppColors.info,
-                                    cardWidth,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          a.taskTitle ?? 'Operation Task',
+                                          style:
+                                              AppTypography.labelMedium(
+                                                color: textColor,
+                                              ).copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Order: ${a.orderNumber ?? "SO-000"} • Role: ${a.roleInTask.toUpperCase()} (${a.sharePercentage}%)',
+                                          style: AppTypography.bodySmall(
+                                            color: isDark
+                                                ? AppColors.textSecondaryDark
+                                                : AppColors.textSecondaryLight,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  _buildMetricCard(
-                                    'ACCRUED INCENTIVES',
-                                    _formatRp(totalIncentives),
-                                    AppColors.success,
-                                    cardWidth,
-                                  ),
-                                  _buildMetricCard(
-                                    'NET ADJUSTMENTS',
-                                    '${netAdjustments >= 0 ? "+" : ""}${_formatRp(netAdjustments)}',
-                                    netAdjustments >= 0 ? AppColors.info : AppColors.accentRed,
-                                    cardWidth,
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '+${_formatRp(a.allocatedCents)}',
+                                    style: AppTypography.telemetryMedium(
+                                      color: AppColors.success,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 24),
-
-                          // 3. Completed Operation Incentives
-                          Text(
-                            'OPERATION INCENTIVES LEDGER',
-                            style: AppTypography.labelLarge(
-                              color: textColor,
-                            ).copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 8),
-                          if (_allocations.isEmpty)
-                            PitCard(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Text(
-                                  'No completed operation incentives accrued yet this billing period.',
-                                  style: TextStyle(
-                                    color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-                                  ),
-                                ),
                               ),
-                            )
-                          else
-                            ..._allocations.map((a) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: PitCard(
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                a.taskTitle ?? 'Operation Task',
-                                                style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                'Order: ${a.orderNumber ?? "SO-000"} • Role: ${a.roleInTask.toUpperCase()} (${a.sharePercentage}%)',
-                                                style: AppTypography.bodySmall(
-                                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '+${_formatRp(a.allocatedCents)}',
-                                          style: AppTypography.telemetryMedium(
-                                            color: AppColors.success,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )),
-                          const SizedBox(height: 24),
-
-                          // 4. Payroll Adjustments
-                          Text(
-                            'AUDITED PAYROLL ADJUSTMENTS',
-                            style: AppTypography.labelLarge(
-                              color: textColor,
-                            ).copyWith(fontWeight: FontWeight.w700),
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          if (_adjustments.isEmpty)
-                            PitCard(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Text(
-                                  'No adjustments recorded this period.',
-                                  style: TextStyle(
-                                    color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            ..._adjustments.map((adj) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: PitCard(
-                                    accentBorderLeft: adj.isDeduction ? AppColors.accentRed : AppColors.success,
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  StatusBadge(
-                                                    label: adj.adjustmentType.toUpperCase(),
-                                                    color: adj.isDeduction ? AppColors.accentRed : AppColors.success,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      adj.reason,
-                                                      style: AppTypography.bodySmall(color: textColor).copyWith(fontWeight: FontWeight.w600),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '${adj.isDeduction ? "-" : "+"}${_formatRp(adj.amountCents)}',
-                                          style: AppTypography.telemetryMedium(
-                                            color: adj.isDeduction ? AppColors.accentRed : AppColors.success,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )),
-                        ],
+                        ),
+                      const SizedBox(height: 24),
+
+                      // 4. Payroll Adjustments
+                      Text(
+                        'AUDITED PAYROLL ADJUSTMENTS',
+                        style: AppTypography.labelLarge(color: textColor)
+                            .copyWith(fontWeight: FontWeight.w700),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      if (_adjustments.isEmpty)
+                        PitCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(
+                              'No adjustments recorded this period.',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppColors.textMutedDark
+                                    : AppColors.textMutedLight,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        ..._adjustments.map(
+                          (adj) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: PitCard(
+                              accentBorderLeft: adj.isDeduction
+                                  ? AppColors.accentRed
+                                  : AppColors.success,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            StatusBadge(
+                                              label: adj.adjustmentType
+                                                  .toUpperCase(),
+                                              color: adj.isDeduction
+                                                  ? AppColors.accentRed
+                                                  : AppColors.success,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                adj.reason,
+                                                style:
+                                                    AppTypography.bodySmall(
+                                                      color: textColor,
+                                                    ).copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${adj.isDeduction ? "-" : "+"}${_formatRp(adj.amountCents)}',
+                                    style: AppTypography.telemetryMedium(
+                                      color: adj.isDeduction
+                                          ? AppColors.accentRed
+                                          : AppColors.success,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
+              ),
+            ),
     );
   }
 
-  Widget _buildMetricCard(String label, String value, Color accent, double cardWidth) {
+  Widget _buildMetricCard(
+    String label,
+    String value,
+    Color accent,
+    double cardWidth,
+  ) {
     return SizedBox(
       width: cardWidth,
       child: PitCard(
@@ -333,7 +395,9 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
             const SizedBox(height: 8),
             Text(
               value,
-              style: AppTypography.headlineSmall().copyWith(fontWeight: FontWeight.w700),
+              style: AppTypography.headlineSmall().copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),

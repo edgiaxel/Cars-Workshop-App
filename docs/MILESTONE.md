@@ -20,17 +20,17 @@ Role: **Main Orchestrator** managing a multi-agent Git worktree workflow. Execut
 1. **Prep & Shared Contract (on `main` BEFORE worktrees):**
    - Clean up stale worktrees/branches and verify `main` builds clean.
    - Lock shared contracts (`UI_CONTRACT.md`, shared types, API schemas, global theme, Navigation/Layout, and central router skeleton) on `main` so all worktrees inherit identical UI/navigation/state rules.
-2. **Plan & Isolate (`/plan`):**
-   - Run `/plan` to split this milestone into isolated worktrees with strict, non-overlapping folder ownership.
+2. **Plan & Isolate:**
+   - Run [/plan](slashCommand;plan) to split this milestone into isolated worktrees with strict, non-overlapping folder ownership.
    - Ban subagents from creating duplicate navbars, global layouts, custom themes, or editing central shared files directly.
    - Require every subagent to connect real DB/backend logic (zero mocks/hardcoded data) and output a brief `HANDOFF.md` (files touched, exported entry points, env/schema changes, caveats, what needs to do next) upon completion.
-3. **Merge, Wire & Verify (on `main`):**
+3. **Merge, Wire & Verify:**
    - Review subagent `HANDOFF.md` reports, merge branches into `main`, and centrally integrate all new features from each worktree.
    - Audit for zero mock/hardcoded data—everything must hit real database and backend endpoints.
    - Run Playwright CLI against localhost to verify end-to-end user flows, navigation consistency, and DB persistence. Fix any regressions.
 4. **Docs Sync & Milestone Handoff:**
-   - Update `docs/` (`changelog.md`, architecture/status docs) and remove temporary worktrees.
-   - Write a concise `docs/HANDOFF_M<X>.md` summarizing completed features, DB/API contracts, touched files, and next-milestone readiness for the next fresh session.
+   - Update necessary documentation and remove temporary worktrees.
+   - Write a concise HANDOFF.md for each milestone summarizing completed features, DB/API contracts, touched files, and next-milestone readiness for the next fresh session.
 
 ### Current Milestone Target:
 [PASTE MILESTONE DESCRIPTION / GOAL HERE]

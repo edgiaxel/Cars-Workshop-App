@@ -18,33 +18,16 @@ import '../../inspections/data/repositories/inspection_repository.dart';
 
 /// Predefined standard inspection items per engineering category.
 const Map<String, List<String>> kStandardInspectionCategories = {
-  'Powertrain': [
-    'Engine Oil',
-    'Transmission',
-    'Coolant',
-    'Spark Plugs',
-  ],
+  'Powertrain': ['Engine Oil', 'Transmission', 'Coolant', 'Spark Plugs'],
   'Brakes & Suspension': [
     'Front Brake Pads',
     'Rear Brake Pads',
     'Rotors',
     'Brake Fluid',
   ],
-  'Electrical & Battery': [
-    'Battery Health',
-    'Alternator',
-    'Headlights',
-  ],
-  'Fluids & Filters': [
-    'Air Filter',
-    'Cabin Filter',
-    'Steering Fluid',
-  ],
-  'Tires & Chassis': [
-    'Tire Tread Depth',
-    'Wheel Alignment',
-    'Exhaust',
-  ],
+  'Electrical & Battery': ['Battery Health', 'Alternator', 'Headlights'],
+  'Fluids & Filters': ['Air Filter', 'Cabin Filter', 'Steering Fluid'],
+  'Tires & Chassis': ['Tire Tread Depth', 'Wheel Alignment', 'Exhaust'],
 };
 
 /// Mutable in-memory evaluation state for an inspection checklist item.
@@ -193,8 +176,9 @@ class _InspectionWorkspaceScreenState
 
     // 3. Load existing findings if session exists
     if (_inspectionId != null) {
-      final findingsResult =
-          await _repository.fetchInspectionFindings(_inspectionId!);
+      final findingsResult = await _repository.fetchInspectionFindings(
+        _inspectionId!,
+      );
       if (findingsResult.isSuccess && findingsResult.dataOrNull != null) {
         for (final finding in findingsResult.dataOrNull!) {
           final key = '${finding.category}::${finding.itemName}';
@@ -274,7 +258,8 @@ class _InspectionWorkspaceScreenState
     setState(() => _isSubmitting = true);
 
     try {
-      final inspId = _inspectionId ?? 'insp-${DateTime.now().millisecondsSinceEpoch}';
+      final inspId =
+          _inspectionId ?? 'insp-${DateTime.now().millisecondsSinceEpoch}';
 
       // 1. Save all evaluated findings
       for (final item in _itemsState.values) {
@@ -322,7 +307,11 @@ class _InspectionWorkspaceScreenState
           builder: (ctx) => AlertDialog(
             title: Row(
               children: [
-                const Icon(Icons.check_circle, color: AppColors.success, size: 28),
+                const Icon(
+                  Icons.check_circle,
+                  color: AppColors.success,
+                  size: 28,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -378,10 +367,12 @@ class _InspectionWorkspaceScreenState
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor =
-        isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
-    final secondaryTextColor =
-        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final textColor = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.graphitePrimary;
+    final secondaryTextColor = isDark
+        ? AppColors.textSecondaryDark
+        : AppColors.textSecondaryLight;
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Inspection Diagnostics',
@@ -389,7 +380,12 @@ class _InspectionWorkspaceScreenState
       userSubtitle: 'Lead Performance Tech',
       currentIndex: 2,
       navItems: RoleNavigation.mechanicNavItems,
-      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.mechanicNavItems, i, currentIndex: 2),
+      onNavIndexChanged: (i) => RoleNavigation.navigate(
+        context,
+        RoleNavigation.mechanicNavItems,
+        i,
+        currentIndex: 2,
+      ),
       showBackButton: true,
       onBack: () {
         if (context.canPop()) {
@@ -419,8 +415,10 @@ class _InspectionWorkspaceScreenState
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 20.0,
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 960),
@@ -483,8 +481,10 @@ class _InspectionWorkspaceScreenState
             children: [
               // License Plate Display Badge
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.plateBackground,
                   borderRadius: AppSpacing.roundedSmall,
@@ -510,9 +510,7 @@ class _InspectionWorkspaceScreenState
           const SizedBox(height: 10),
           Text(
             telemetry.vehicleDisplayName,
-            style: AppTypography.headlineMedium(
-              color: textColor,
-            ),
+            style: AppTypography.headlineMedium(color: textColor),
           ),
           const SizedBox(height: 4),
           Wrap(
@@ -536,7 +534,11 @@ class _InspectionWorkspaceScreenState
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.person_outline, size: 16, color: secondaryTextColor),
+                  Icon(
+                    Icons.person_outline,
+                    size: 16,
+                    color: secondaryTextColor,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     telemetry.customerName,
@@ -604,23 +606,25 @@ class _InspectionWorkspaceScreenState
               borderRadius: AppSpacing.roundedSmall,
               child: Container(
                 constraints: const BoxConstraints(minHeight: 48),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14.0,
+                  vertical: 10.0,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? (isDark
-                          ? AppColors.surfaceElevatedDark
-                          : AppColors.graphitePrimary)
+                            ? AppColors.surfaceElevatedDark
+                            : AppColors.graphitePrimary)
                       : (isDark
-                          ? AppColors.surfaceDark
-                          : AppColors.surfaceLight),
+                            ? AppColors.surfaceDark
+                            : AppColors.surfaceLight),
                   borderRadius: AppSpacing.roundedSmall,
                   border: Border.all(
                     color: isSelected
                         ? AppColors.accentRed
                         : (isDark
-                            ? AppColors.borderDark
-                            : AppColors.borderLight),
+                              ? AppColors.borderDark
+                              : AppColors.borderLight),
                     width: isSelected ? 1.5 : 1.0,
                   ),
                 ),
@@ -635,8 +639,8 @@ class _InspectionWorkspaceScreenState
                       color: isTouched
                           ? AppColors.success
                           : (isSelected
-                              ? Colors.white70
-                              : AppColors.textSecondaryLight),
+                                ? Colors.white70
+                                : AppColors.textSecondaryLight),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -645,8 +649,8 @@ class _InspectionWorkspaceScreenState
                         color: isSelected
                             ? Colors.white
                             : (isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.graphitePrimary),
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.graphitePrimary),
                         fontWeight: isSelected
                             ? FontWeight.w700
                             : FontWeight.w500,
@@ -689,7 +693,11 @@ class _InspectionWorkspaceScreenState
             TextButton.icon(
               key: Key('mark-all-good-$_selectedCategory'),
               onPressed: () => _markAllGoodInCategory(_selectedCategory),
-              icon: const Icon(Icons.done_all, size: 18, color: AppColors.success),
+              icon: const Icon(
+                Icons.done_all,
+                size: 18,
+                color: AppColors.success,
+              ),
               label: Text(
                 'MARK ALL AS GOOD',
                 style: AppTypography.labelSmall(
@@ -860,8 +868,7 @@ class _InspectionWorkspaceScreenState
                 }
               },
               decoration: InputDecoration(
-                hintText:
-                    'e.g. Pad thickness measured at 2.8mm, uneven wear on inner edge',
+                hintText: 'e.g. Pad thickness measured at 2.8mm, uneven wear on inner edge',
                 filled: true,
                 fillColor: isDark
                     ? AppColors.surfaceContainerDark
@@ -869,7 +876,9 @@ class _InspectionWorkspaceScreenState
                 border: OutlineInputBorder(
                   borderRadius: AppSpacing.roundedSmall,
                   borderSide: BorderSide(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
                   ),
                 ),
               ),
@@ -905,7 +914,9 @@ class _InspectionWorkspaceScreenState
                 border: OutlineInputBorder(
                   borderRadius: AppSpacing.roundedSmall,
                   borderSide: BorderSide(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
                   ),
                 ),
               ),
@@ -943,9 +954,7 @@ class _InspectionWorkspaceScreenState
           decoration: BoxDecoration(
             color: isSelected
                 ? color.withValues(alpha: 0.18)
-                : (isDark
-                    ? AppColors.surfaceDark
-                    : AppColors.surfaceLight),
+                : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
             borderRadius: AppSpacing.roundedSmall,
             border: Border.all(
               color: isSelected
@@ -960,8 +969,8 @@ class _InspectionWorkspaceScreenState
               color: isSelected
                   ? color
                   : (isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textSecondaryLight),
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textSecondaryLight),
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
             ),
           ),
@@ -980,8 +989,8 @@ class _InspectionWorkspaceScreenState
     final color = targetSeverity == SeverityLevel.urgent
         ? AppColors.danger
         : (targetSeverity == SeverityLevel.medium
-            ? AppColors.warning
-            : AppColors.info);
+              ? AppColors.warning
+              : AppColors.info);
 
     return Expanded(
       child: InkWell(
@@ -994,9 +1003,7 @@ class _InspectionWorkspaceScreenState
           decoration: BoxDecoration(
             color: isSelected
                 ? color.withValues(alpha: 0.16)
-                : (isDark
-                    ? AppColors.surfaceDark
-                    : AppColors.surfaceLight),
+                : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
             borderRadius: AppSpacing.roundedSmall,
             border: Border.all(
               color: isSelected
@@ -1011,8 +1018,8 @@ class _InspectionWorkspaceScreenState
               color: isSelected
                   ? color
                   : (isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textSecondaryLight),
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textSecondaryLight),
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
@@ -1032,8 +1039,11 @@ class _InspectionWorkspaceScreenState
         children: [
           Row(
             children: [
-              const Icon(Icons.rate_review_outlined,
-                  size: 20, color: AppColors.accentRed),
+              const Icon(
+                Icons.rate_review_outlined,
+                size: 20,
+                color: AppColors.accentRed,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1057,8 +1067,7 @@ class _InspectionWorkspaceScreenState
             controller: _summaryController,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText:
-                  'e.g. Powertrain and battery are in healthy condition. Front brake rotors have heat glazing and need resurfacing. Air filter replacement recommended.',
+              hintText: 'e.g. Powertrain and battery are in healthy condition. Front brake rotors have heat glazing and need resurfacing. Air filter replacement recommended.',
               filled: true,
               fillColor: isDark
                   ? AppColors.surfaceContainerDark
@@ -1096,7 +1105,11 @@ class _InspectionWorkspaceScreenState
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline, color: AppColors.warning, size: 20),
+                const Icon(
+                  Icons.info_outline,
+                  color: AppColors.warning,
+                  size: 20,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -1118,8 +1131,9 @@ class _InspectionWorkspaceScreenState
             key: const Key('submit-inspection-button'),
             onPressed: _isSubmitting ? null : _submitInspection,
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  complete ? AppColors.accentRed : AppColors.graphiteSecondary,
+              backgroundColor: complete
+                  ? AppColors.accentRed
+                  : AppColors.graphiteSecondary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: AppSpacing.roundedSmall,

@@ -16,20 +16,26 @@ class AdminOverviewScreen extends ConsumerStatefulWidget {
   const AdminOverviewScreen({super.key});
 
   @override
-  ConsumerState<AdminOverviewScreen> createState() => _AdminOverviewScreenState();
+  ConsumerState<AdminOverviewScreen> createState() =>
+      _AdminOverviewScreenState();
 }
 
 class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
-
-
   void _onNavChanged(int index) {
-    RoleNavigation.navigate(context, RoleNavigation.adminNavItems, index, currentIndex: 0);
+    RoleNavigation.navigate(
+      context,
+      RoleNavigation.adminNavItems,
+      index,
+      currentIndex: 0,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final textColor = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.graphitePrimary;
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Workshop Dispatch',
@@ -64,7 +70,11 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                   onTap: () => context.go(RoutePaths.adminWorkshopFloor),
                   child: Row(
                     children: [
-                      const Icon(Icons.garage_outlined, color: AppColors.accentRed, size: 24),
+                      const Icon(
+                        Icons.garage_outlined,
+                        color: AppColors.accentRed,
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -81,13 +91,18 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                             Text(
                               'Monitor 5 physical bays, detect occupancy conflicts, and dispatch approved operations.',
                               style: AppTypography.bodySmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.accentRed),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppColors.accentRed,
+                      ),
                     ],
                   ),
                 ),
@@ -99,7 +114,11 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                   onTap: () => context.go(RoutePaths.adminCustomers),
                   child: Row(
                     children: [
-                      const Icon(Icons.group_add_outlined, color: AppColors.accentRed, size: 24),
+                      const Icon(
+                        Icons.group_add_outlined,
+                        color: AppColors.accentRed,
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -116,13 +135,18 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                             Text(
                               'Register new walk-in guest vehicles or inspect existing customer accounts.',
                               style: AppTypography.bodySmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.accentRed),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppColors.accentRed,
+                      ),
                     ],
                   ),
                 ),
@@ -135,7 +159,11 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                   onTap: () => context.go(RoutePaths.adminInventory),
                   child: Row(
                     children: [
-                      const Icon(Icons.inventory_2_outlined, color: AppColors.info, size: 24),
+                      const Icon(
+                        Icons.inventory_2_outlined,
+                        color: AppColors.info,
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -152,7 +180,9 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                             Text(
                               'Manage stock levels, receive shipments, audit movements, and record adjustments.',
                               style: AppTypography.bodySmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -174,15 +204,24 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                       onTap: () => context.go(RoutePaths.adminPartRequests),
                       child: Row(
                         children: [
-                          const Icon(Icons.handyman_outlined, color: AppColors.warning, size: 20),
+                          const Icon(
+                            Icons.handyman_outlined,
+                            color: AppColors.warning,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'FLOOR PART REQUESTS',
-                              style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
+                              style: AppTypography.labelMedium(color: textColor)
+                                  .copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
-                          const Icon(Icons.chevron_right, color: AppColors.warning, size: 18),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: AppColors.warning,
+                            size: 18,
+                          ),
                         ],
                       ),
                     );
@@ -193,15 +232,24 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                       onTap: () => context.go(RoutePaths.adminCompensation),
                       child: Row(
                         children: [
-                          const Icon(Icons.payments_outlined, color: AppColors.success, size: 20),
+                          const Icon(
+                            Icons.payments_outlined,
+                            color: AppColors.success,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'MECHANIC COMPENSATION',
-                              style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
+                              style: AppTypography.labelMedium(color: textColor)
+                                  .copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
-                          const Icon(Icons.chevron_right, color: AppColors.success, size: 18),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: AppColors.success,
+                            size: 18,
+                          ),
                         ],
                       ),
                     );
@@ -239,11 +287,18 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                           Text(
                             'ACTIVE ORDERS',
                             style: AppTypography.labelSmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text('4', style: AppTypography.headlineLarge(color: textColor)),
+                          Text(
+                            '4',
+                            style: AppTypography.headlineLarge(
+                              color: textColor,
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -257,11 +312,18 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                           Text(
                             'IN WORKSHOP',
                             style: AppTypography.labelSmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text('3', style: AppTypography.headlineLarge(color: AppColors.accentRed)),
+                          Text(
+                            '3',
+                            style: AppTypography.headlineLarge(
+                              color: AppColors.accentRed,
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -275,11 +337,18 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                           Text(
                             'AWAITING AUTH',
                             style: AppTypography.labelSmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text('1', style: AppTypography.headlineLarge(color: AppColors.warning)),
+                          Text(
+                            '1',
+                            style: AppTypography.headlineLarge(
+                              color: AppColors.warning,
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -293,11 +362,18 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                           Text(
                             'QC READY',
                             style: AppTypography.labelSmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text('1', style: AppTypography.headlineLarge(color: AppColors.success)),
+                          Text(
+                            '1',
+                            style: AppTypography.headlineLarge(
+                              color: AppColors.success,
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -363,16 +439,23 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                             children: [
                               Text(
                                 'BAY 02 — HOIST B',
-                                style: AppTypography.headlineSmall(color: textColor),
+                                style: AppTypography.headlineSmall(
+                                  color: textColor,
+                                ),
                               ),
                               const SizedBox(width: 8),
-                              StatusBadge.inProgress('IN PROGRESS', icon: Icons.play_arrow),
+                              StatusBadge.inProgress(
+                                'IN PROGRESS',
+                                icon: Icons.play_arrow,
+                              ),
                             ],
                           ),
                           Text(
                             'Tech: Dian S.',
                             style: AppTypography.bodySmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ],
@@ -380,12 +463,17 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'Honda Civic Type R (FL5) [B 9912 SPO]',
-                        style: AppTypography.labelLarge(color: textColor, fontWeight: FontWeight.w700),
+                        style: AppTypography.labelLarge(
+                          color: textColor,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       Text(
                         'SO-2026-0143: Brake Rotor & Pad Bedding + High-Temp Fluid Flush',
                         style: AppTypography.bodySmall(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -410,16 +498,23 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                             children: [
                               Text(
                                 'BAY 04 — DIAGNOSTIC',
-                                style: AppTypography.headlineSmall(color: textColor),
+                                style: AppTypography.headlineSmall(
+                                  color: textColor,
+                                ),
                               ),
                               const SizedBox(width: 8),
-                              StatusBadge.warning('WAITING CLIENT AUTH', icon: Icons.pending),
+                              StatusBadge.warning(
+                                'WAITING CLIENT AUTH',
+                                icon: Icons.pending,
+                              ),
                             ],
                           ),
                           Text(
                             'Tech: Reza P.',
                             style: AppTypography.bodySmall(
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ],
@@ -427,12 +522,17 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'BMW 320i F30 LCI [B 3021 RFS]',
-                        style: AppTypography.labelLarge(color: textColor, fontWeight: FontWeight.w700),
+                        style: AppTypography.labelLarge(
+                          color: textColor,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       Text(
                         'SO-2026-0144: Ignition Coil #3 Replacement (Client Quote Sent)',
                         style: AppTypography.bodySmall(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],

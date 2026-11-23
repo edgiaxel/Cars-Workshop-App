@@ -25,10 +25,6 @@ class MechanicHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
-
-
-
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -49,7 +45,12 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
       userName: mechanicName,
       userSubtitle: 'Lead Performance Tech',
       currentIndex: 0,
-      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.mechanicNavItems, i, currentIndex: 0),
+      onNavIndexChanged: (i) => RoleNavigation.navigate(
+        context,
+        RoleNavigation.mechanicNavItems,
+        i,
+        currentIndex: 0,
+      ),
       navItems: RoleNavigation.mechanicNavItems,
       telemetryNotice: 'BAY 02 TELEMETRY ONLINE',
       onLogout: () async {
@@ -241,11 +242,7 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
           ),
         ];
 
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: cards,
-        );
+        return Wrap(spacing: 12, runSpacing: 12, children: cards);
       },
     );
   }
