@@ -49,9 +49,9 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
       selectedIcon: Icons.history,
     ),
     RoleNavItem(
-      label: 'Profile',
-      icon: Icons.account_circle_outlined,
-      selectedIcon: Icons.account_circle,
+      label: 'Earnings',
+      icon: Icons.account_balance_wallet_outlined,
+      selectedIcon: Icons.account_balance_wallet,
     ),
   ];
 
@@ -75,7 +75,13 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
       userName: mechanicName,
       userSubtitle: 'Lead Performance Tech',
       currentIndex: _navIndex,
-      onNavIndexChanged: (i) => setState(() => _navIndex = i),
+      onNavIndexChanged: (i) {
+        if (i == 4) {
+          context.push(RoutePaths.mechanicEarnings);
+          return;
+        }
+        setState(() => _navIndex = i);
+      },
       navItems: _mechanicNavItems,
       telemetryNotice: 'BAY 02 TELEMETRY ONLINE',
       onLogout: () async {
@@ -83,6 +89,12 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
         if (context.mounted) context.go(RoutePaths.login);
       },
       actions: [
+        IconButton(
+          key: const Key('btn_mechanic_earnings_action'),
+          icon: const Icon(Icons.account_balance_wallet_outlined, size: 22),
+          onPressed: () => context.push(RoutePaths.mechanicEarnings),
+          tooltip: 'My Earnings & Incentives',
+        ),
         IconButton(
           icon: const Icon(Icons.notifications_none, size: 22),
           onPressed: () {},

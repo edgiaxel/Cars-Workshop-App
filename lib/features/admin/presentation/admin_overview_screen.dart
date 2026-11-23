@@ -26,6 +26,9 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
     RoleNavItem(label: 'Inspection Review', icon: Icons.assignment_outlined, selectedIcon: Icons.assignment),
     RoleNavItem(label: 'Workshop Floor', icon: Icons.garage_outlined, selectedIcon: Icons.garage),
     RoleNavItem(label: 'Bookings', icon: Icons.calendar_month_outlined, selectedIcon: Icons.calendar_month),
+    RoleNavItem(label: 'Inventory', icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2),
+    RoleNavItem(label: 'Part Requests', icon: Icons.handyman_outlined, selectedIcon: Icons.handyman),
+    RoleNavItem(label: 'Compensation', icon: Icons.payments_outlined, selectedIcon: Icons.payments),
   ];
 
   void _onNavChanged(int index) {
@@ -43,6 +46,18 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
     }
     if (index == 4) {
       context.go(RoutePaths.adminBookings);
+      return;
+    }
+    if (index == 5) {
+      context.go(RoutePaths.adminInventory);
+      return;
+    }
+    if (index == 6) {
+      context.go(RoutePaths.adminPartRequests);
+      return;
+    }
+    if (index == 7) {
+      context.go(RoutePaths.adminCompensation);
       return;
     }
     setState(() => _navIndex = index);
@@ -147,6 +162,90 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                       const Icon(Icons.chevron_right, color: AppColors.accentRed),
                     ],
                   ),
+                ),
+                const SizedBox(height: 12),
+
+                // Quick Navigation Banner to Inventory & Catalog
+                PitCard(
+                  key: const Key('card_admin_nav_inventory'),
+                  accentBorderLeft: AppColors.info,
+                  onTap: () => context.go(RoutePaths.adminInventory),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.inventory_2_outlined, color: AppColors.info, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'INVENTORY & SPARE PARTS CATALOG',
+                              style: AppTypography.labelLarge(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Manage stock levels, receive shipments, audit movements, and record adjustments.',
+                              style: AppTypography.bodySmall(
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.info),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Quick Navigation Banner to Part Requests & Compensation
+                Row(
+                  children: [
+                    Expanded(
+                      child: PitCard(
+                        key: const Key('card_admin_nav_requests'),
+                        accentBorderLeft: AppColors.warning,
+                        onTap: () => context.go(RoutePaths.adminPartRequests),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.handyman_outlined, color: AppColors.warning, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'FLOOR PART REQUESTS',
+                                style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right, color: AppColors.warning, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: PitCard(
+                        key: const Key('card_admin_nav_compensation'),
+                        accentBorderLeft: AppColors.success,
+                        onTap: () => context.go(RoutePaths.adminCompensation),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.payments_outlined, color: AppColors.success, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'MECHANIC COMPENSATION',
+                                style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right, color: AppColors.success, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 18),
 
