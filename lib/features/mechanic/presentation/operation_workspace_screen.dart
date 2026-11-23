@@ -6,9 +6,13 @@ import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/inventory/data/models/part_request_model.dart';
+import 'package:pitmate/features/inventory/data/models/service_task_part_consumption_model.dart';
+import 'package:pitmate/features/inventory/data/repositories/part_operations_repository.dart';
 import 'package:pitmate/features/service_operations/data/models/service_order_task_model.dart';
 import 'package:pitmate/features/service_operations/data/repositories/service_operations_repository.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
+import 'package:pitmate/shared/widgets/pit_error_dialog.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
 
@@ -28,8 +32,11 @@ class OperationWorkspaceScreen extends ConsumerStatefulWidget {
 class _OperationWorkspaceScreenState
     extends ConsumerState<OperationWorkspaceScreen> {
   final _operationsRepo = ServiceOperationsRepository();
+  final _partOpsRepo = PartOperationsRepository();
 
   ServiceOrderTaskModel? _task;
+  List<PartRequestModel> _partRequests = [];
+  List<ServiceTaskPartConsumptionModel> _consumptions = [];
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -63,15 +70,29 @@ class _OperationWorkspaceScreenState
               ),
       );
 
-      setState(() {
-        _task = match;
-        _isLoading = false;
-      });
+      List<PartRequestModel> reqs = [];
+      List<ServiceTaskPartConsumptionModel> cons = [];
+      try {
+        final allReqs = await _partOpsRepo.fetchRequests(serviceOrderId: match.serviceOrderId);
+        reqs = allReqs.where((r) => r.taskId == match.id).toList();
+        cons = await _partOpsRepo.fetchTaskConsumptions(match.id);
+      } catch (_) {}
+
+      if (mounted) {
+        setState(() {
+          _task = match;
+          _partRequests = reqs;
+          _consumptions = cons;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -394,7 +415,11 @@ class _OperationWorkspaceScreenState
                           _buildChecklistSection(isDark, textColor),
                           const SizedBox(height: 18),
 
-                          // 3. Operational Action Controls
+                          // 3. Parts & Materials Floor Management
+                          _buildPartsSection(isDark, textColor),
+                          const SizedBox(height: 18),
+
+                          // 4. Operational Action Controls
                           _buildExecutionControls(isDark, textColor),
                         ],
                       ),
@@ -643,6 +668,494 @@ class _OperationWorkspaceScreenState
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  Future<void> _openRequestPartDialog() async {
+    if (_task == null) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final qtyController = TextEditingController(text: '1');
+    final notesController = TextEditingController();
+
+    List<Map<String, dynamic>> catalog = [];
+    try {
+      catalog = await _partOpsRepo.fetchCatalogForRequest();
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    if (catalog.isEmpty) {
+      showPitErrorDialog(
+        context,
+        title: 'CATALOG EMPTY',
+        message: 'No active parts found in warehouse catalog.',
+        hint: 'Contact workshop admin to configure catalog items.',
+      );
+      return;
+    }
+
+    String selectedPartId = catalog.first['id'] as String;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (_, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          title: Text(
+            'REQUEST FLOOR PART',
+            style: AppTypography.headlineSmall(
+              color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+            ).copyWith(fontWeight: FontWeight.w700),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select Part from Warehouse Catalog:',
+                  style: AppTypography.bodySmall(
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedPartId,
+                  dropdownColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                  isExpanded: true,
+                  items: catalog.map((p) {
+                    final sku = p['sku'] ?? '';
+                    final name = p['name'] ?? '';
+                    final unit = p['unit_of_measurement'] ?? 'pcs';
+                    int avail = 0;
+                    if (p['inventory_balances'] != null) {
+                      if (p['inventory_balances'] is List && (p['inventory_balances'] as List).isNotEmpty) {
+                        avail = ((p['inventory_balances'] as List).first['quantity_available'] as num?)?.toInt() ?? 0;
+                      } else if (p['inventory_balances'] is Map) {
+                        avail = (p['inventory_balances']['quantity_available'] as num?)?.toInt() ?? 0;
+                      }
+                    }
+                    return DropdownMenuItem<String>(
+                      value: p['id'] as String,
+                      child: Text(
+                        '[$sku] $name (Avail: $avail $unit)',
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setDialogState(() => selectedPartId = val);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  key: const Key('input_request_part_qty'),
+                  controller: qtyController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantity Required',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('input_request_part_notes'),
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason / Specifics (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              key: const Key('btn_submit_part_request'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accentRed,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final qty = int.tryParse(qtyController.text.trim()) ?? 0;
+                if (qty <= 0) {
+                  showPitErrorDialog(
+                    ctx,
+                    title: 'INVALID QUANTITY',
+                    message: 'Quantity must be at least 1 unit.',
+                  );
+                  return;
+                }
+                Navigator.pop(ctx);
+                try {
+                  await _partOpsRepo.requestPart(
+                    taskId: _task!.id,
+                    partId: selectedPartId,
+                    quantity: qty,
+                    notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
+                  );
+                  if (!mounted) return;
+                  _loadTask();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Part request dispatched to workshop inventory.'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  showPitErrorDialog(
+                    context,
+                    title: 'PART REQUEST FAILED',
+                    message: e.toString().replaceAll('Exception: ', ''),
+                    hint: 'Check that active service order is open and stock is available.',
+                  );
+                }
+              },
+              child: const Text('SUBMIT REQUEST'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openRecordConsumptionDialog() async {
+    if (_task == null) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Collect parts that can be consumed (fulfilled requests or catalog)
+    List<Map<String, dynamic>> eligibleParts = [];
+    for (final req in _partRequests) {
+      if (req.quantityFulfilled > 0) {
+        eligibleParts.add({
+          'id': req.partId,
+          'name': req.partName ?? req.partSku ?? 'Part',
+          'sku': req.partSku ?? '',
+          'unit': req.partUnit ?? 'pcs',
+          'max': req.quantityFulfilled,
+        });
+      }
+    }
+
+    if (eligibleParts.isEmpty) {
+      try {
+        final catalog = await _partOpsRepo.fetchCatalogForRequest();
+        for (final p in catalog) {
+          eligibleParts.add({
+            'id': p['id'] as String,
+            'name': p['name'] as String? ?? '',
+            'sku': p['sku'] as String? ?? '',
+            'unit': p['unit_of_measurement'] as String? ?? 'pcs',
+            'max': 100,
+          });
+        }
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+
+    if (eligibleParts.isEmpty) {
+      showPitErrorDialog(
+        context,
+        title: 'NO PARTS ISSUED',
+        message: 'No parts have been fulfilled or issued for this operation yet.',
+        hint: 'Submit a part request and wait for admin fulfillment first.',
+      );
+      return;
+    }
+
+    String selectedPartId = eligibleParts.first['id'] as String;
+    final consumedController = TextEditingController(text: '1');
+    final returnedController = TextEditingController(text: '0');
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (_, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          title: Text(
+            'RECORD CONSUMPTION & RETURN',
+            style: AppTypography.headlineSmall(
+              color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+            ).copyWith(fontWeight: FontWeight.w700),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select Part:',
+                  style: AppTypography.bodySmall(
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedPartId,
+                  dropdownColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                  isExpanded: true,
+                  items: eligibleParts.map((p) {
+                    final sku = p['sku'] ?? '';
+                    final name = p['name'] ?? '';
+                    final unit = p['unit'] ?? 'pcs';
+                    return DropdownMenuItem<String>(
+                      value: p['id'] as String,
+                      child: Text(
+                        '[$sku] $name ($unit)',
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setDialogState(() => selectedPartId = val);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  key: const Key('input_consumed_qty'),
+                  controller: consumedController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Units Consumed / Installed',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('input_returned_qty'),
+                  controller: returnedController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Units Unused / Returned to Stock',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              key: const Key('btn_submit_part_consumption'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final consumed = int.tryParse(consumedController.text.trim()) ?? -1;
+                final returned = int.tryParse(returnedController.text.trim()) ?? -1;
+                if (consumed < 0 || returned < 0 || (consumed == 0 && returned == 0)) {
+                  showPitErrorDialog(
+                    ctx,
+                    title: 'INVALID QUANTITIES',
+                    message: 'Consumed and returned must be non-negative with at least 1 unit recorded.',
+                  );
+                  return;
+                }
+                Navigator.pop(ctx);
+                try {
+                  await _partOpsRepo.consumeAndReturnParts(
+                    taskId: _task!.id,
+                    partId: selectedPartId,
+                    consumedQty: consumed,
+                    returnedQty: returned,
+                  );
+                  if (!mounted) return;
+                  _loadTask();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Recorded $consumed consumed, $returned returned.'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  showPitErrorDialog(
+                    context,
+                    title: 'RECORD CONSUMPTION FAILED',
+                    message: e.toString().replaceAll('Exception: ', ''),
+                    hint: 'Ensure returned and consumed amounts do not exceed issued quantities.',
+                  );
+                }
+              },
+              child: const Text('CONFIRM USAGE'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPartsSection(bool isDark, Color textColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'PARTS & MATERIALS',
+              style: AppTypography.labelLarge(
+                color: textColor,
+              ).copyWith(fontWeight: FontWeight.w700),
+            ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                OutlinedButton.icon(
+                  key: const Key('btn_open_part_request_dialog'),
+                  icon: const Icon(Icons.add_shopping_cart, size: 14),
+                  label: const Text('REQUEST PART', style: TextStyle(fontSize: 12)),
+                  onPressed: _openRequestPartDialog,
+                ),
+                OutlinedButton.icon(
+                  key: const Key('btn_open_part_consumption_dialog'),
+                  icon: const Icon(Icons.check_box_outlined, size: 14),
+                  label: const Text('RECORD USAGE', style: TextStyle(fontSize: 12)),
+                  onPressed: _openRecordConsumptionDialog,
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_partRequests.isEmpty && _consumptions.isEmpty)
+          PitCard(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'No parts requested or consumed for this operation.',
+                style: TextStyle(
+                  color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                ),
+              ),
+            ),
+          ),
+        if (_partRequests.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Text(
+              'FLOOR REQUESTS',
+              style: AppTypography.bodySmall(
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+          ..._partRequests.map((req) {
+            Color statusColor = AppColors.warning;
+            if (req.isFulfilled) statusColor = AppColors.success;
+            if (req.isRejected) statusColor = AppColors.accentRed;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: PitCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            req.partName ?? req.partSku ?? 'Part ${req.partId}',
+                            style: AppTypography.labelMedium(color: textColor)
+                                .copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'SKU: ${req.partSku ?? "—"} • Qty: ${req.quantityRequested} ${req.partUnit ?? "pcs"} (Fulfilled: ${req.quantityFulfilled})',
+                            style: AppTypography.bodySmall(
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                          if (req.notes != null && req.notes!.isNotEmpty)
+                            Text(
+                              'Note: ${req.notes}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    StatusBadge(
+                      label: req.status.replaceAll('_', ' ').toUpperCase(),
+                      color: statusColor,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+        if (_consumptions.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Text(
+              'RECORDED CONSUMPTION',
+              style: AppTypography.bodySmall(
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+          ..._consumptions.map((c) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: PitCard(
+                accentBorderLeft: AppColors.info,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            c.partName ?? c.partSku ?? 'Part ${c.partId}',
+                            style: AppTypography.labelMedium(color: textColor)
+                                .copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Consumed: ${c.quantityConsumed} ${c.partUnit ?? "pcs"} • Returned: ${c.quantityReturned} ${c.partUnit ?? "pcs"}',
+                            style: AppTypography.bodySmall(
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      'Rp ${(c.totalCostCents).toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
+                      style: AppTypography.telemetrySmall(
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
       ],
     );
   }
