@@ -22,6 +22,20 @@ Do not record planned functionality as completed.
 
 ---
 
+# [1.3.1-nav-audit] — 2026-11-23
+
+### Fixed
+- **Role Navigation Consistency:** Created unified single source of truth `RoleNavigation` in `lib/shared/navigation/role_navigation.dart` defining immutable nav items and route bindings for Admin (8 destinations), Mechanic (4 destinations), and Customer (4 destinations).
+- **Sidebar & App Bar Standardization:** Enhanced `ResponsiveRoleScaffold` with consistent 250px desktop sidebar, mobile drawer with full navigation routes, and fixed bottom navigation bar preventing overflow and selection crashes.
+- **Screen Route & Index Alignment:** Standardized `currentIndex` across all 16 role screens:
+  - Admin (8): Overview (`/admin`), Customers & Fleet (`/admin/customers`), Workshop Floor (`/admin/floor`), Bay Schedule & Bookings (`/admin/bookings`), Inspection Review (`/admin/inspection-review`), Inventory & Stock (`/admin/inventory`), Part Requests (`/admin/part-requests`), Compensation (`/admin/compensation`).
+  - Mechanic (4): My Work (`/mechanic`), Active Workspace (`/mechanic/operation`), Vehicle Inspection (`/mechanic/inspection`), My Earnings (`/mechanic/earnings`).
+  - Customer (4): My Garage (`/customer/garage`), Book Service (`/customer/book-service`), Appointments (`/customer/appointments`), Estimates & Approval (`/customer/estimates`).
+- **Mobile Responsive Layout (antislop-layoutmobile):** Eliminated all RenderFlex layout overflows across mobile viewports (390x844) in Admin Overview, Customer Registry, Workshop Floor Console, Mechanic Workspace, Inspection Workspace, and Mechanic Earnings using adaptive `LayoutBuilder`, `Wrap`, and `Expanded` reflow patterns.
+- **Automated Verification:** Verified 100% pass rate on test suite (137/137 tests), clean static analysis (0 issues), and verified all 16 screens and 24 navigation transitions via Playwright CLI.
+
+---
+
 # [1.3.0-m4] — 2026-11-23
 
 ### Added

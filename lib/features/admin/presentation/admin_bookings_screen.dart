@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -27,7 +28,7 @@ class AdminBookingsScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
-  int _navIndex = 3; // "Bay Schedule / Bookings"
+
   late final BookingRepository _repo;
 
   bool _isLoading = false;
@@ -107,35 +108,6 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
 
   List<BookingModel> _bookings = List.from(_defaultBookings);
 
-  static const List<RoleNavItem> _adminNavItems = [
-    RoleNavItem(
-      label: 'Workshop Overview',
-      icon: Icons.dashboard_outlined,
-      selectedIcon: Icons.dashboard,
-    ),
-    RoleNavItem(
-      label: 'Customers & Fleet',
-      icon: Icons.people_outline,
-      selectedIcon: Icons.people,
-    ),
-    RoleNavItem(
-      label: 'Service Orders',
-      icon: Icons.assignment_outlined,
-      selectedIcon: Icons.assignment,
-      badge: '4',
-    ),
-    RoleNavItem(
-      label: 'Bay Schedule & Bookings',
-      icon: Icons.calendar_month_outlined,
-      selectedIcon: Icons.calendar_month,
-    ),
-    RoleNavItem(
-      label: 'Inventory',
-      icon: Icons.inventory_2_outlined,
-      selectedIcon: Icons.inventory_2,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -158,13 +130,7 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
   }
 
   void _onNavChanged(int index) {
-    if (index == 0) {
-      context.go(RoutePaths.admin);
-    } else if (index == 1) {
-      context.go(RoutePaths.adminCustomers);
-    } else {
-      setState(() => _navIndex = index);
-    }
+    RoleNavigation.navigate(context, RoleNavigation.adminNavItems, index, currentIndex: 3);
   }
 
   Future<void> _confirmBooking(BookingModel booking) async {
@@ -437,9 +403,9 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
       userSubtitle: 'Workshop Director',
       showBackButton: true,
       onBack: () => context.go(RoutePaths.admin),
-      currentIndex: _navIndex,
+      currentIndex: 3,
       onNavIndexChanged: _onNavChanged,
-      navItems: _adminNavItems,
+      navItems: RoleNavigation.adminNavItems,
       telemetryNotice: 'LIVE DISPATCH SCHEDULER',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();

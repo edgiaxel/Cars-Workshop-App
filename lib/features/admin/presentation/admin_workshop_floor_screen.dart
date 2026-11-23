@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -255,30 +256,9 @@ class _AdminWorkshopFloorScreenState
       roleTitle: 'Workshop Dispatch',
       userName: 'Toto Wolf',
       userSubtitle: 'Workshop Director',
-      currentIndex: 3,
-      onNavIndexChanged: (i) {
-        if (i == 0) context.go(RoutePaths.admin);
-        if (i == 1) context.go(RoutePaths.adminCustomers);
-        if (i == 2) context.push(RoutePaths.adminInspectionReview);
-      },
-      navItems: const [
-        RoleNavItem(
-            label: 'Overview',
-            icon: Icons.dashboard_outlined,
-            selectedIcon: Icons.dashboard),
-        RoleNavItem(
-            label: 'Customers & Fleet',
-            icon: Icons.people_outline,
-            selectedIcon: Icons.people),
-        RoleNavItem(
-            label: 'Inspection Review',
-            icon: Icons.assignment_outlined,
-            selectedIcon: Icons.assignment),
-        RoleNavItem(
-            label: 'Workshop Floor',
-            icon: Icons.garage_outlined,
-            selectedIcon: Icons.garage),
-      ],
+      currentIndex: 2,
+      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.adminNavItems, i, currentIndex: 2),
+      navItems: RoleNavigation.adminNavItems,
       telemetryNotice: telemetryNotice,
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();
@@ -359,9 +339,11 @@ class _AdminWorkshopFloorScreenState
   Widget _buildFloorHeader(bool isDark, Color textColor, int occupiedCount) {
     return PitCard(
       accentBorderLeft: AppColors.accentRed,
-      child: Row(
-        children: [
-          Container(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 600;
+
+          final iconWidget = Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: AppColors.accentRed.withValues(alpha: 0.1),
@@ -369,51 +351,10 @@ class _AdminWorkshopFloorScreenState
             ),
             child: const Icon(Icons.precision_manufacturing,
                 color: AppColors.accentRed, size: 28),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'PITMATE 5-BAY OPERATIONS CONSOLE',
-                      style: AppTypography.headlineMedium(color: textColor),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'LIVE',
-                      style: AppTypography.telemetrySmall(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Physical bay allocation, conflict detection, and live workload dispatch.',
-                  style: AppTypography.bodySmall(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          );
+
+          final badgeWidget = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: occupiedCount > 0 ? AppColors.warning : AppColors.success,
               borderRadius: AppSpacing.roundedSmall,
@@ -423,11 +364,115 @@ class _AdminWorkshopFloorScreenState
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                fontSize: 11,
               ),
             ),
-          ),
-        ],
+          );
+
+          if (isNarrow) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    iconWidget,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '5-BAY OPERATIONS CONSOLE',
+                            style: AppTypography.headlineSmall(color: textColor),
+                          ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.success,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'LIVE DISPATCH',
+                                style: AppTypography.telemetrySmall(
+                                  color: AppColors.success,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    badgeWidget,
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Physical bay allocation, conflict detection, and live workload dispatch.',
+                  style: AppTypography.bodySmall(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              iconWidget,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'PITMATE 5-BAY OPERATIONS CONSOLE',
+                          style: AppTypography.headlineMedium(color: textColor),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'LIVE',
+                          style: AppTypography.telemetrySmall(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Physical bay allocation, conflict detection, and live workload dispatch.',
+                      style: AppTypography.bodySmall(
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              badgeWidget,
+            ],
+          );
+        },
       ),
     );
   }
@@ -456,13 +501,17 @@ class _AdminWorkshopFloorScreenState
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          bay.name.toUpperCase(),
-                          style: AppTypography.labelLarge(
-                            color: textColor,
-                            fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Text(
+                            bay.name.toUpperCase(),
+                            style: AppTypography.labelLarge(
+                              color: textColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 8),
                         if (bay.isOccupied)
                           StatusBadge.danger('OCCUPIED')
                         else
@@ -476,10 +525,13 @@ class _AdminWorkshopFloorScreenState
                           const Icon(Icons.directions_car,
                               size: 16, color: AppColors.accentRed),
                           const SizedBox(width: 6),
-                          Text(
-                            bay.vehiclePlate ?? 'Vehicle Assigned',
-                            style: AppTypography.headlineSmall(
-                              color: textColor,
+                          Expanded(
+                            child: Text(
+                              bay.vehiclePlate ?? 'Vehicle Assigned',
+                              style: AppTypography.headlineSmall(
+                                color: textColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -550,9 +602,10 @@ class _AdminWorkshopFloorScreenState
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: PitCard(
-            child: Row(
-              children: [
-                Container(
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final isCompact = c.maxWidth < 500;
+                final iconBox = Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: isDark
@@ -561,32 +614,33 @@ class _AdminWorkshopFloorScreenState
                     borderRadius: AppSpacing.roundedSmall,
                   ),
                   child: const Icon(Icons.car_repair, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${order.orderNumber} • ${order.vehicleDescription}',
-                        style: AppTypography.labelLarge(
-                          color: textColor,
-                          fontWeight: FontWeight.w700,
-                        ),
+                );
+
+                final detailsCol = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${order.orderNumber} • ${order.vehicleDescription}',
+                      style: AppTypography.labelLarge(
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Customer: ${order.customerName ?? 'Walk-in'} • Status: ${order.status}',
-                        style: AppTypography.bodySmall(
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
-                        ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Customer: ${order.customerName ?? 'Walk-in'} • Status: ${order.status}',
+                      style: AppTypography.bodySmall(
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
-                    ],
-                  ),
-                ),
-                ElevatedButton.icon(
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                );
+
+                final assignBtn = ElevatedButton.icon(
                   key: Key('btn_assign_bay_${order.id}'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.accentRed,
@@ -598,8 +652,34 @@ class _AdminWorkshopFloorScreenState
                   icon: const Icon(Icons.login, size: 16),
                   label: const Text('ASSIGN BAY'),
                   onPressed: () => _showAssignBayModal(order),
-                ),
-              ],
+                );
+
+                if (isCompact) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          iconBox,
+                          const SizedBox(width: 12),
+                          Expanded(child: detailsCol),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      assignBtn,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    iconBox,
+                    const SizedBox(width: 12),
+                    Expanded(child: detailsCol),
+                    assignBtn,
+                  ],
+                );
+              },
             ),
           ),
         );

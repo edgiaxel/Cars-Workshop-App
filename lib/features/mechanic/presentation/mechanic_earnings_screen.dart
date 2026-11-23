@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
@@ -30,11 +31,7 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
   // Default demo mechanic: Max Verstappen
   static const String _mechanicId = '7294334d-7144-4c14-9d28-5f90e48a5fbb';
 
-  static const List<RoleNavItem> _mechanicNavItems = [
-    RoleNavItem(label: 'My Work', icon: Icons.handyman_outlined, selectedIcon: Icons.handyman),
-    RoleNavItem(label: 'Vehicle Inspection', icon: Icons.car_repair_outlined, selectedIcon: Icons.car_repair),
-    RoleNavItem(label: 'My Earnings', icon: Icons.account_balance_wallet_outlined, selectedIcon: Icons.account_balance_wallet),
-  ];
+
 
   @override
   void initState() {
@@ -81,7 +78,7 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
   }
 
   void _onNavChanged(int index) {
-    if (index == 0) context.go(RoutePaths.mechanic);
+    RoleNavigation.navigate(context, RoleNavigation.mechanicNavItems, index, currentIndex: 3);
   }
 
   String _formatRp(int amount) {
@@ -102,9 +99,11 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
       roleTitle: 'Mechanic Compensation',
       userName: _profile?.mechanicName ?? 'Max Verstappen',
       userSubtitle: 'Senior Pit Technician',
-      currentIndex: 2,
+      currentIndex: 3,
+      showBackButton: true,
+      onBack: () => context.go(RoutePaths.mechanic),
       onNavIndexChanged: _onNavChanged,
-      navItems: _mechanicNavItems,
+      navItems: RoleNavigation.mechanicNavItems,
       telemetryNotice: 'MONTHLY ESTIMATED: ${_formatRp(estimatedTotal)}',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();
@@ -119,69 +118,70 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
       ],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final isNarrow = constraints.maxWidth < 700;
-
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 18.0),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 960),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 1. Primary Highlight Card
-                          PitCard(
-                            accentBorderLeft: AppColors.success,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'ESTIMATED MONTHLY EARNINGS',
-                                  style: AppTypography.labelSmall(color: AppColors.success),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _formatRp(estimatedTotal),
-                                  style: AppTypography.headlineLarge(color: textColor).copyWith(fontWeight: FontWeight.w800),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Includes fixed base salary, job completion incentives, and audited performance adjustments.',
-                                  style: AppTypography.bodySmall(
-                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                  ),
-                                ),
-                              ],
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 18.0),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 960),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 1. Primary Highlight Card
+                      PitCard(
+                        accentBorderLeft: AppColors.success,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ESTIMATED MONTHLY EARNINGS',
+                              style: AppTypography.labelSmall(color: AppColors.success),
                             ),
-                          ),
-                          const SizedBox(height: 16),
+                            const SizedBox(height: 8),
+                            Text(
+                              _formatRp(estimatedTotal),
+                              style: AppTypography.headlineLarge(color: textColor).copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Includes fixed base salary, job completion incentives, and audited performance adjustments.',
+                              style: AppTypography.bodySmall(
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
                           // 2. Telemetry Breakdown Cards
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              _buildMetricCard(
-                                'BASE SALARY',
-                                _formatRp(baseSalary),
-                                AppColors.info,
-                                isNarrow,
-                              ),
-                              _buildMetricCard(
-                                'ACCRUED INCENTIVES',
-                                _formatRp(totalIncentives),
-                                AppColors.success,
-                                isNarrow,
-                              ),
-                              _buildMetricCard(
-                                'NET ADJUSTMENTS',
-                                '${netAdjustments >= 0 ? "+" : ""}${_formatRp(netAdjustments)}',
-                                netAdjustments >= 0 ? AppColors.info : AppColors.accentRed,
-                                isNarrow,
-                              ),
-                            ],
+                          LayoutBuilder(
+                            builder: (context, c) {
+                              final cardWidth = c.maxWidth < 600 ? c.maxWidth : (c.maxWidth - 24) / 3;
+                              return Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: [
+                                  _buildMetricCard(
+                                    'BASE SALARY',
+                                    _formatRp(baseSalary),
+                                    AppColors.info,
+                                    cardWidth,
+                                  ),
+                                  _buildMetricCard(
+                                    'ACCRUED INCENTIVES',
+                                    _formatRp(totalIncentives),
+                                    AppColors.success,
+                                    cardWidth,
+                                  ),
+                                  _buildMetricCard(
+                                    'NET ADJUSTMENTS',
+                                    '${netAdjustments >= 0 ? "+" : ""}${_formatRp(netAdjustments)}',
+                                    netAdjustments >= 0 ? AppColors.info : AppColors.accentRed,
+                                    cardWidth,
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(height: 24),
 
@@ -218,6 +218,7 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
                                               Text(
                                                 a.taskTitle ?? 'Operation Task',
                                                 style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                               const SizedBox(height: 2),
                                               Text(
@@ -225,10 +226,12 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
                                                 style: AppTypography.bodySmall(
                                                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                                 ),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ],
                                           ),
                                         ),
+                                        const SizedBox(width: 8),
                                         Text(
                                           '+${_formatRp(a.allocatedCents)}',
                                           style: AppTypography.telemetryMedium(
@@ -280,15 +283,19 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
                                                     color: adj.isDeduction ? AppColors.accentRed : AppColors.success,
                                                   ),
                                                   const SizedBox(width: 8),
-                                                  Text(
-                                                    adj.reason,
-                                                    style: AppTypography.bodySmall(color: textColor).copyWith(fontWeight: FontWeight.w600),
+                                                  Expanded(
+                                                    child: Text(
+                                                      adj.reason,
+                                                      style: AppTypography.bodySmall(color: textColor).copyWith(fontWeight: FontWeight.w600),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
                                                   ),
                                                 ],
                                               ),
                                             ],
                                           ),
                                         ),
+                                        const SizedBox(width: 8),
                                         Text(
                                           '${adj.isDeduction ? "-" : "+"}${_formatRp(adj.amountCents)}',
                                           style: AppTypography.telemetryMedium(
@@ -304,15 +311,13 @@ class _MechanicEarningsScreenState extends ConsumerState<MechanicEarningsScreen>
                       ),
                     ),
                   ),
-                );
-              },
-            ),
+                ),
     );
   }
 
-  Widget _buildMetricCard(String label, String value, Color accent, bool isNarrow) {
+  Widget _buildMetricCard(String label, String value, Color accent, double cardWidth) {
     return SizedBox(
-      width: isNarrow ? double.infinity : 280,
+      width: cardWidth,
       child: PitCard(
         accentBorderLeft: accent,
         child: Column(

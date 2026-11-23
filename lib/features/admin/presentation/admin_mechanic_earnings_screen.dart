@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
@@ -27,13 +28,7 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
   List<MechanicCompensationProfile> _profiles = [];
   List<MechanicPayrollAdjustment> _adjustments = [];
 
-  static const List<RoleNavItem> _adminNavItems = [
-    RoleNavItem(label: 'Workshop Overview', icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard),
-    RoleNavItem(label: 'Customers & Fleet', icon: Icons.people_outline, selectedIcon: Icons.people),
-    RoleNavItem(label: 'Inspection Review', icon: Icons.assignment_outlined, selectedIcon: Icons.assignment),
-    RoleNavItem(label: 'Workshop Floor', icon: Icons.garage_outlined, selectedIcon: Icons.garage),
-    RoleNavItem(label: 'Compensation', icon: Icons.payments_outlined, selectedIcon: Icons.payments),
-  ];
+
 
   @override
   void initState() {
@@ -65,10 +60,7 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
   }
 
   void _onNavChanged(int index) {
-    if (index == 0) context.go(RoutePaths.admin);
-    if (index == 1) context.go(RoutePaths.adminCustomers);
-    if (index == 2) context.push(RoutePaths.adminInspectionReview);
-    if (index == 3) context.go(RoutePaths.adminWorkshopFloor);
+    RoleNavigation.navigate(context, RoleNavigation.adminNavItems, index, currentIndex: 7);
   }
 
   String _formatRp(int amount) {
@@ -316,9 +308,9 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
       roleTitle: 'Mechanic Compensation',
       userName: 'Toto Wolf',
       userSubtitle: 'Workshop Director',
-      currentIndex: 4,
+      currentIndex: 7,
       onNavIndexChanged: _onNavChanged,
-      navItems: _adminNavItems,
+      navItems: RoleNavigation.adminNavItems,
       telemetryNotice: '${_profiles.length} ACTIVE TECHNICIANS',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();

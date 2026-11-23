@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -24,36 +25,9 @@ class MechanicHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
-  int _navIndex = 0;
 
-  static const List<RoleNavItem> _mechanicNavItems = [
-    RoleNavItem(
-      label: 'My Work',
-      icon: Icons.assignment_outlined,
-      selectedIcon: Icons.assignment,
-    ),
-    RoleNavItem(
-      label: 'Tasks & Torques',
-      icon: Icons.checklist_outlined,
-      selectedIcon: Icons.checklist,
-    ),
-    RoleNavItem(
-      label: 'Parts Reqs',
-      icon: Icons.handyman_outlined,
-      selectedIcon: Icons.handyman,
-      badge: '1',
-    ),
-    RoleNavItem(
-      label: 'Work History',
-      icon: Icons.history_outlined,
-      selectedIcon: Icons.history,
-    ),
-    RoleNavItem(
-      label: 'Earnings',
-      icon: Icons.account_balance_wallet_outlined,
-      selectedIcon: Icons.account_balance_wallet,
-    ),
-  ];
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -74,15 +48,9 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
       roleTitle: 'Mechanic Telemetry',
       userName: mechanicName,
       userSubtitle: 'Lead Performance Tech',
-      currentIndex: _navIndex,
-      onNavIndexChanged: (i) {
-        if (i == 4) {
-          context.push(RoutePaths.mechanicEarnings);
-          return;
-        }
-        setState(() => _navIndex = i);
-      },
-      navItems: _mechanicNavItems,
+      currentIndex: 0,
+      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.mechanicNavItems, i, currentIndex: 0),
+      navItems: RoleNavigation.mechanicNavItems,
       telemetryNotice: 'BAY 02 TELEMETRY ONLINE',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();
@@ -136,8 +104,11 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Text(
                 'GOOD MORNING, DIAN S.',
@@ -181,22 +152,29 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
-              const Icon(
-                Icons.precision_manufacturing,
-                size: 16,
-                color: AppColors.accentRed,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.precision_manufacturing,
+                    size: 16,
+                    color: AppColors.accentRed,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Bay 02 • Hoist B',
+                    style: AppTypography.labelMedium(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
-              Text(
-                'Bay 02 • Hoist B',
-                style: AppTypography.labelMedium(
-                  color: textColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 8),
               Text(
                 '•',
                 style: TextStyle(
@@ -205,7 +183,6 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
                       : AppColors.textMutedLight,
                 ),
               ),
-              const SizedBox(width: 8),
               Text(
                 'Morning Shift (08:00 – 17:00)',
                 style: AppTypography.bodySmall(
@@ -224,46 +201,50 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
   Widget _buildWorkloadMetrics(bool isDark, Color textColor) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth = (constraints.maxWidth - 36) / 4;
-        return Row(
-          children: [
-            _buildMetricCard(
-              title: 'ASSIGNED',
-              count: '4',
-              subtext: 'TOTAL',
-              color: textColor,
-              width: cardWidth,
-              isDark: isDark,
-            ),
-            const SizedBox(width: 12),
-            _buildMetricCard(
-              title: 'IN PROGRESS',
-              count: '1',
-              subtext: 'ACTIVE',
-              color: AppColors.accentRed,
-              accentLeft: AppColors.accentRed,
-              width: cardWidth,
-              isDark: isDark,
-            ),
-            const SizedBox(width: 12),
-            _buildMetricCard(
-              title: 'ON HOLD',
-              count: '2',
-              subtext: 'PARTS',
-              color: AppColors.warning,
-              width: cardWidth,
-              isDark: isDark,
-            ),
-            const SizedBox(width: 12),
-            _buildMetricCard(
-              title: 'PASSED QC',
-              count: '1',
-              subtext: 'READY',
-              color: AppColors.success,
-              width: cardWidth,
-              isDark: isDark,
-            ),
-          ],
+        final isNarrow = constraints.maxWidth < 650;
+        final columns = isNarrow ? 2 : 4;
+        final cardWidth = (constraints.maxWidth - (columns - 1) * 12) / columns;
+
+        final cards = [
+          _buildMetricCard(
+            title: 'ASSIGNED',
+            count: '4',
+            subtext: 'TOTAL',
+            color: textColor,
+            width: cardWidth,
+            isDark: isDark,
+          ),
+          _buildMetricCard(
+            title: 'IN PROGRESS',
+            count: '1',
+            subtext: 'ACTIVE',
+            color: AppColors.accentRed,
+            accentLeft: AppColors.accentRed,
+            width: cardWidth,
+            isDark: isDark,
+          ),
+          _buildMetricCard(
+            title: 'ON HOLD',
+            count: '2',
+            subtext: 'PARTS',
+            color: AppColors.warning,
+            width: cardWidth,
+            isDark: isDark,
+          ),
+          _buildMetricCard(
+            title: 'PASSED QC',
+            count: '1',
+            subtext: 'READY',
+            color: AppColors.success,
+            width: cardWidth,
+            isDark: isDark,
+          ),
+        ];
+
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: cards,
         );
       },
     );
@@ -326,10 +307,14 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   StatusBadge.inProgress('ACTIVE JOB', icon: Icons.play_arrow),
                   const SizedBox(width: 8),

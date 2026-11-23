@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -457,15 +458,9 @@ class _CustomerEstimateApprovalScreenState
           context.go(RoutePaths.customerGarage);
         }
       },
-      navItems: const [
-        RoleNavItem(label: 'My Garage', icon: Icons.garage_outlined, selectedIcon: Icons.garage),
-        RoleNavItem(label: 'Service History', icon: Icons.history_outlined, selectedIcon: Icons.history),
-        RoleNavItem(label: 'Active Booking', icon: Icons.calendar_today_outlined, selectedIcon: Icons.calendar_today),
-      ],
-      currentIndex: 0,
-      onNavIndexChanged: (index) {
-        if (index == 0) context.go(RoutePaths.customerGarage);
-      },
+      navItems: RoleNavigation.customerNavItems,
+      currentIndex: 3,
+      onNavIndexChanged: (index) => RoleNavigation.navigate(context, RoleNavigation.customerNavItems, index, currentIndex: 3),
       telemetryNotice: 'ESTIMATE: ${_estimate.revisionLabel.toUpperCase()}',
       body: _isLoading
           ? const Center(

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
+import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
@@ -289,31 +294,42 @@ class _AdminInspectionReviewScreenState
     final secondaryTextColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      appBar: AppBar(
-        title: Text(
-          'ADMIN DIAGNOSTIC REVIEW',
-          style: AppTypography.headlineSmall(
-            color: isDark ? AppColors.textPrimaryDark : AppColors.racingRed,
-          ),
-        ),
-        actions: [
-          if (_inspection != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Center(
-                child: StatusBadge(
-                  label: _inspection!.status.displayName.toUpperCase(),
-                  type: _inspection!.status.isCompleted
-                      ? StatusBadgeType.success
-                      : StatusBadgeType.inProgress,
-                ),
+    return ResponsiveRoleScaffold(
+      roleTitle: 'Diagnostic Review',
+      userName: 'Toto Wolf',
+      userSubtitle: 'Workshop Director',
+      currentIndex: 4,
+      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.adminNavItems, i, currentIndex: 4),
+      navItems: RoleNavigation.adminNavItems,
+      showBackButton: true,
+      onBack: () {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go(RoutePaths.adminWorkshopFloor);
+        }
+      },
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
+      telemetryNotice: _inspection != null
+          ? 'STATUS: ${_inspection!.status.displayName.toUpperCase()}'
+          : 'DIAGNOSTIC TELEMETRY ACTIVE',
+      actions: [
+        if (_inspection != null)
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Center(
+              child: StatusBadge(
+                label: _inspection!.status.displayName.toUpperCase(),
+                type: _inspection!.status.isCompleted
+                    ? StatusBadgeType.success
+                    : StatusBadgeType.inProgress,
               ),
             ),
-        ],
-      ),
+          ),
+      ],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(

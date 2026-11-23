@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -26,7 +27,7 @@ class CustomerGarageScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
-  int _navIndex = 0;
+
   bool _isLoading = false;
   String? _customerRecordId;
   String _customerName = 'Customer Member';
@@ -147,28 +148,7 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
     }
   }
 
-  static const List<RoleNavItem> _navItems = [
-    RoleNavItem(
-      label: 'My Garage',
-      icon: Icons.garage_outlined,
-      selectedIcon: Icons.garage,
-    ),
-    RoleNavItem(
-      label: 'Book Service',
-      icon: Icons.calendar_month_outlined,
-      selectedIcon: Icons.calendar_month,
-    ),
-    RoleNavItem(
-      label: 'Invoices',
-      icon: Icons.receipt_long_outlined,
-      selectedIcon: Icons.receipt_long,
-    ),
-    RoleNavItem(
-      label: 'Profile',
-      icon: Icons.person_outline,
-      selectedIcon: Icons.person,
-    ),
-  ];
+
 
   void _openAddVehicleSheet() {
     showModalBottomSheet<void>(
@@ -226,15 +206,9 @@ class _CustomerGarageScreenState extends ConsumerState<CustomerGarageScreen> {
       roleTitle: 'Customer Garage',
       userName: _customerName,
       userSubtitle: _customerSubtitle,
-      currentIndex: _navIndex,
-      onNavIndexChanged: (index) {
-        if (index == 1) {
-          context.go(RoutePaths.customerAppointments);
-          return;
-        }
-        setState(() => _navIndex = index);
-      },
-      navItems: _navItems,
+      currentIndex: 0,
+      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.customerNavItems, i, currentIndex: 0),
+      navItems: RoleNavigation.customerNavItems,
       telemetryNotice: 'CONNECTED TO PITMATE CLOUD',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();

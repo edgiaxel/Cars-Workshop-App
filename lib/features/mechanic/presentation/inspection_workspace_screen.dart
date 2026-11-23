@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
+import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app/theme/app_colors.dart';
@@ -320,9 +324,11 @@ class _InspectionWorkspaceScreenState
               children: [
                 const Icon(Icons.check_circle, color: AppColors.success, size: 28),
                 const SizedBox(width: 8),
-                Text(
-                  'INSPECTION SUBMITTED',
-                  style: AppTypography.headlineSmall(),
+                Expanded(
+                  child: Text(
+                    'INSPECTION SUBMITTED',
+                    style: AppTypography.headlineSmall(),
+                  ),
                 ),
               ],
             ),
@@ -377,30 +383,39 @@ class _InspectionWorkspaceScreenState
     final secondaryTextColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      appBar: AppBar(
-        title: Text(
-          'INSPECTION & DIAGNOSTIC WORKSPACE',
-          style: AppTypography.headlineSmall(
-            color: isDark ? AppColors.textPrimaryDark : AppColors.racingRed,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Center(
-              child: StatusBadge(
-                label: '$_evaluatedItemsCount/$_totalItems CHECKED',
-                type: _isChecklistComplete
-                    ? StatusBadgeType.success
-                    : StatusBadgeType.warning,
-              ),
+    return ResponsiveRoleScaffold(
+      roleTitle: 'Inspection Diagnostics',
+      userName: 'Max Verstappen',
+      userSubtitle: 'Lead Performance Tech',
+      currentIndex: 2,
+      navItems: RoleNavigation.mechanicNavItems,
+      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.mechanicNavItems, i, currentIndex: 2),
+      showBackButton: true,
+      onBack: () {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go(RoutePaths.mechanic);
+        }
+      },
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
+      telemetryNotice: '$_evaluatedItemsCount/$_totalItems CHECKED',
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: Center(
+            child: StatusBadge(
+              label: '$_evaluatedItemsCount/$_totalItems CHECKED',
+              type: _isChecklistComplete
+                  ? StatusBadgeType.success
+                  : StatusBadgeType.warning,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -500,26 +515,37 @@ class _InspectionWorkspaceScreenState
             ),
           ),
           const SizedBox(height: 4),
-          Row(
+          Wrap(
+            spacing: 16,
+            runSpacing: 4,
             children: [
-              Icon(Icons.speed, size: 16, color: secondaryTextColor),
-              const SizedBox(width: 4),
-              Text(
-                telemetry.formattedOdometer,
-                style: AppTypography.telemetrySmall(
-                  color: secondaryTextColor,
-                  fontWeight: FontWeight.w600,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.speed, size: 16, color: secondaryTextColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    telemetry.formattedOdometer,
+                    style: AppTypography.telemetrySmall(
+                      color: secondaryTextColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              Icon(Icons.person_outline, size: 16, color: secondaryTextColor),
-              const SizedBox(width: 4),
-              Text(
-                telemetry.customerName,
-                style: AppTypography.bodySmall(
-                  color: secondaryTextColor,
-                  fontWeight: FontWeight.w500,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person_outline, size: 16, color: secondaryTextColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    telemetry.customerName,
+                    style: AppTypography.bodySmall(
+                      color: secondaryTextColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -646,8 +672,11 @@ class _InspectionWorkspaceScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 4,
           children: [
             Text(
               '${_selectedCategory.toUpperCase()} DIAGNOSTICS',
@@ -1006,11 +1035,13 @@ class _InspectionWorkspaceScreenState
               const Icon(Icons.rate_review_outlined,
                   size: 20, color: AppColors.accentRed),
               const SizedBox(width: 8),
-              Text(
-                'MASTER INSPECTION SUMMARY & RECOMMENDATIONS',
-                style: AppTypography.labelLarge(
-                  color: textColor,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  'MASTER INSPECTION SUMMARY & RECOMMENDATIONS',
+                  style: AppTypography.labelLarge(
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -1109,11 +1140,14 @@ class _InspectionWorkspaceScreenState
                     children: [
                       const Icon(Icons.assignment_turned_in_outlined, size: 20),
                       const SizedBox(width: 8),
-                      Text(
-                        'SUBMIT INSPECTION TO ESTIMATE PENDING',
-                        style: AppTypography.labelLarge(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                      Flexible(
+                        child: Text(
+                          'SUBMIT INSPECTION TO ESTIMATE PENDING',
+                          style: AppTypography.labelLarge(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],

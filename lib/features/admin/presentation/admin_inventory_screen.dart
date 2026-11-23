@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
@@ -28,14 +29,6 @@ class _AdminInventoryScreenState extends ConsumerState<AdminInventoryScreen> {
   String _selectedCategory = 'all';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-
-  static const List<RoleNavItem> _adminNavItems = [
-    RoleNavItem(label: 'Workshop Overview', icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard),
-    RoleNavItem(label: 'Customers & Fleet', icon: Icons.people_outline, selectedIcon: Icons.people),
-    RoleNavItem(label: 'Inspection Review', icon: Icons.assignment_outlined, selectedIcon: Icons.assignment),
-    RoleNavItem(label: 'Workshop Floor', icon: Icons.garage_outlined, selectedIcon: Icons.garage),
-    RoleNavItem(label: 'Inventory & Stock', icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2),
-  ];
 
   @override
   void initState() {
@@ -67,10 +60,7 @@ class _AdminInventoryScreenState extends ConsumerState<AdminInventoryScreen> {
   }
 
   void _onNavChanged(int index) {
-    if (index == 0) context.go(RoutePaths.admin);
-    if (index == 1) context.go(RoutePaths.adminCustomers);
-    if (index == 2) context.push(RoutePaths.adminInspectionReview);
-    if (index == 3) context.go(RoutePaths.adminWorkshopFloor);
+    RoleNavigation.navigate(context, RoleNavigation.adminNavItems, index, currentIndex: 5);
   }
 
   String _formatRupiah(int cents) {
@@ -678,9 +668,9 @@ class _AdminInventoryScreenState extends ConsumerState<AdminInventoryScreen> {
       roleTitle: 'Inventory & Stock Management',
       userName: 'Toto Wolf',
       userSubtitle: 'Workshop Director',
-      currentIndex: 4,
+      currentIndex: 5,
       onNavIndexChanged: _onNavChanged,
-      navItems: _adminNavItems,
+      navItems: RoleNavigation.adminNavItems,
       telemetryNotice: 'INVENTORY VALUATION: ${_formatRupiah(totalValuation)}',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();

@@ -8,16 +8,32 @@
 
 ---
 **Important:** Dont replace these, this is my template prompt.
-```
-[antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) [antislop-layoutmobile](slashCommand;antislop-layoutmobile) 
+
+[antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) [antislop-layoutmobile](slashCommand;antislop-layoutmobile)
 
 [caveman](slashCommand;caveman)[ultracave](slashCommand;ultracave) be brief, use less token.
 
-Read docs/ with necessary documents then update and sync them. Read the existing project code before continuing. 
+Read `docs/` (PRD, architecture, latest milestone handoff/changelog) and inspect existing project code before acting.
 
-We are using multiagent workflow with different worktree
-You as the orchestrator your job is to review the work, merge them and make sure the code works to real app, no mockup no hardcode, connect the real workflow to database and backend logic everything and run playwright CLI to test in localhost and do the testing that everything has worked. And make sure no mock/hardcoded data.
-```
+Role: **Main Orchestrator** managing a multi-agent Git worktree workflow. Execute strictly in these phases:
+
+1. **Prep & Shared Contract (on `main` BEFORE worktrees):**
+   - Clean up stale worktrees/branches and verify `main` builds clean.
+   - Lock shared contracts (`UI_CONTRACT.md`, shared types, API schemas, global theme, Navigation/Layout, and central router skeleton) on `main` so all worktrees inherit identical UI/navigation/state rules.
+2. **Plan & Isolate (`/plan`):**
+   - Run `/plan` to split this milestone into isolated worktrees with strict, non-overlapping folder ownership.
+   - Ban subagents from creating duplicate navbars, global layouts, custom themes, or editing central shared files directly.
+   - Require every subagent to connect real DB/backend logic (zero mocks/hardcoded data) and output a brief `HANDOFF.md` (files touched, exported entry points, env/schema changes, caveats, what needs to do next) upon completion.
+3. **Merge, Wire & Verify (on `main`):**
+   - Review subagent `HANDOFF.md` reports, merge branches into `main`, and centrally integrate all new features from each worktree.
+   - Audit for zero mock/hardcoded data—everything must hit real database and backend endpoints.
+   - Run Playwright CLI against localhost to verify end-to-end user flows, navigation consistency, and DB persistence. Fix any regressions.
+4. **Docs Sync & Milestone Handoff:**
+   - Update `docs/` (`changelog.md`, architecture/status docs) and remove temporary worktrees.
+   - Write a concise `docs/HANDOFF_M<X>.md` summarizing completed features, DB/API contracts, touched files, and next-milestone readiness for the next fresh session.
+
+### Current Milestone Target:
+[PASTE MILESTONE DESCRIPTION / GOAL HERE]
 
 ---
 

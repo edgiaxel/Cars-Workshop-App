@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -53,7 +54,7 @@ class AdminCustomersScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
-  int _navIndex = 1; // "Customers" item
+
   String _searchQuery = '';
   CustomerType? _filterType;
   bool _isLoading = false;
@@ -157,34 +158,7 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
     }
   }
 
-  static const List<RoleNavItem> _adminNavItems = [
-    RoleNavItem(
-      label: 'Workshop Overview',
-      icon: Icons.dashboard_outlined,
-      selectedIcon: Icons.dashboard,
-    ),
-    RoleNavItem(
-      label: 'Customers & Fleet',
-      icon: Icons.people_outline,
-      selectedIcon: Icons.people,
-    ),
-    RoleNavItem(
-      label: 'Service Orders',
-      icon: Icons.assignment_outlined,
-      selectedIcon: Icons.assignment,
-      badge: '4',
-    ),
-    RoleNavItem(
-      label: 'Bay Schedule',
-      icon: Icons.calendar_month_outlined,
-      selectedIcon: Icons.calendar_month,
-    ),
-    RoleNavItem(
-      label: 'Inventory',
-      icon: Icons.inventory_2_outlined,
-      selectedIcon: Icons.inventory_2,
-    ),
-  ];
+
 
   void _openCustomerIntakeModal() {
     showModalBottomSheet<void>(
@@ -248,17 +222,9 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
         await ref.read(authNotifierProvider.notifier).signOut();
         if (context.mounted) context.go(RoutePaths.login);
       },
-      currentIndex: _navIndex,
-      onNavIndexChanged: (i) {
-        if (i == 0) {
-          context.go(RoutePaths.admin);
-        } else if (i == 3) {
-          context.go(RoutePaths.adminBookings);
-        } else {
-          setState(() => _navIndex = i);
-        }
-      },
-      navItems: _adminNavItems,
+      currentIndex: 1,
+      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.adminNavItems, i, currentIndex: 1),
+      navItems: RoleNavigation.adminNavItems,
       telemetryNotice: 'DISPATCH TELEMETRY ACTIVE',
       actions: [
         IconButton(
@@ -276,124 +242,163 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Top telemetry KPI summary cards
-                Row(
-                  children: [
-                    Expanded(
-                      child: PitCard(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'TOTAL IN REGISTRY',
-                              style: AppTypography.labelSmall(
-                                color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
-                              ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 600;
+                    final totalCard = PitCard(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'TOTAL IN REGISTRY',
+                            style: AppTypography.labelSmall(
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '${_customers.length}',
-                              style: AppTypography.displayMedium(
-                                color: textColor,
-                              ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${_customers.length}',
+                            style: AppTypography.displayMedium(
+                              color: textColor,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: PitCard(
-                        padding: const EdgeInsets.all(12),
-                        accentBorderLeft: AppColors.success,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'REGISTERED CLIENTS',
-                              style: AppTypography.labelSmall(
-                                color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
-                              ),
+                    );
+
+                    final regCard = PitCard(
+                      padding: const EdgeInsets.all(12),
+                      accentBorderLeft: AppColors.success,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'REGISTERED CLIENTS',
+                            style: AppTypography.labelSmall(
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '$registeredCount',
-                              style: AppTypography.displayMedium(
-                                color: AppColors.success,
-                              ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '$registeredCount',
+                            style: AppTypography.displayMedium(
+                              color: AppColors.success,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: PitCard(
-                        padding: const EdgeInsets.all(12),
-                        accentBorderLeft: AppColors.warning,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'WALK-IN GUESTS',
-                              style: AppTypography.labelSmall(
-                                color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
-                              ),
+                    );
+
+                    final guestCard = PitCard(
+                      padding: const EdgeInsets.all(12),
+                      accentBorderLeft: AppColors.warning,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'WALK-IN GUESTS',
+                            style: AppTypography.labelSmall(
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '$guestCount',
-                              style: AppTypography.displayMedium(
-                                color: AppColors.warning,
-                              ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '$guestCount',
+                            style: AppTypography.displayMedium(
+                              color: AppColors.warning,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+
+                    if (isNarrow) {
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: regCard),
+                              const SizedBox(width: 10),
+                              Expanded(child: guestCard),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          totalCard,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: totalCard),
+                        const SizedBox(width: 12),
+                        Expanded(child: regCard),
+                        const SizedBox(width: 12),
+                        Expanded(child: guestCard),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 20),
 
                 // Search, Filter & New Customer Intake CTA
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        key: const Key('admin-customer-search-input'),
-                        onChanged: (val) => setState(() => _searchQuery = val),
-                        decoration: InputDecoration(
-                          hintText:
-                              'Search by client name, company, phone, plate...',
-                          prefixIcon: const Icon(Icons.search, size: 20),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear, size: 18),
-                                  onPressed: () =>
-                                      setState(() => _searchQuery = ''),
-                                )
-                              : null,
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 500;
+                    final searchField = TextFormField(
+                      key: const Key('admin-customer-search-input'),
+                      onChanged: (val) => setState(() => _searchQuery = val),
+                      decoration: InputDecoration(
+                        hintText:
+                            'Search by client name, company, phone, plate...',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
                         ),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                onPressed: () =>
+                                    setState(() => _searchQuery = ''),
+                              )
+                            : null,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
+                    );
+
+                    final addBtn = ElevatedButton.icon(
                       key: const Key('new-customer-button'),
                       onPressed: _openCustomerIntakeModal,
                       icon: const Icon(Icons.person_add, size: 18),
                       label: const Text('NEW CUSTOMER'),
-                    ),
-                  ],
+                    );
+
+                    if (isNarrow) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          searchField,
+                          const SizedBox(height: 10),
+                          addBtn,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: searchField),
+                        const SizedBox(width: 12),
+                        addBtn,
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
 
@@ -490,185 +495,210 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
       accentBorderLeft: isCompany
           ? AppColors.info
           : (isRegistered ? AppColors.success : AppColors.warning),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 550;
+
+          final avatar = CircleAvatar(
+            radius: 20,
+            backgroundColor: isCompany
+                ? AppColors.info.withValues(alpha: 0.2)
+                : (isRegistered
+                      ? AppColors.success.withValues(alpha: 0.2)
+                      : AppColors.warning.withValues(alpha: 0.2)),
+            child: Icon(
+              isCompany
+                  ? Icons.business
+                  : (isRegistered
+                        ? Icons.verified_user
+                        : Icons.person_outline),
+              size: 20,
+              color: isCompany
+                  ? AppColors.info
+                  : (isRegistered ? AppColors.success : AppColors.warning),
+            ),
+          );
+
+          final details = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: isCompany
-                    ? AppColors.info.withValues(alpha: 0.2)
-                    : (isRegistered
-                          ? AppColors.success.withValues(alpha: 0.2)
-                          : AppColors.warning.withValues(alpha: 0.2)),
-                child: Icon(
-                  isCompany
-                      ? Icons.business
-                      : (isRegistered
-                            ? Icons.verified_user
-                            : Icons.person_outline),
-                  size: 20,
-                  color: isCompany
-                      ? AppColors.info
-                      : (isRegistered ? AppColors.success : AppColors.warning),
-                ),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  Text(
+                    customer.fullName,
+                    style: AppTypography.headlineSmall(
+                      color: textColor,
+                    ),
+                  ),
+                  if (isCompany)
+                    StatusBadge.info(customer.companyName ?? 'COMPANY')
+                  else if (isRegistered)
+                    StatusBadge.success('REGISTERED CUSTOMER')
+                  else
+                    StatusBadge.warning('GUEST CUSTOMER'),
+                ],
               ),
-              const SizedBox(width: 14),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 12,
+                runSpacing: 4,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.phone_outlined,
+                        size: 14,
+                        color: AppColors.textSecondaryLight,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        customer.phoneNumber,
+                        style: AppTypography.bodySmall(
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.email_outlined,
+                        size: 14,
+                        color: AppColors.textSecondaryLight,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        customer.email,
+                        style: AppTypography.bodySmall(
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          );
 
-              // Customer Details
-              Expanded(
-                child: Column(
+          final actionBtn = OutlinedButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Selected customer: ${customer.fullName}'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('INTAKE SO'),
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isNarrow) ...[
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            customer.fullName,
-                            style: AppTypography.headlineSmall(
-                              color: textColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (isCompany)
-                          StatusBadge.info(customer.companyName ?? 'COMPANY')
-                        else if (isRegistered)
-                          StatusBadge.success('REGISTERED CUSTOMER')
-                        else
-                          StatusBadge.warning('GUEST CUSTOMER'),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 12,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.phone_outlined,
-                              size: 14,
-                              color: AppColors.textSecondaryLight,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              customer.phoneNumber,
-                              style: AppTypography.bodySmall(
-                                color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.email_outlined,
-                              size: 14,
-                              color: AppColors.textSecondaryLight,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              customer.email,
-                              style: AppTypography.bodySmall(
-                                color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    avatar,
+                    const SizedBox(width: 12),
+                    Expanded(child: details),
                   ],
                 ),
-              ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: actionBtn,
+                ),
+              ] else ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    avatar,
+                    const SizedBox(width: 14),
+                    Expanded(child: details),
+                    actionBtn,
+                  ],
+                ),
+              ],
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
 
-              // Action button
-              OutlinedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Selected customer: ${customer.fullName}'),
-                      behavior: SnackBarBehavior.floating,
+              // Registered Vehicles Tags
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'FLEET VEHICLES:',
+                      style: AppTypography.telemetrySmall(
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  );
-                },
-                child: const Text('INTAKE SO'),
+                  ),
+                  const SizedBox(width: 8),
+                  if (customer.vehicles.isEmpty)
+                    Text(
+                      'No vehicles registered',
+                      style: AppTypography.bodySmall(
+                        color: isDark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: customer.vehicles.map((plate) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.surfaceElevatedDark
+                                  : AppColors.surfaceElevatedLight,
+                              borderRadius: AppSpacing.roundedSmall,
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.borderDark
+                                    : AppColors.borderLight,
+                              ),
+                            ),
+                            child: Text(
+                              plate,
+                              style: AppTypography.telemetrySmall(
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.graphitePrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                ],
               ),
             ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 10),
-
-          // Registered Vehicles Tags
-          Row(
-            children: [
-              Text(
-                'FLEET VEHICLES:',
-                style: AppTypography.telemetrySmall(
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (customer.vehicles.isEmpty)
-                Text(
-                  'No vehicles registered',
-                  style: AppTypography.bodySmall(
-                    color: isDark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                  ),
-                )
-              else
-                Expanded(
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: customer.vehicles.map((plate) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.surfaceElevatedDark
-                              : AppColors.surfaceElevatedLight,
-                          borderRadius: AppSpacing.roundedSmall,
-                          border: Border.all(
-                            color: isDark
-                                ? AppColors.borderDark
-                                : AppColors.borderLight,
-                          ),
-                        ),
-                        child: Text(
-                          plate,
-                          style: AppTypography.telemetrySmall(
-                            color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.graphitePrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -29,7 +30,7 @@ class CustomerAppointmentsScreen extends ConsumerStatefulWidget {
 
 class _CustomerAppointmentsScreenState
     extends ConsumerState<CustomerAppointmentsScreen> {
-  int _navIndex = 1;
+
   late final BookingRepository _repo;
 
   bool _isLoading = false;
@@ -71,28 +72,7 @@ class _CustomerAppointmentsScreenState
 
   List<BookingModel> _bookings = List.from(_fallbackBookings);
 
-  static const List<RoleNavItem> _navItems = [
-    RoleNavItem(
-      label: 'My Garage',
-      icon: Icons.garage_outlined,
-      selectedIcon: Icons.garage,
-    ),
-    RoleNavItem(
-      label: 'Book Service',
-      icon: Icons.calendar_month_outlined,
-      selectedIcon: Icons.calendar_month,
-    ),
-    RoleNavItem(
-      label: 'Invoices',
-      icon: Icons.receipt_long_outlined,
-      selectedIcon: Icons.receipt_long,
-    ),
-    RoleNavItem(
-      label: 'Profile',
-      icon: Icons.person_outline,
-      selectedIcon: Icons.person,
-    ),
-  ];
+
 
   @override
   void initState() {
@@ -182,11 +162,7 @@ class _CustomerAppointmentsScreenState
   }
 
   void _onNavChanged(int index) {
-    if (index == 0) {
-      context.go(RoutePaths.customerGarage);
-    } else {
-      setState(() => _navIndex = index);
-    }
+    RoleNavigation.navigate(context, RoleNavigation.customerNavItems, index, currentIndex: 2);
   }
 
   Color _statusAccent(BookingStatus status) {
@@ -235,9 +211,9 @@ class _CustomerAppointmentsScreenState
       roleTitle: 'Service Appointments',
       userName: 'Customer Member',
       userSubtitle: 'Verified Member',
-      currentIndex: _navIndex,
+      currentIndex: 2,
       onNavIndexChanged: _onNavChanged,
-      navItems: _navItems,
+      navItems: RoleNavigation.customerNavItems,
       telemetryNotice: 'CONNECTED TO PITMATE CLOUD',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();

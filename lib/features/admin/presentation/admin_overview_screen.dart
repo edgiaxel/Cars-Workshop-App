@@ -10,6 +10,8 @@ import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
 
 /// Admin Workshop Overview Screen matching screens/admin_home_overview prototype.
+import 'package:pitmate/shared/navigation/role_navigation.dart';
+
 class AdminOverviewScreen extends ConsumerStatefulWidget {
   const AdminOverviewScreen({super.key});
 
@@ -18,49 +20,10 @@ class AdminOverviewScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
-  int _navIndex = 0;
 
-  static const List<RoleNavItem> _adminNavItems = [
-    RoleNavItem(label: 'Workshop Overview', icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard),
-    RoleNavItem(label: 'Customers & Fleet', icon: Icons.people_outline, selectedIcon: Icons.people),
-    RoleNavItem(label: 'Inspection Review', icon: Icons.assignment_outlined, selectedIcon: Icons.assignment),
-    RoleNavItem(label: 'Workshop Floor', icon: Icons.garage_outlined, selectedIcon: Icons.garage),
-    RoleNavItem(label: 'Bookings', icon: Icons.calendar_month_outlined, selectedIcon: Icons.calendar_month),
-    RoleNavItem(label: 'Inventory', icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2),
-    RoleNavItem(label: 'Part Requests', icon: Icons.handyman_outlined, selectedIcon: Icons.handyman),
-    RoleNavItem(label: 'Compensation', icon: Icons.payments_outlined, selectedIcon: Icons.payments),
-  ];
 
   void _onNavChanged(int index) {
-    if (index == 1) {
-      context.go(RoutePaths.adminCustomers);
-      return;
-    }
-    if (index == 2) {
-      context.push(RoutePaths.adminInspectionReview);
-      return;
-    }
-    if (index == 3) {
-      context.go(RoutePaths.adminWorkshopFloor);
-      return;
-    }
-    if (index == 4) {
-      context.go(RoutePaths.adminBookings);
-      return;
-    }
-    if (index == 5) {
-      context.go(RoutePaths.adminInventory);
-      return;
-    }
-    if (index == 6) {
-      context.go(RoutePaths.adminPartRequests);
-      return;
-    }
-    if (index == 7) {
-      context.go(RoutePaths.adminCompensation);
-      return;
-    }
-    setState(() => _navIndex = index);
+    RoleNavigation.navigate(context, RoleNavigation.adminNavItems, index, currentIndex: 0);
   }
 
   @override
@@ -72,9 +35,9 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
       roleTitle: 'Workshop Dispatch',
       userName: 'Toto Wolf',
       userSubtitle: 'Workshop Director',
-      currentIndex: _navIndex,
+      currentIndex: 0,
       onNavIndexChanged: _onNavChanged,
-      navItems: _adminNavItems,
+      navItems: RoleNavigation.adminNavItems,
       telemetryNotice: '4/5 BAYS ACTIVE (80%)',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();
@@ -202,135 +165,177 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                 const SizedBox(height: 12),
 
                 // Quick Navigation Banner to Part Requests & Compensation
-                Row(
-                  children: [
-                    Expanded(
-                      child: PitCard(
-                        key: const Key('card_admin_nav_requests'),
-                        accentBorderLeft: AppColors.warning,
-                        onTap: () => context.go(RoutePaths.adminPartRequests),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.handyman_outlined, color: AppColors.warning, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'FLOOR PART REQUESTS',
-                                style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
-                              ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 600;
+                    final reqCard = PitCard(
+                      key: const Key('card_admin_nav_requests'),
+                      accentBorderLeft: AppColors.warning,
+                      onTap: () => context.go(RoutePaths.adminPartRequests),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.handyman_outlined, color: AppColors.warning, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'FLOOR PART REQUESTS',
+                              style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
                             ),
-                            const Icon(Icons.chevron_right, color: AppColors.warning, size: 18),
-                          ],
-                        ),
+                          ),
+                          const Icon(Icons.chevron_right, color: AppColors.warning, size: 18),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: PitCard(
-                        key: const Key('card_admin_nav_compensation'),
-                        accentBorderLeft: AppColors.success,
-                        onTap: () => context.go(RoutePaths.adminCompensation),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.payments_outlined, color: AppColors.success, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'MECHANIC COMPENSATION',
-                                style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
-                              ),
+                    );
+
+                    final compCard = PitCard(
+                      key: const Key('card_admin_nav_compensation'),
+                      accentBorderLeft: AppColors.success,
+                      onTap: () => context.go(RoutePaths.adminCompensation),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.payments_outlined, color: AppColors.success, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'MECHANIC COMPENSATION',
+                              style: AppTypography.labelMedium(color: textColor).copyWith(fontWeight: FontWeight.w700),
                             ),
-                            const Icon(Icons.chevron_right, color: AppColors.success, size: 18),
-                          ],
-                        ),
+                          ),
+                          const Icon(Icons.chevron_right, color: AppColors.success, size: 18),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+
+                    if (isNarrow) {
+                      return Column(
+                        children: [
+                          reqCard,
+                          const SizedBox(height: 10),
+                          compCard,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: reqCard),
+                        const SizedBox(width: 12),
+                        Expanded(child: compCard),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 18),
 
                 // Live Workshop KPI Row
-                Row(
-                  children: [
-                    Expanded(
-                      child: PitCard(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ACTIVE ORDERS',
-                              style: AppTypography.labelSmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                              ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 600;
+                    final kpi1 = PitCard(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ACTIVE ORDERS',
+                            style: AppTypography.labelSmall(
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
-                            const SizedBox(height: 4),
-                            Text('4', style: AppTypography.headlineLarge(color: textColor)),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text('4', style: AppTypography.headlineLarge(color: textColor)),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: PitCard(
-                        padding: const EdgeInsets.all(12),
-                        accentBorderLeft: AppColors.accentRed,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'IN WORKSHOP',
-                              style: AppTypography.labelSmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                              ),
+                    );
+
+                    final kpi2 = PitCard(
+                      padding: const EdgeInsets.all(12),
+                      accentBorderLeft: AppColors.accentRed,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'IN WORKSHOP',
+                            style: AppTypography.labelSmall(
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
-                            const SizedBox(height: 4),
-                            Text('3', style: AppTypography.headlineLarge(color: AppColors.accentRed)),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text('3', style: AppTypography.headlineLarge(color: AppColors.accentRed)),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: PitCard(
-                        padding: const EdgeInsets.all(12),
-                        accentBorderLeft: AppColors.warning,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'AWAITING AUTH',
-                              style: AppTypography.labelSmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                              ),
+                    );
+
+                    final kpi3 = PitCard(
+                      padding: const EdgeInsets.all(12),
+                      accentBorderLeft: AppColors.warning,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AWAITING AUTH',
+                            style: AppTypography.labelSmall(
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
-                            const SizedBox(height: 4),
-                            Text('1', style: AppTypography.headlineLarge(color: AppColors.warning)),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text('1', style: AppTypography.headlineLarge(color: AppColors.warning)),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: PitCard(
-                        padding: const EdgeInsets.all(12),
-                        accentBorderLeft: AppColors.success,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'QC READY',
-                              style: AppTypography.labelSmall(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                              ),
+                    );
+
+                    final kpi4 = PitCard(
+                      padding: const EdgeInsets.all(12),
+                      accentBorderLeft: AppColors.success,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'QC READY',
+                            style: AppTypography.labelSmall(
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
-                            const SizedBox(height: 4),
-                            Text('1', style: AppTypography.headlineLarge(color: AppColors.success)),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text('1', style: AppTypography.headlineLarge(color: AppColors.success)),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+
+                    if (isNarrow) {
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: kpi1),
+                              const SizedBox(width: 10),
+                              Expanded(child: kpi2),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(child: kpi3),
+                              const SizedBox(width: 10),
+                              Expanded(child: kpi4),
+                            ],
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: kpi1),
+                        const SizedBox(width: 12),
+                        Expanded(child: kpi2),
+                        const SizedBox(width: 12),
+                        Expanded(child: kpi3),
+                        const SizedBox(width: 12),
+                        Expanded(child: kpi4),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -347,10 +352,14 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 'BAY 02 — HOIST B',
@@ -390,10 +399,14 @@ class _AdminOverviewScreenState extends ConsumerState<AdminOverviewScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 'BAY 04 — DIAGNOSTIC',

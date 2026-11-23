@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -430,18 +431,9 @@ class _AdminEstimateBuilderScreenState
           context.go(RoutePaths.admin);
         }
       },
-      navItems: const [
-        RoleNavItem(label: 'Workshop Overview', icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard),
-        RoleNavItem(label: 'Customers & Fleet', icon: Icons.people_outline, selectedIcon: Icons.people),
-        RoleNavItem(label: 'Service Orders', icon: Icons.assignment_outlined, selectedIcon: Icons.assignment),
-        RoleNavItem(label: 'Bay Schedule', icon: Icons.calendar_month_outlined, selectedIcon: Icons.calendar_month),
-        RoleNavItem(label: 'Inventory', icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2),
-      ],
-      currentIndex: 2,
-      onNavIndexChanged: (index) {
-        if (index == 0) context.go(RoutePaths.admin);
-        if (index == 1) context.go(RoutePaths.adminCustomers);
-      },
+      navItems: RoleNavigation.adminNavItems,
+      currentIndex: 3,
+      onNavIndexChanged: (index) => RoleNavigation.navigate(context, RoleNavigation.adminNavItems, index, currentIndex: 3),
       telemetryNotice: 'BAY: $_assignedBay • ${_items.length} ITEMS',
       body: _isLoading
           ? const Center(

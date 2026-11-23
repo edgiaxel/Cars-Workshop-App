@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -282,9 +283,13 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Book Workshop Service',
+      userName: 'Customer Member',
+      userSubtitle: 'Verified Member',
+      currentIndex: 1,
       showBackButton: true,
-      onBack: () => context.pop(),
-      navItems: const [],
+      onBack: () => context.canPop() ? context.pop() : context.go(RoutePaths.customerGarage),
+      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.customerNavItems, i, currentIndex: 1),
+      navItems: RoleNavigation.customerNavItems,
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
         child: Center(

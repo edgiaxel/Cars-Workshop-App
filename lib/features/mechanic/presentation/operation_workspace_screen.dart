@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -351,19 +352,10 @@ class _OperationWorkspaceScreenState
       userName: 'Max Verstappen',
       userSubtitle: 'Lead Performance Tech',
       currentIndex: 1,
-      onNavIndexChanged: (i) {
-        if (i == 0) context.go(RoutePaths.mechanic);
-      },
-      navItems: const [
-        RoleNavItem(
-            label: 'My Work',
-            icon: Icons.assignment_outlined,
-            selectedIcon: Icons.assignment),
-        RoleNavItem(
-            label: 'Active Workspace',
-            icon: Icons.precision_manufacturing_outlined,
-            selectedIcon: Icons.precision_manufacturing),
-      ],
+      showBackButton: true,
+      onBack: () => context.go(RoutePaths.mechanic),
+      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.mechanicNavItems, i, currentIndex: 1),
+      navItems: RoleNavigation.mechanicNavItems,
       telemetryNotice: 'OPERATION EXECUTION ONLINE',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();
@@ -647,26 +639,42 @@ class _OperationWorkspaceScreenState
         const SizedBox(height: 14),
 
         // Support Actions: Assistance & Additional Findings
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const Key('btn_request_assistance'),
-                icon: const Icon(Icons.handyman_outlined, size: 16),
-                label: const Text('REQUEST ASSISTANCE'),
-                onPressed: _showAssistanceDialog,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const Key('btn_report_finding'),
-                icon: const Icon(Icons.search, size: 16),
-                label: const Text('REPORT FINDING'),
-                onPressed: _showAdditionalFindingDialog,
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 450;
+            final assistBtn = OutlinedButton.icon(
+              key: const Key('btn_request_assistance'),
+              icon: const Icon(Icons.handyman_outlined, size: 16),
+              label: const Text('REQUEST ASSISTANCE'),
+              onPressed: _showAssistanceDialog,
+            );
+
+            final findingBtn = OutlinedButton.icon(
+              key: const Key('btn_report_finding'),
+              icon: const Icon(Icons.search, size: 16),
+              label: const Text('REPORT FINDING'),
+              onPressed: _showAdditionalFindingDialog,
+            );
+
+            if (isNarrow) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  assistBtn,
+                  const SizedBox(height: 10),
+                  findingBtn,
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: assistBtn),
+                const SizedBox(width: 12),
+                Expanded(child: findingBtn),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -1006,9 +1014,11 @@ class _OperationWorkspaceScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children: [
             Text(
               'PARTS & MATERIALS',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -137,7 +138,13 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                           borderRadius: AppSpacing.roundedMedium,
                           child: InkWell(
                             borderRadius: AppSpacing.roundedMedium,
-                            onTap: () => onNavIndexChanged?.call(index),
+                            onTap: () {
+                              if (onNavIndexChanged != null) {
+                                onNavIndexChanged!(index);
+                              } else if (item.path != null && index != currentIndex) {
+                                context.go(item.path!);
+                              }
+                            },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                               decoration: BoxDecoration(
@@ -329,6 +336,7 @@ class ResponsiveRoleScaffold extends StatelessWidget {
 
     return Scaffold(
       floatingActionButton: floatingActionButton,
+      drawer: navItems.isEmpty ? null : _buildMobileDrawer(context, isDark, surfaceColor, borderColor, textColor),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(56.0),
         child: Container(
@@ -351,6 +359,17 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                   ] else ...[
+                    if (navItems.isNotEmpty) ...[
+                      Builder(
+                        builder: (bContext) => IconButton(
+                          key: const Key('mobile_scaffold_menu_button'),
+                          icon: const Icon(Icons.menu, size: 20),
+                          tooltip: 'Navigation Menu',
+                          onPressed: () => Scaffold.of(bContext).openDrawer(),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
                     const PitMateLogo(compact: true),
                     const SizedBox(width: 10),
                     Container(
@@ -403,8 +422,30 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                 border: Border(top: BorderSide(color: borderColor, width: 1.0)),
               ),
               child: BottomNavigationBar(
-                currentIndex: currentIndex,
-                onTap: onNavIndexChanged,
+                currentIndex: navItems.isEmpty ? 0 : currentIndex.clamp(0, navItems.length - 1),
+                onTap: (index) {
+                  if (onNavIndexChanged != null) {
+                    onNavIndexChanged!(index);
+                  } else if (index >= 0 && index < navItems.length) {
+                    final item = navItems[index];
+                    if (item.path != null && index != currentIndex) {
+                      context.go(item.path!);
+                    }
+                  }
+                },
+                type: BottomNavigationBarType.fixed,
+                backgroundColor: surfaceColor,
+                selectedItemColor: AppColors.racingRed,
+                unselectedItemColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                selectedLabelStyle: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: navItems.length > 5 ? 9.5 : 11,
+                ),
+                unselectedLabelStyle: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: navItems.length > 5 ? 9.0 : 11,
+                ),
+                elevation: 8,
                 items: navItems.map((item) {
                   return BottomNavigationBarItem(
                     icon: item.badge != null
@@ -420,6 +461,178 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                 }).toList(),
               ),
             ),
+    );
+  }
+
+  Widget _buildMobileDrawer(
+    BuildContext context,
+    bool isDark,
+    Color surfaceColor,
+    Color borderColor,
+    Color textColor,
+  ) {
+    return Drawer(
+      backgroundColor: surfaceColor,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const PitMateLogo(),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentRed.withValues(alpha: 0.12),
+                      borderRadius: AppSpacing.roundedSmall,
+                      border: Border.all(color: AppColors.accentRed.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      roleTitle.toUpperCase(),
+                      style: AppTypography.telemetrySmall(
+                        color: AppColors.accentRed,
+                        fontWeight: FontWeight.w700,
+                      ).copyWith(fontSize: 10),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, thickness: 1),
+            Expanded(
+              child: ListView.builder(
+                itemCount: navItems.length,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                itemBuilder: (context, index) {
+                  final item = navItems[index];
+                  final isSelected = index == currentIndex;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Material(
+                      color: isSelected
+                          ? (isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight)
+                          : Colors.transparent,
+                      borderRadius: AppSpacing.roundedMedium,
+                      child: InkWell(
+                        borderRadius: AppSpacing.roundedMedium,
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          if (onNavIndexChanged != null) {
+                            onNavIndexChanged!(index);
+                          } else if (item.path != null && index != currentIndex) {
+                            context.go(item.path!);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: AppSpacing.roundedMedium,
+                            border: isSelected
+                                ? const Border(
+                                    left: BorderSide(color: AppColors.accentRed, width: 3),
+                                  )
+                                : null,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected ? (item.selectedIcon ?? item.icon) : item.icon,
+                                size: 20,
+                                color: isSelected
+                                    ? AppColors.accentRed
+                                    : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  item.label,
+                                  style: AppTypography.labelLarge(
+                                    color: isSelected
+                                        ? textColor
+                                        : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              if (item.badge != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.accentRed,
+                                    borderRadius: AppSpacing.roundedFull,
+                                  ),
+                                  child: Text(
+                                    item.badge!,
+                                    style: AppTypography.telemetrySmall(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ).copyWith(fontSize: 10),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 1, thickness: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.accentRed,
+                    child: Text(
+                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          userName,
+                          style: AppTypography.labelLarge(
+                            color: textColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          userSubtitle,
+                          style: AppTypography.bodySmall(
+                            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (onLogout != null)
+                    IconButton(
+                      icon: const Icon(Icons.logout, size: 18),
+                      tooltip: 'Sign Out',
+                      onPressed: onLogout,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
