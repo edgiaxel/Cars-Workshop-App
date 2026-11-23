@@ -1,15 +1,15 @@
 # Milestones — PitMate
 
-> **Current milestone:** M3 Workshop Operations — Complete  
-> **Overall status:** M0, M1, M2 & M3 Complete (123/123 tests passing, Playwright E2E verified), M4 Next  
+> **Current milestone:** M4 Inventory & Cost Management — Active  
+> **Overall status:** M0-M3 Complete (123/123 tests passing, Playwright E2E verified), M4 In Progress  
 > **Version:** 2.3  
 > **Last updated:** 2026-11-23  
 > **Deadline:** To be confirmed
 
 ---
-
+**Important:** Dont replace these, this is my template prompt.
 ```
-[antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) 
+[antislop](slashCommand;antislop) [antislop-ui](slashCommand;antislop-ui) [antislop-code](slashCommand;antislop-code) [antislop-human](slashCommand;antislop-human) [antislop-layoutmobile](slashCommand;antislop-layoutmobile) 
 
 [caveman](slashCommand;caveman)[ultracave](slashCommand;ultracave) be brief, use less token.
 
@@ -63,7 +63,7 @@ Begin Milestone M4 Inventory & Cost Management planning.
 | M1 | Application Foundation | Authentication and role-based application | Complete |
 | M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Complete |
 | M3 | Workshop Operations | Dispatch and mechanic execution | Complete |
-| M4 | Inventory & Cost Management | Operational stock and service costing | Not started |
+| M4 | Inventory & Cost Management | Operational stock and service costing | In Progress |
 | M5 | Completion & Finance | QC, invoice, payment and handover | Not started |
 | M6 | Communication & Customer Portal | Real-time notifications and reminders | Not started |
 | M7 | Integration & Release | Fully tested workshop application | Not started |

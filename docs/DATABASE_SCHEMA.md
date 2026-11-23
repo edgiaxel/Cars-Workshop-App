@@ -31,8 +31,8 @@ Tables and schema migrations are introduced incrementally per milestone based on
 |---|---|---|---|
 | **M1** | Auth & Identity | `user_role` enum, `profiles`, `customer_type` enum, `customers`, `vehicles`, RLS policies, auth trigger | **Implemented** |
 | **M2** | Customer Intake & Diagnosis | `bookings`, `service_orders`, `inspections`, `inspection_findings`, `estimates`, `estimate_items`, `estimate_authorizations` | **Implemented** |
-| **M3** | Workshop Operations | `workshop_bays`, `service_order_tasks`, `mechanic_assignments`, `task_checklists`, `task_assistance_requests`, `service_order_additional_findings` | **Specified / In Progress** |
-| **M4** | Inventory & Costing | `parts`, `inventory_transactions`, `part_requests` | Planned |
+| **M3** | Workshop Operations | `workshop_bays`, `service_order_tasks`, `mechanic_assignments`, `task_checklists`, `task_assistance_requests`, `service_order_additional_findings` | **Implemented** |
+| **M4** | Inventory & Costing | `parts`, `inventory_balances`, `inventory_transactions`, `part_requests`, `service_task_part_consumptions`, `mechanic_compensation_profiles`, `mechanic_earnings`, `mechanic_earning_allocations`, `mechanic_payroll_adjustments` | **Specified / In Progress** |
 | **M5** | Invoicing & Finance | `invoices`, `invoice_items`, `payments` | Planned |
 | **M6** | Customer Portal & Notifications | `notifications`, `maintenance_reminders` | Planned |
 
@@ -623,4 +623,246 @@ Atomic task completion:
 
 ### 6.3.6 `public.request_task_assistance(...)` & `report_additional_finding(...)`
 Records assistance requests and active repair discoveries.
+
+---
+
+# 7. Milestone M4: Inventory & Costing Schema Specification
+
+## 7.1 Enums
+
+### `public.inventory_transaction_type`
+Stock movement ledger classifications:
+- `'receiving'`: Physical stock intake from supplier with purchase cost recalculation.
+- `'adjustment'`: Manual stock reconciliation or audit correction.
+- `'reservation'`: Holding stock for an approved or in-progress service order task.
+- `'reservation_release'`: Canceling or modifying reserved allocation.
+- `'issue'`: Dispatching parts from inventory storage to workshop floor.
+- `'consumption'`: Actual parts installed/consumed into customer vehicle.
+- `'return'`: Unused parts returned to stock balance.
+- `'damaged'`: Scrapped or damaged inventory write-off.
+
+```sql
+CREATE TYPE public.inventory_transaction_type AS ENUM (
+  'receiving',
+  'adjustment',
+  'reservation',
+  'reservation_release',
+  'issue',
+  'consumption',
+  'return',
+  'damaged'
+);
+```
+
+### `public.part_request_status`
+Lifecycle states for mechanic-initiated part requests:
+- `'pending'`: Submitted by mechanic, awaiting admin action.
+- `'fulfilled'`: Fulfilled in full.
+- `'partially_fulfilled'`: Available stock allocated partially.
+- `'rejected'`: Request rejected by workshop administration.
+- `'unavailable'`: Stock out of inventory, required supplier procurement.
+
+```sql
+CREATE TYPE public.part_request_status AS ENUM (
+  'pending',
+  'fulfilled',
+  'partially_fulfilled',
+  'rejected',
+  'unavailable'
+);
+```
+
+### `public.earning_status`
+Lifecycle for mechanic earned compensation:
+- `'accrued'`: Auto-calculated upon completed eligible task.
+- `'approved'`: Verified by admin.
+- `'paid'`: Disbursed in payroll period.
+- `'adjusted'`: Audited manual adjustment.
+
+```sql
+CREATE TYPE public.earning_status AS ENUM (
+  'accrued',
+  'approved',
+  'paid',
+  'adjusted'
+);
+```
+
+---
+
+## 7.2 Tables
+
+### 7.2.1 `public.parts`
+Part catalog containing SKU, pricing, measurement units, and safety stock thresholds.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Unique part identifier |
+| `sku` | `TEXT` | `NOT NULL UNIQUE` | Unique SKU / Part code |
+| `name` | `TEXT` | `NOT NULL` | Descriptive part name |
+| `category` | `TEXT` | `NOT NULL` | Category (e.g. lubricants, filters, brakes) |
+| `unit_of_measurement` | `TEXT` | `NOT NULL DEFAULT 'pcs'` | Unit label (e.g. pcs, liter, bottle) |
+| `purchase_cost_cents` | `BIGINT` | `NOT NULL DEFAULT 0 CHECK (purchase_cost_cents >= 0)` | Weighted-average purchase cost |
+| `selling_price_cents` | `BIGINT` | `NOT NULL DEFAULT 0 CHECK (selling_price_cents >= 0)` | Customer retail billing price |
+| `minimum_stock` | `INT` | `NOT NULL DEFAULT 0 CHECK (minimum_stock >= 0)` | Low-stock threshold |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Last update timestamp |
+
+### 7.2.2 `public.inventory_balances`
+Maintained operational quantities per part. Prevents negative available stock via generated column & check constraint.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `part_id` | `UUID` | `PRIMARY KEY REFERENCES public.parts(id) ON DELETE CASCADE` | Part reference |
+| `quantity_on_hand` | `INT` | `NOT NULL DEFAULT 0 CHECK (quantity_on_hand >= 0)` | Total physical units in warehouse |
+| `quantity_reserved` | `INT` | `NOT NULL DEFAULT 0 CHECK (quantity_reserved >= 0)` | Units committed to active jobs |
+| `quantity_available` | `INT` | `GENERATED ALWAYS AS (quantity_on_hand - quantity_reserved) STORED CHECK (quantity_on_hand - quantity_reserved >= 0)` | Available for new reservation |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Last updated timestamp |
+
+### 7.2.3 `public.inventory_transactions`
+Immutable, append-only stock movement ledger providing complete auditable history.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Movement transaction ID |
+| `part_id` | `UUID` | `NOT NULL REFERENCES public.parts(id) ON DELETE RESTRICT` | Part reference |
+| `transaction_type` | `public.inventory_transaction_type` | `NOT NULL` | Ledger event type |
+| `quantity_change` | `INT` | `NOT NULL` | Net change to physical/reserved stock |
+| `balance_after_on_hand` | `INT` | `NOT NULL` | Snapshot of physical stock after event |
+| `balance_after_reserved` | `INT` | `NOT NULL` | Snapshot of reserved stock after event |
+| `unit_cost_cents` | `BIGINT` | `NOT NULL DEFAULT 0` | Valuation unit cost at time of event |
+| `total_cost_cents` | `BIGINT` | `NOT NULL DEFAULT 0` | Valuation total amount |
+| `reason` | `TEXT` | `NULL` | Compulsory for adjustments and write-offs |
+| `reference_id` | `TEXT` | `NULL` | Traceability ID (order ID, task ID, PO reference) |
+| `performed_by` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT` | User executing movement |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Audit timestamp |
+
+### 7.2.4 `public.part_requests`
+Coordination queue allowing mechanics on the floor to request stock for specific operations.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Part request identifier |
+| `service_order_id` | `UUID` | `NOT NULL REFERENCES public.service_orders(id) ON DELETE CASCADE` | Service order reference |
+| `task_id` | `UUID` | `REFERENCES public.service_order_tasks(id) ON DELETE SET NULL` | Target operation |
+| `part_id` | `UUID` | `NOT NULL REFERENCES public.parts(id) ON DELETE RESTRICT` | Requested part |
+| `requested_by` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT` | Requesting mechanic profile |
+| `quantity_requested` | `INT` | `NOT NULL CHECK (quantity_requested > 0)` | Quantity needed |
+| `quantity_fulfilled` | `INT` | `NOT NULL DEFAULT 0 CHECK (quantity_fulfilled >= 0)` | Quantity issued by admin |
+| `status` | `public.part_request_status` | `NOT NULL DEFAULT 'pending'` | Current fulfillment status |
+| `notes` | `TEXT` | `NULL` | Mechanic notes |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Submission timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Last update timestamp |
+
+### 7.2.5 `public.service_task_part_consumptions`
+Direct link between an operation and actual physical stock consumed and returned.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Consumption line ID |
+| `service_order_id` | `UUID` | `NOT NULL REFERENCES public.service_orders(id) ON DELETE CASCADE` | Service order reference |
+| `task_id` | `UUID` | `NOT NULL REFERENCES public.service_order_tasks(id) ON DELETE CASCADE` | Operation reference |
+| `part_id` | `UUID` | `NOT NULL REFERENCES public.parts(id) ON DELETE RESTRICT` | Part reference |
+| `quantity_issued` | `INT` | `NOT NULL DEFAULT 0 CHECK (quantity_issued >= 0)` | Units issued to mechanic |
+| `quantity_consumed` | `INT` | `NOT NULL DEFAULT 0 CHECK (quantity_consumed >= 0)` | Units actually consumed |
+| `quantity_returned` | `INT` | `NOT NULL DEFAULT 0 CHECK (quantity_returned >= 0)` | Units returned unused |
+| `unit_cost_cents` | `BIGINT` | `NOT NULL` | Historical purchase cost valuation |
+| `total_cost_cents` | `BIGINT` | `NOT NULL` | Total cost attributed to operation |
+| `recorded_by` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT` | Mechanic or admin |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Record timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Last updated timestamp |
+
+### 7.2.6 `public.mechanic_compensation_profiles`
+Monthly salary and default incentive parameters per technician.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `mechanic_id` | `UUID` | `PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE` | Mechanic profile ID |
+| `monthly_base_salary_cents` | `BIGINT` | `NOT NULL DEFAULT 0 CHECK (monthly_base_salary_cents >= 0)` | Monthly guaranteed base pay |
+| `standard_incentive_percent` | `NUMERIC(5,2)` | `NOT NULL DEFAULT 10.00 CHECK (standard_incentive_percent >= 0)` | Default incentive percentage |
+| `is_active` | `BOOLEAN` | `NOT NULL DEFAULT TRUE` | Active employment status |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Last updated timestamp |
+
+### 7.2.7 `public.mechanic_earnings`
+Accrued incentive pool generated from completed eligible service operations.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Earning event ID |
+| `service_order_id` | `UUID` | `NOT NULL REFERENCES public.service_orders(id) ON DELETE CASCADE` | Service order reference |
+| `task_id` | `UUID` | `NOT NULL REFERENCES public.service_order_tasks(id) ON DELETE CASCADE` | Completed task reference |
+| `total_eligible_labor_cents` | `BIGINT` | `NOT NULL CHECK (total_eligible_labor_cents >= 0)` | Labor revenue snapshot |
+| `total_incentive_pool_cents` | `BIGINT` | `NOT NULL CHECK (total_incentive_pool_cents >= 0)` | Total incentive generated |
+| `status` | `public.earning_status` | `NOT NULL DEFAULT 'accrued'` | Earning lifecycle |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Earning timestamp |
+
+### 7.2.8 `public.mechanic_earning_allocations`
+Split distribution of task incentives among lead and contributing mechanics.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Allocation record ID |
+| `earning_id` | `UUID` | `NOT NULL REFERENCES public.mechanic_earnings(id) ON DELETE CASCADE` | Parent incentive pool |
+| `mechanic_id` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT` | Earning recipient |
+| `split_percentage` | `NUMERIC(5,2)` | `NOT NULL CHECK (split_percentage > 0 AND split_percentage <= 100)` | Contribution percentage |
+| `allocated_cents` | `BIGINT` | `NOT NULL CHECK (allocated_cents >= 0)` | Minor currency amount |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+
+### 7.2.9 `public.mechanic_payroll_adjustments`
+Auditable manual compensation corrections, deductions, or bonuses.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Adjustment record ID |
+| `mechanic_id` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT` | Technician recipient |
+| `amount_cents` | `BIGINT` | `NOT NULL` | Positive (bonus) or negative (deduction) |
+| `reason` | `TEXT` | `NOT NULL` | Audit explanation |
+| `adjusted_by` | `UUID` | `NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT` | Admin profile ID |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Timestamp |
+
+---
+
+## 7.3 Database Functions & RPCs
+
+### 7.3.1 `public.receive_stock(...)`
+Atomic stock receipt with weighted-average valuation:
+- Recalculates `parts.purchase_cost_cents = ((current_on_hand * current_avg_cost) + (qty * unit_cost)) / (current_on_hand + qty)`.
+- Increments `inventory_balances.quantity_on_hand`.
+- Appends to `inventory_transactions`.
+
+### 7.3.2 `public.adjust_stock(...)`
+Manual stock reconciliation with required audit reason. Updates `quantity_on_hand` and inserts into `inventory_transactions`.
+
+### 7.3.3 `public.reserve_stock_for_task(...)`
+Allocates stock for an approved service task:
+- Validates `quantity <= quantity_available`.
+- Increments `inventory_balances.quantity_reserved`.
+- Appends `reservation` ledger entry.
+
+### 7.3.4 `public.request_part_for_task(...)`
+Mechanic floor request creating a `part_requests` record.
+
+### 7.3.5 `public.fulfill_part_request(...)`
+Admin fulfillment (full or partial):
+- Transfers quantity from available/reserved to issued.
+- Updates `part_requests` status (`fulfilled` or `partially_fulfilled`).
+- Creates consumption ledger record.
+
+### 7.3.6 `public.consume_and_return_parts(...)`
+Records actual parts used vs returned:
+- Decrements physical `quantity_on_hand` by consumed units.
+- Releases reserved units.
+- Adds unused units back to available stock.
+- Inserts `service_task_part_consumptions` and `inventory_transactions`.
+
+### 7.3.7 `public.generate_task_mechanic_incentives(...)`
+Triggered on completed eligible task:
+- Validates task status is `'completed'`.
+- Determines labor revenue and incentive pool.
+- Splits pool among assigned mechanics (from `mechanic_assignments`).
+- Inserts `mechanic_earnings` and `mechanic_earning_allocations`.
+
+### 7.3.8 `public.adjust_mechanic_compensation(...)`
+Admin adjustment creating an auditable `mechanic_payroll_adjustments` entry.
+
 
