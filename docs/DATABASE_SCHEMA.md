@@ -32,7 +32,7 @@ Tables and schema migrations are introduced incrementally per milestone based on
 | **M1** | Auth & Identity | `user_role` enum, `profiles`, `customer_type` enum, `customers`, `vehicles`, RLS policies, auth trigger | **Implemented** |
 | **M2** | Customer Intake & Diagnosis | `bookings`, `service_orders`, `inspections`, `inspection_findings`, `estimates`, `estimate_items`, `estimate_authorizations` | **Implemented** |
 | **M3** | Workshop Operations | `workshop_bays`, `service_order_tasks`, `mechanic_assignments`, `task_checklists`, `task_assistance_requests`, `service_order_additional_findings` | **Implemented** |
-| **M4** | Inventory & Costing | `parts`, `inventory_balances`, `inventory_transactions`, `part_requests`, `service_task_part_consumptions`, `mechanic_compensation_profiles`, `mechanic_earnings`, `mechanic_earning_allocations`, `mechanic_payroll_adjustments` | **Specified / In Progress** |
+| **M4** | Inventory & Costing | `parts`, `inventory_balances`, `inventory_transactions`, `part_requests`, `service_task_part_consumptions`, `mechanic_compensation_profiles`, `mechanic_earnings`, `mechanic_earning_allocations`, `mechanic_payroll_adjustments` | **Implemented & Migrated** |
 | **M5** | Invoicing & Finance | `invoices`, `invoice_items`, `payments` | Planned |
 | **M6** | Customer Portal & Notifications | `notifications`, `maintenance_reminders` | Planned |
 

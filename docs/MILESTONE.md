@@ -1,8 +1,8 @@
 # Milestones — PitMate
 
-> **Current milestone:** M4 Inventory & Cost Management — Active  
-> **Overall status:** M0-M3 Complete (123/123 tests passing, Playwright E2E verified), M4 In Progress  
-> **Version:** 2.3  
+> **Current milestone:** M4 Inventory & Cost Management — Complete  
+> **Overall status:** M0-M4 Complete (137/137 tests passing, Playwright E2E verified), M5 Next  
+> **Version:** 2.4  
 > **Last updated:** 2026-11-23  
 > **Deadline:** To be confirmed
 
@@ -39,11 +39,12 @@ Customers, mechanics and administrators use one integrated application with role
 - M1 Application Foundation: Complete.
 - M2 Customer Intake & Diagnosis: Complete (116/116 tests passing, Playwright E2E verified).
 - M3 Workshop Operations: Complete (123/123 tests passing, Playwright E2E verified).
-- Next: M4 Inventory & Cost Management.
+- M4 Inventory & Cost Management: Complete (137/137 tests passing, Playwright E2E verified).
+- Next: M5 Completion & Finance.
 
 ## Next action
 
-Begin Milestone M4 Inventory & Cost Management planning.
+Begin Milestone M5 Completion & Finance planning.
 
 ## Related documents
 
@@ -63,7 +64,7 @@ Begin Milestone M4 Inventory & Cost Management planning.
 | M1 | Application Foundation | Authentication and role-based application | Complete |
 | M2 | Customer Intake & Diagnosis | Complete intake-to-estimate workflow | Complete |
 | M3 | Workshop Operations | Dispatch and mechanic execution | Complete |
-| M4 | Inventory & Cost Management | Operational stock and service costing | In Progress |
+| M4 | Inventory & Cost Management | Operational stock and service costing | Complete |
 | M5 | Completion & Finance | QC, invoice, payment and handover | Not started |
 | M6 | Communication & Customer Portal | Real-time notifications and reminders | Not started |
 | M7 | Integration & Release | Fully tested workshop application | Not started |
@@ -432,10 +433,10 @@ Included:
 
 Acceptance:
 
-- [ ] Admin can create parts.
-- [ ] Admin can edit part information.
-- [ ] Purchase and selling prices are separate.
-- [ ] Stock balances are visible.
+- [x] Admin can create parts.
+- [x] Admin can edit part information.
+- [x] Purchase and selling prices are separate.
+- [x] Stock balances are visible.
 
 ### VS-12 — Stock Receiving and Adjustment
 
@@ -451,11 +452,11 @@ Included:
 
 Acceptance:
 
-- [ ] Admin can receive stock.
-- [ ] Admin can adjust stock.
-- [ ] Every movement creates a ledger entry.
-- [ ] Cost calculations are correct.
-- [ ] Stock discrepancies are auditable.
+- [x] Admin can receive stock.
+- [x] Admin can adjust stock.
+- [x] Every movement creates a ledger entry.
+- [x] Cost calculations are correct.
+- [x] Stock discrepancies are auditable.
 
 ### VS-13 — Reservation and Part Requests
 
@@ -472,12 +473,12 @@ Included:
 
 Acceptance:
 
-- [ ] Stock can be reserved for an operation.
-- [ ] Mechanics can request parts.
-- [ ] Admin can fulfill requests.
-- [ ] Insufficient stock is handled.
-- [ ] Other independent operations remain available.
-- [ ] Notifications are generated.
+- [x] Stock can be reserved for an operation.
+- [x] Mechanics can request parts.
+- [x] Admin can fulfill requests.
+- [x] Insufficient stock is handled.
+- [x] Other independent operations remain available.
+- [x] Notifications are generated.
 
 ### VS-14 — Consumption and Returns
 
@@ -493,11 +494,11 @@ Included:
 
 Acceptance:
 
-- [ ] Mechanics record actual usage through authorized workflows.
-- [ ] Unused parts can return to inventory.
-- [ ] Inventory ledger remains consistent.
-- [ ] Service operation receives the correct part cost.
-- [ ] Negative available stock is prevented.
+- [x] Mechanics record actual usage through authorized workflows.
+- [x] Unused parts can return to inventory.
+- [x] Inventory ledger remains consistent.
+- [x] Service operation receives the correct part cost.
+- [x] Negative available stock is prevented.
 
 ### VS-15 — Mechanic Compensation
 
@@ -513,16 +514,19 @@ Included:
 
 Acceptance:
 
-- [ ] Admin can configure salary.
-- [ ] Admin can configure incentives.
-- [ ] Multiple mechanics can share incentives.
-- [ ] Incentives are tied to completed eligible work.
-- [ ] Mechanics can view their earnings.
-- [ ] Adjustments are auditable.
+- [x] Admin can configure salary.
+- [x] Admin can configure incentives.
+- [x] Multiple mechanics can share incentives.
+- [x] Incentives are tied to completed eligible work.
+- [x] Mechanics can view their earnings.
+- [x] Adjustments are auditable.
 
 ### M4 Exit Criteria
 
-A complete service operation can reserve parts, consume stock, calculate costs and generate mechanic incentives.
+- [x] A complete service operation can reserve parts, consume stock, calculate costs and generate mechanic incentives.
+- [x] Invariant enforced at database level: non-negative available stock via generated stored column and check constraint (`quantity_available >= 0`).
+- [x] 137/137 unit and widget tests passing with zero static analysis issues.
+- [x] Playwright CLI multi-role E2E verification complete on localhost web with remote Supabase PostgreSQL (13 visual proofs recorded: `e2e_m4_*.png`).
 
 ---
 

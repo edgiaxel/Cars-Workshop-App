@@ -22,6 +22,24 @@ Do not record planned functionality as completed.
 
 ---
 
+# [1.3.0-m4] — 2026-11-23
+
+### Added
+- **VS-11 Part Catalog:** Parts catalog console (`AdminInventoryScreen`), part creation and editing modal, SKU, categories, unit of measurement, separate purchase and retail prices, low stock alerts, and live balance counters.
+- **VS-12 Stock Receiving and Adjustment:** Manual receiving modal with atomic weighted-average purchase cost recalculation; manual stock adjustment modal with mandatory audit reason; auditable ledger history (`inventory_transactions`).
+- **VS-13 Reservation and Part Requests:** Floor coordination console (`AdminPartRequestsScreen`), mechanic request modal inside `OperationWorkspaceScreen`, atomic reservation, pending/fulfilled/rejected status management, and real-time badge updates.
+- **VS-14 Consumption and Returns:** Task-level consumption dialog for mechanics, parts issue, actual usage recording, undamaged surplus returns back to inventory, snapshotting unit cost at consumption time, and database-level non-negative available stock protection (`quantity_available >= 0`).
+- **VS-15 Mechanic Compensation:** Admin compensation configuration console (`AdminMechanicEarningsScreen`), base salary and incentive percentage profiles, labor incentive accruals on completed work via `generate_task_mechanic_incentives`, multi-mechanic split rules, auditable payroll adjustments via `adjust_mechanic_compensation`, and mechanic personal earnings ledger (`MechanicEarningsScreen`).
+- **UI Error Dialogs:** Centralized `showPitErrorDialog` and `PitValidationBanner` in `lib/shared/widgets/pit_error_dialog.dart` preventing raw Flutter crash dumps and presenting clean user validation guidance.
+- **Database Schema & RPCs:** Migration `20261123000002_m4_inventory_and_costing.sql` introducing tables `parts`, `inventory_balances`, `inventory_transactions`, `part_requests`, `service_task_part_consumptions`, `mechanic_compensation_profiles`, `mechanic_earnings`, `mechanic_earning_allocations`, `mechanic_payroll_adjustments`, and RPC functions `receive_stock`, `adjust_stock`, `request_part_for_task`, `fulfill_part_request`, `consume_and_return_parts`, `generate_task_mechanic_incentives`, and `adjust_mechanic_compensation`.
+- **E2E Playwright Suite:** Full multi-role web localhost E2E verification with 13 screenshot proofs (`e2e_m4_*.png`) validating admin inventory, stock receiving, adjustment reasons, floor requests, fulfillment, consumption, checklist completion, mechanic incentive calculations, payroll adjustments, and responsive mobile layout (390x844).
+
+### Security
+- Enforced PostgreSQL row level security across all M4 tables restricting catalog/stock mutations and payroll adjustments to admin role while permitting authenticated mechanics to request parts and view assigned earnings.
+- Database CHECK constraint `quantity_on_hand - quantity_reserved >= 0` on `inventory_balances` preventing inventory overselling or negative stock under concurrent usage.
+
+---
+
 # [1.2.0-m3] — 2026-11-23
 
 ### Added
