@@ -14,7 +14,7 @@ Future<void> showPitErrorDialog(
 }) async {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
-  final subtextColor = isDark ? AppColors.textSecondaryDark : AppColors.steelMuted;
+  final subtextColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
   final surfaceColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
 
   return showDialog<void>(
@@ -49,10 +49,9 @@ Future<void> showPitErrorDialog(
           Expanded(
             child: Text(
               title.toUpperCase(),
-              style: AppTypography.headingSmall(
+              style: AppTypography.headlineSmall(
                 color: AppColors.accentRed,
-                fontWeight: FontWeight.w700,
-              ),
+              ).copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -67,14 +66,13 @@ Future<void> showPitErrorDialog(
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF2A1515) : const Color(0xFFFFF0F0),
                 borderRadius: BorderRadius.circular(8),
-                border: BorderSide(color: AppColors.accentRed.withValues(alpha: 0.3)),
+                border: Border.all(color: AppColors.accentRed.withValues(alpha: 0.3)),
               ),
               child: Text(
                 message,
                 style: AppTypography.bodyMedium(
                   color: textColor,
-                  fontWeight: FontWeight.w500,
-                ),
+                ).copyWith(fontWeight: FontWeight.w500),
               ),
             ),
             if (hint != null && hint.isNotEmpty) ...[
@@ -82,7 +80,7 @@ Future<void> showPitErrorDialog(
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline, size: 16, color: AppColors.accentBlue),
+                  const Icon(Icons.info_outline, size: 16, color: AppColors.info),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -114,8 +112,7 @@ Future<void> showPitErrorDialog(
             primaryButtonText,
             style: AppTypography.labelLarge(
               color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
+            ).copyWith(fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -142,7 +139,7 @@ class PitValidationBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.accentRed.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
-        border: BorderSide(color: AppColors.accentRed.withValues(alpha: 0.4)),
+        border: Border.all(color: AppColors.accentRed.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
@@ -153,8 +150,7 @@ class PitValidationBanner extends StatelessWidget {
               message,
               style: AppTypography.bodySmall(
                 color: AppColors.accentRed,
-                fontWeight: FontWeight.w600,
-              ),
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           if (onDismiss != null)
