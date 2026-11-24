@@ -665,12 +665,12 @@ Included:
 
 Acceptance:
 
-- [ ] Admin receives operational notifications.
-- [ ] Mechanic receives assignment notifications.
-- [ ] Customer receives service notifications.
-- [ ] Notifications appear without manual refresh.
-- [ ] Notification history is preserved.
-- [ ] Duplicate notifications are prevented.
+- [x] Admin receives operational notifications.
+- [x] Mechanic receives assignment notifications.
+- [x] Customer receives service notifications.
+- [x] Notifications appear without manual refresh.
+- [x] Notification history is preserved.
+- [x] Duplicate notifications are prevented.
 
 ### VS-21 — Customer Service Tracking
 
@@ -688,11 +688,11 @@ Included:
 
 Acceptance:
 
-- [ ] Customer can see active vehicle service.
-- [ ] Customer sees appropriate workflow progress.
-- [ ] Customer can approve supplementary work.
-- [ ] Customer cannot access internal workshop data.
-- [ ] Completed services appear in history.
+- [x] Customer can see active vehicle service.
+- [x] Customer sees appropriate workflow progress.
+- [x] Customer can approve supplementary work.
+- [x] Customer cannot access internal workshop data.
+- [x] Completed services appear in history.
 
 ### VS-22 — Maintenance Reminders
 
@@ -708,11 +708,11 @@ Included:
 
 Acceptance:
 
-- [ ] Completed services can generate reminders.
-- [ ] Date-based reminders work.
-- [ ] Mileage-based reminders work.
-- [ ] Duplicate reminder processing is prevented.
-- [ ] Customer can view reminders.
+- [x] Completed services can generate reminders.
+- [x] Date-based reminders work.
+- [x] Mileage-based reminders work.
+- [x] Duplicate reminder processing is prevented.
+- [x] Customer can view reminders.
 
 ### VS-23 — Reporting and Overview
 
@@ -730,15 +730,17 @@ Included:
 
 Acceptance:
 
-- [ ] Admin can view daily activity.
-- [ ] Admin can view monthly reports.
-- [ ] Settled and outstanding revenue are distinct.
-- [ ] Inventory costs are represented correctly.
-- [ ] Mechanic workload is reportable.
+- [x] Admin can view daily activity.
+- [x] Admin can view monthly reports.
+- [x] Settled and outstanding revenue are distinct.
+- [x] Inventory costs are represented correctly.
+- [x] Mechanic workload is reportable.
 
 ### M6 Exit Criteria
 
-All three roles receive appropriate notifications and the customer can follow a complete vehicle service without depending on the admin for every status update.
+- [x] All three roles receive appropriate notifications and the customer can follow a complete vehicle service without depending on the admin for every status update.
+- [x] 209/209 automated unit and widget tests passing across entire repository.
+- [x] Zero mock or hardcoded data: all M6 features backed by live Supabase PostgreSQL (`kxvoeqwelcmcvdfwxduu`), transactional RPCs, and Realtime channels.
 
 ---
 

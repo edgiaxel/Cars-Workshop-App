@@ -22,6 +22,31 @@ Do not record planned functionality as completed.
 
 ---
 
+# [1.5.0-m6] — 2026-11-24
+
+### Added
+- **VS-20 Notification Infrastructure (F-017):**
+  - Persistent, role-routed notification records in `public.notifications` and event deduplication via `public.notification_events`.
+  - Notification Bell action button (`NotificationBellButton`) with live unread badge count wired across all role scaffolds.
+  - Interactive Notification Center modal (`NotificationCenterModal`) with real-time Supabase Realtime channel stream, read/unread filters, single-tap mark-as-read, and batch mark-all-as-read via RPC `mark_all_notifications_read`.
+- **VS-21 Customer Service Tracking (F-002, F-017):**
+  - Transparent customer vehicle tracking portal (`CustomerTrackingScreen`) powered by RPC `get_customer_service_tracking`.
+  - Sanitized 8-stage workshop lifecycle stepper (Intake -> Inspection -> Estimate -> Authorization -> Assigned -> In Progress -> QC -> Ready for Handover) ensuring complete privacy from internal mechanics' payroll and raw cost calculations.
+  - Transparent itemized inspection findings overview and direct links to Estimate Approval and Invoices.
+- **VS-22 Maintenance Reminders (F-018):**
+  - Scheduled date-based and odometer mileage-based maintenance reminder entity in `public.maintenance_reminders`.
+  - Customer reminder console (`CustomerRemindersScreen`) with countdown intervals, one-tap booking navigation, and customer dismissal via RPC `dismiss_maintenance_reminder`.
+  - Admin reminder dispatch queue (`AdminRemindersScreen`) with status filtering chips and automated batch processor triggering notifications via RPC `process_due_reminders`.
+- **VS-23 Reporting & Overview (F-019):**
+  - Real-time workshop operations and financial dashboard (`AdminReportsScreen`) backed by RPCs `get_workshop_daily_metrics` and `get_workshop_monthly_metrics`.
+  - Daily Activity telemetry: active service orders, completed today, bay occupancy gauge (5 bays), settled revenue vs outstanding receivables.
+  - Monthly Financials: orders completed, gross revenue, parts COGS, labor revenue, and gross profit margin calculation.
+  - Top 5 consumed parts ranking by volume and COGS; mechanic workload and incentive allocations breakdown.
+- **Database & Architecture:**
+  - Supabase PostgreSQL migration `20261124110000_m6_communication_and_reporting.sql` creating tables `notifications`, `notification_events`, `maintenance_reminders` with RLS policies, Realtime publication, and 9 transactional RPCs.
+
+---
+
 # [1.4.0-m5] — 2026-11-24
 
 ### Added

@@ -865,4 +865,115 @@ Triggered on completed eligible task:
 ### 7.3.8 `public.adjust_mechanic_compensation(...)`
 Admin adjustment creating an auditable `mechanic_payroll_adjustments` entry.
 
+---
+
+# 8. Milestone M6: Communication and Customer Experience Schema Specification
+
+## 8.1 Enums
+
+### `public.notification_type`
+- `'operational'`: Workshop dispatch, bay changes, QC alerts.
+- `'assignment'`: Technician task assignment, assistance requests.
+- `'service_update'`: Intake, inspection finished, estimate ready, order completion.
+- `'authorization_request'`: Customer approval required.
+- `'invoice'`: Invoice issued, payment settled.
+- `'reminder'`: Scheduled date or mileage service due.
+
+### `public.notification_entity_type`
+- `'service_order'`, `'task'`, `'estimate'`, `'invoice'`, `'reminder'`, `'booking'`
+
+### `public.reminder_type`
+- `'scheduled_date'`: Calendar interval (e.g. 6-month inspection).
+- `'mileage_odometer'`: Odometer threshold (e.g. periodic 15,000 KM).
+
+### `public.reminder_status`
+- `'pending'`: Queued for schedule or mileage trigger.
+- `'notified'`: Notification emitted to customer.
+- `'completed'`: Service booked or completed.
+- `'dismissed'`: Customer dismissed recommendation.
+
+---
+
+## 8.2 Tables
+
+### 8.2.1 `public.notifications`
+Persistent role-routed notifications for admin, mechanic, and customer.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Notification ID |
+| `user_id` | `UUID` | `NULL REFERENCES public.profiles(id) ON DELETE CASCADE` | Specific recipient profile |
+| `role` | `TEXT` | `NOT NULL` | Role (`admin`, `mechanic`, `customer`) |
+| `title` | `TEXT` | `NOT NULL` | Alert headline |
+| `message` | `TEXT` | `NOT NULL` | Detailed description |
+| `type` | `public.notification_type` | `NOT NULL` | Classification |
+| `entity_type` | `public.notification_entity_type` | `NULL` | Linked entity category |
+| `entity_id` | `UUID` | `NULL` | Linked entity primary key |
+| `is_read` | `BOOLEAN` | `NOT NULL DEFAULT FALSE` | Read status |
+| `read_at` | `TIMESTAMPTZ` | `NULL` | Timestamp marked read |
+| `metadata` | `JSONB` | `NOT NULL DEFAULT '{}'::jsonb` | Extensible payload |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+
+### 8.2.2 `public.notification_events`
+Idempotent deduplication ledger for emission events.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Event ID |
+| `idempotency_key` | `TEXT` | `NOT NULL UNIQUE` | Unique event key |
+| `event_type` | `TEXT` | `NOT NULL` | Event classifier |
+| `payload` | `JSONB` | `NOT NULL DEFAULT '{}'::jsonb` | Event payload |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Timestamp |
+
+### 8.2.3 `public.maintenance_reminders`
+Future maintenance tracking entity by date and odometer intervals.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Reminder ID |
+| `customer_id` | `UUID` | `NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE` | Vehicle owner |
+| `vehicle_id` | `UUID` | `NOT NULL REFERENCES public.vehicles(id) ON DELETE CASCADE` | Target vehicle |
+| `service_order_id`| `UUID` | `NULL REFERENCES public.service_orders(id) ON DELETE SET NULL` | Originating order |
+| `reminder_type` | `public.reminder_type` | `NOT NULL` | Date or mileage trigger |
+| `title` | `TEXT` | `NOT NULL` | Service recommendation |
+| `description` | `TEXT` | `NULL` | Interval instructions |
+| `due_date` | `DATE` | `NULL` | Calendar due date |
+| `due_odometer_km` | `INT` | `NULL` | Mileage due threshold |
+| `status` | `public.reminder_status` | `NOT NULL DEFAULT 'pending'` | Processing status |
+| `last_notified_at`| `TIMESTAMPTZ` | `NULL` | Last alert timestamp |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | Modification timestamp |
+
+---
+
+## 8.3 Database Functions & RPCs
+
+### 8.3.1 `public.create_notification_event(...)`
+Idempotent notification creation with deduplication check against `notification_events`.
+
+### 8.3.2 `public.mark_notification_read(p_notification_id UUID)`
+Updates single notification `is_read = TRUE` and `read_at = NOW()`.
+
+### 8.3.3 `public.mark_all_notifications_read(p_user_id UUID)`
+Batch marks all unread notifications for a user profile as read.
+
+### 8.3.4 `public.generate_service_order_reminders(p_service_order_id UUID)`
+Generates 6-month scheduled date and periodic +10,000 KM odometer maintenance reminders upon service completion.
+
+### 8.3.5 `public.dismiss_maintenance_reminder(p_reminder_id UUID)`
+Allows customer to dismiss a scheduled reminder (`status = 'dismissed'`).
+
+### 8.3.6 `public.process_due_reminders()`
+Admin batch processor querying pending reminders where `due_date <= CURRENT_DATE` or `due_odometer_km <= vehicle.mileage`, emitting notifications and marking status `'notified'`.
+
+### 8.3.7 `public.get_workshop_daily_metrics(report_date DATE)`
+Aggregates active orders count, completed today, bay occupancy rate, settled payments revenue, and total outstanding receivables.
+
+### 8.3.8 `public.get_workshop_monthly_metrics(report_month DATE)`
+Aggregates completed orders count, gross settled revenue, parts COGS, labor revenue, gross margin, top 5 consumed parts by volume and COGS, and mechanic workload/incentive distribution.
+
+### 8.3.9 `public.get_customer_service_tracking(p_customer_id UUID, p_order_id UUID)`
+Sanitized customer vehicle tracking summary returning active order stage, 8-stage progress index, itemized customer tasks, and transparent inspection findings.
+
+
 
