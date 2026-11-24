@@ -4,6 +4,7 @@ import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/features/reports/data/reports_repository.dart';
 import 'package:pitmate/features/reports/models/workshop_metrics_model.dart';
 import 'package:pitmate/shared/navigation/role_navigation.dart';
@@ -114,6 +115,7 @@ class _AdminReportsScreenState extends ConsumerState<AdminReportsScreen>
       navItems: RoleNavigation.adminNavItems,
       telemetryNotice: 'FINANCIAL TELEMETRY',
       actions: [
+        const NotificationBellButton(),
         IconButton(
           key: const Key('refresh_reports_button'),
           icon: const Icon(Icons.refresh, size: 20),

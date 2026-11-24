@@ -7,6 +7,7 @@ import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/features/reminders/data/reminder_repository.dart';
 import 'package:pitmate/features/reminders/models/maintenance_reminder.dart';
 import 'package:pitmate/shared/navigation/role_navigation.dart';
@@ -147,6 +148,7 @@ class _CustomerRemindersScreenState extends ConsumerState<CustomerRemindersScree
       navItems: RoleNavigation.customerNavItems,
       telemetryNotice: _reminders.isNotEmpty ? '${_reminders.length} ACTIVE REMINDERS' : null,
       actions: [
+        const NotificationBellButton(),
         IconButton(
           key: const Key('refresh_reminders_button'),
           icon: const Icon(Icons.refresh, size: 20),

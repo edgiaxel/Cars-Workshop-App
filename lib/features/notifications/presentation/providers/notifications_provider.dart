@@ -50,7 +50,14 @@ class NotificationsNotifier extends Notifier<NotificationsState> {
         _streamSubscription?.cancel();
         state = const NotificationsState();
       }
-    }, fireImmediately: true);
+    });
+
+    final auth = ref.watch(authNotifierProvider);
+    if (auth is AuthAuthenticated) {
+      Future.microtask(() {
+        loadNotifications(auth.userProfile.role.name, auth.userProfile.id);
+      });
+    }
 
     ref.onDispose(() {
       _streamSubscription?.cancel();

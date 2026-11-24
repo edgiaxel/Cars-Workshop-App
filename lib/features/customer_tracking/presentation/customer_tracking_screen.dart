@@ -10,6 +10,7 @@ import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart'
 import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/customer_tracking/data/customer_tracking_repository.dart';
 import 'package:pitmate/features/customer_tracking/models/customer_tracking_model.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
@@ -105,6 +106,7 @@ class _CustomerTrackingScreenState extends ConsumerState<CustomerTrackingScreen>
       navItems: RoleNavigation.customerNavItems,
       telemetryNotice: _summary.hasActiveOrder ? 'ACTIVE WORKSHOP TELEMETRY' : null,
       actions: [
+        const NotificationBellButton(),
         IconButton(
           key: const Key('refresh_tracking_button'),
           icon: const Icon(Icons.refresh, size: 20),

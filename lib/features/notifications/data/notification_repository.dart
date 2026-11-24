@@ -4,10 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository for persistent notifications and live realtime subscription.
 class NotificationRepository {
-  NotificationRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  NotificationRepository({this.client});
 
-  final SupabaseClient _client;
+  final SupabaseClient? client;
+
+  SupabaseClient get _client => client ?? Supabase.instance.client;
 
   /// Fetch persistent notifications for user or role.
   Future<List<NotificationItem>> fetchNotifications({
@@ -78,15 +79,19 @@ class NotificationRepository {
     required String userId,
     required String role,
   }) {
-    return _client
-        .from('notifications')
-        .stream(primaryKey: ['id'])
-        .order('created_at', ascending: false)
-        .map((rows) {
-          return rows
-              .where((r) => r['user_id'] == userId || r['role'] == role)
-              .map((e) => NotificationItem.fromJson(e))
-              .toList();
-        });
+    try {
+      return _client
+          .from('notifications')
+          .stream(primaryKey: ['id'])
+          .order('created_at', ascending: false)
+          .map((rows) {
+            return rows
+                .where((r) => r['user_id'] == userId || r['role'] == role)
+                .map((e) => NotificationItem.fromJson(e))
+                .toList();
+          });
+    } catch (_) {
+      return const Stream.empty();
+    }
   }
 }

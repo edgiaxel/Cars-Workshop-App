@@ -277,9 +277,12 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                       ],
-                      Text(
-                        roleTitle,
-                        style: AppTypography.headlineMedium(color: textColor),
+                      Flexible(
+                        child: Text(
+                          roleTitle,
+                          style: AppTypography.headlineMedium(color: textColor),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       if (telemetryNotice != null) ...[
                         const SizedBox(width: 16),

@@ -4,6 +4,7 @@ import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/features/reminders/models/maintenance_reminder.dart';
 import 'package:pitmate/features/reminders/presentation/customer_reminders_screen.dart';
 import 'package:pitmate/shared/navigation/role_navigation.dart';
@@ -118,6 +119,7 @@ class _AdminRemindersScreenState extends ConsumerState<AdminRemindersScreen> {
       navItems: RoleNavigation.adminNavItems,
       telemetryNotice: '${_reminders.length} QUEUED REMINDERS',
       actions: [
+        const NotificationBellButton(),
         IconButton(
           key: const Key('refresh_admin_reminders_button'),
           icon: const Icon(Icons.refresh, size: 20),

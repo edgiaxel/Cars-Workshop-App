@@ -3,11 +3,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository for customer vehicle live progress tracking.
 class CustomerTrackingRepository {
-  CustomerTrackingRepository({SupabaseClient? client}) : _client = client;
+  CustomerTrackingRepository({this.client});
 
-  final SupabaseClient? _client;
+  final SupabaseClient? client;
 
-  SupabaseClient get _supabase => _client ?? Supabase.instance.client;
+  SupabaseClient get _supabase => client ?? Supabase.instance.client;
 
   /// Fetch customer profile ID for current auth session.
   Future<String?> getCurrentCustomerId() async {
