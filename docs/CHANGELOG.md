@@ -22,6 +22,41 @@ Do not record planned functionality as completed.
 
 ---
 
+# [1.4.0-m5] — 2026-11-24
+
+### Added
+- **VS-16 Quality Control (F-014):**
+  - Interactive Admin QC console (`AdminQcScreen`) with queue of eligible orders in `qc_pending`.
+  - 5-point quality checklist (Mechanical, Fluids, Electrical, Safety, Cosmetics) with individual pass/fail toggles.
+  - "PASS QUALITY CONTROL" action invoking `record_qc_result` and transitioning order to `completed`.
+  - "FAIL & RETURN TO REPAIR" action prompting for required correction notes and reverting order to `in_progress`.
+- **VS-17 Invoice Generation (F-015):**
+  - Itemized invoicing dashboard (`AdminInvoicesScreen`) generating billing records from completed service order tasks and consumed parts via `generate_service_order_invoice`.
+  - Real-time 11% PPN Indonesian tax calculation (`(taxableSubtotal * 11) ~/ 100`) using integer cents precision.
+  - Historical pricing snapshotting preserving parts/labor costs at time of invoicing.
+  - Deposit and insurance deduction reconciliation.
+- **VS-18 Simulated Payment (F-015):**
+  - Real-time cash payment dialog with automated change calculation (`cash_tendered - amount_due`).
+  - Simulated multi-channel electronic payments (QRIS with dynamic QR presentation, Debit/Credit Card, Bank Virtual Account) generating simulated reference codes via `record_invoice_payment`.
+  - Immutable audit ledger of completed payments in `public.payments`.
+  - Motorsport-themed digital receipt dialog.
+  - Customer self-service portal (`CustomerInvoicesScreen`) for viewing unpaid balances and executing 1-click simulated settlement.
+- **VS-19 Vehicle Handover (F-015):**
+  - Delivery verification console (`AdminHandoverScreen`) tracking vehicles ready for customer handover.
+  - 4-point handover checklist (vehicle cleaned, personal items returned, old parts presented, keys handed back).
+  - Strict payment verification enforcing settled balance or requiring an explicit administrative override reason.
+  - Customer delivery confirmation and final service order closure (`status = 'closed'`) via `record_vehicle_handover`.
+- **Database & Architecture:**
+  - Supabase PostgreSQL migration `20261124090000_m5_completion_and_finance.sql` creating tables `qc_inspections`, `qc_checklist_items`, `invoices`, `invoice_items`, `payments`, and `vehicle_handovers` with RLS policies and 6 transactional RPCs.
+  - Standardized integer cents currency formatter utility `CurrencyFormatter` in `lib/core/utils/currency_formatter.dart`.
+  - Centralized UI and Technical Contract `docs/UI_CONTRACT.md`.
+- **Automated Verification:**
+  - Full suite expanded to 191/191 tests passing (54 new tests across QC, Invoicing, and Handover).
+  - 0 static analysis issues (`flutter analyze`).
+  - Playwright CLI E2E verification capturing 5 visual proofs (`e2e_m5_*.png`) on localhost web.
+
+---
+
 # [1.3.1-nav-audit] — 2026-11-23
 
 ### Fixed

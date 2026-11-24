@@ -564,11 +564,11 @@ Included:
 
 Acceptance:
 
-- [ ] Eligible service orders can enter QC.
-- [ ] QC can pass or fail.
-- [ ] Failed QC records a reason.
-- [ ] Failed work can return for correction.
-- [ ] Passed QC enables final billing.
+- [x] Eligible service orders can enter QC.
+- [x] QC can pass or fail.
+- [x] Failed QC records a reason.
+- [x] Failed work can return for correction.
+- [x] Passed QC enables final billing.
 
 ### VS-17 — Invoice Generation
 
@@ -586,12 +586,12 @@ Included:
 
 Acceptance:
 
-- [ ] Invoice reflects authorized completed work.
-- [ ] Historical prices are preserved.
-- [ ] Tax is calculated correctly.
-- [ ] Deposits are reconciled.
-- [ ] Outstanding balance is accurate.
-- [ ] Invoice cannot be silently altered after finalization.
+- [x] Invoice reflects authorized completed work.
+- [x] Historical prices are preserved.
+- [x] Tax is calculated correctly.
+- [x] Deposits are reconciled.
+- [x] Outstanding balance is accurate.
+- [x] Invoice cannot be silently altered after finalization.
 
 ### VS-18 — Simulated Payment
 
@@ -610,12 +610,12 @@ Included:
 
 Acceptance:
 
-- [ ] Cash payment calculates change.
-- [ ] Simulated external payment records a reference.
-- [ ] Duplicate payment is prevented.
-- [ ] Outstanding balance updates.
-- [ ] Receipt is available.
-- [ ] Refunds and adjustments are auditable.
+- [x] Cash payment calculates change.
+- [x] Simulated external payment records a reference.
+- [x] Duplicate payment is prevented.
+- [x] Outstanding balance updates.
+- [x] Receipt is available.
+- [x] Refunds and adjustments are auditable.
 
 ### VS-19 — Vehicle Handover
 
@@ -631,15 +631,18 @@ Included:
 
 Acceptance:
 
-- [ ] QC must pass before handover.
-- [ ] Payment requirements must be satisfied or explicitly overridden by authorized policy.
-- [ ] Handover is recorded.
-- [ ] Service history is preserved.
-- [ ] Customer receives completion notification.
+- [x] QC must pass before handover.
+- [x] Payment requirements must be satisfied or explicitly overridden by authorized policy.
+- [x] Handover is recorded.
+- [x] Service history is preserved.
+- [x] Customer receives completion notification.
 
 ### M5 Exit Criteria
 
-A complete service order can be completed, inspected, invoiced, paid and physically handed over.
+- [x] A complete service order can be completed, inspected, invoiced, paid and physically handed over.
+- [x] Supabase PostgreSQL migration `20261124090000_m5_completion_and_finance.sql` applied with RLS and 6 transactional RPCs (`submit_order_for_qc`, `record_qc_result`, `return_to_repair_from_qc`, `generate_service_order_invoice`, `record_invoice_payment`, `record_vehicle_handover`).
+- [x] 191/191 unit and widget tests passing cleanly with 0 static analysis issues.
+- [x] Playwright CLI multi-role E2E visual verification complete on localhost web (`e2e_m5_01_admin_qc.png`, `e2e_m5_02_admin_invoices.png`, `e2e_m5_03_admin_handover.png`, `e2e_m5_04_customer_invoices.png`, `e2e_m5_05_mobile_invoices.png`).
 
 ---
 

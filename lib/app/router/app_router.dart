@@ -12,6 +12,10 @@ import 'package:pitmate/features/mechanic/presentation/mechanic_earnings_screen.
 import 'package:pitmate/features/mechanic/presentation/operation_workspace_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_inspection_review_screen.dart';
 import 'package:pitmate/features/admin/presentation/admin_overview_screen.dart';
+import 'package:pitmate/features/quality_control/presentation/admin_qc_screen.dart';
+import 'package:pitmate/features/invoices/presentation/admin_invoices_screen.dart';
+import 'package:pitmate/features/invoices/presentation/customer_invoices_screen.dart';
+import 'package:pitmate/features/handover/presentation/admin_handover_screen.dart';
 import 'package:pitmate/features/auth/domain/user_role.dart';
 import 'package:pitmate/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:pitmate/features/auth/presentation/screens/login_screen.dart';
@@ -122,6 +126,18 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const AdminMechanicEarningsScreen(),
     ),
     GoRoute(
+      path: RoutePaths.adminQualityControl,
+      builder: (context, state) => const AdminQcScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.adminInvoices,
+      builder: (context, state) => const AdminInvoicesScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.adminHandover,
+      builder: (context, state) => const AdminHandoverScreen(),
+    ),
+    GoRoute(
       path: RoutePaths.mechanic,
       builder: (context, state) => const MechanicHomeScreen(),
     ),
@@ -176,6 +192,10 @@ final GoRouter appRouter = GoRouter(
           serviceOrderId: orderId,
         );
       },
+    ),
+    GoRoute(
+      path: RoutePaths.customerInvoices,
+      builder: (context, state) => const CustomerInvoicesScreen(),
     ),
   ],
 );
