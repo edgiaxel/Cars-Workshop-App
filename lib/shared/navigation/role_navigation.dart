@@ -78,6 +78,18 @@ class RoleNavigation {
       selectedIcon: Icons.key,
       path: RoutePaths.adminHandover,
     ),
+    RoleNavItem(
+      label: 'Reports & Analytics',
+      icon: Icons.analytics_outlined,
+      selectedIcon: Icons.analytics,
+      path: RoutePaths.adminReports,
+    ),
+    RoleNavItem(
+      label: 'Service Reminders',
+      icon: Icons.notifications_active_outlined,
+      selectedIcon: Icons.notifications_active,
+      path: RoutePaths.adminReminders,
+    ),
   ];
 
   /// Canonical navigation items for Mechanic role (4 items).
@@ -139,6 +151,18 @@ class RoleNavigation {
       icon: Icons.account_balance_wallet_outlined,
       selectedIcon: Icons.account_balance_wallet,
       path: RoutePaths.customerInvoices,
+    ),
+    RoleNavItem(
+      label: 'Live Tracking',
+      icon: Icons.timeline_outlined,
+      selectedIcon: Icons.timeline,
+      path: RoutePaths.customerTracking,
+    ),
+    RoleNavItem(
+      label: 'Maintenance Reminders',
+      icon: Icons.notifications_active_outlined,
+      selectedIcon: Icons.notifications_active,
+      path: RoutePaths.customerReminders,
     ),
   ];
 

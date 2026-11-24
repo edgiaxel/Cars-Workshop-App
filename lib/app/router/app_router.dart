@@ -27,6 +27,10 @@ import 'package:pitmate/features/customers/presentation/customer_estimate_approv
 import 'package:pitmate/features/customers/presentation/customer_garage_screen.dart';
 import 'package:pitmate/features/mechanic/presentation/inspection_workspace_screen.dart';
 import 'package:pitmate/features/mechanic/presentation/mechanic_home_screen.dart';
+import 'package:pitmate/features/reports/presentation/admin_reports_screen.dart';
+import 'package:pitmate/features/reminders/presentation/admin_reminders_screen.dart';
+import 'package:pitmate/features/customer_tracking/presentation/customer_tracking_screen.dart';
+import 'package:pitmate/features/reminders/presentation/customer_reminders_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Application router for PitMate connected to live authentication.
@@ -138,6 +142,14 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const AdminHandoverScreen(),
     ),
     GoRoute(
+      path: RoutePaths.adminReports,
+      builder: (context, state) => const AdminReportsScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.adminReminders,
+      builder: (context, state) => const AdminRemindersScreen(),
+    ),
+    GoRoute(
       path: RoutePaths.mechanic,
       builder: (context, state) => const MechanicHomeScreen(),
     ),
@@ -196,6 +208,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RoutePaths.customerInvoices,
       builder: (context, state) => const CustomerInvoicesScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.customerTracking,
+      builder: (context, state) => const CustomerTrackingScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.customerReminders,
+      builder: (context, state) => const CustomerRemindersScreen(),
     ),
   ],
 );

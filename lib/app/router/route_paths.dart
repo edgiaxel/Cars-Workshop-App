@@ -22,6 +22,8 @@ class RoutePaths {
   static const String adminQualityControl = '/admin/quality-control';
   static const String adminInvoices = '/admin/invoices';
   static const String adminHandover = '/admin/handover';
+  static const String adminReports = '/admin/reports';
+  static const String adminReminders = '/admin/reminders';
 
   // Mechanic subsystem paths
   static const String mechanic = '/mechanic';
@@ -36,4 +38,6 @@ class RoutePaths {
   static const String customerAppointments = '/customer/appointments';
   static const String customerEstimateApproval = '/customer/estimates';
   static const String customerInvoices = '/customer/invoices';
+  static const String customerTracking = '/customer/tracking';
+  static const String customerReminders = '/customer/reminders';
 }
