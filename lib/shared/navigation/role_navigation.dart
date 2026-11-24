@@ -60,6 +60,24 @@ class RoleNavigation {
       selectedIcon: Icons.payments,
       path: RoutePaths.adminCompensation,
     ),
+    RoleNavItem(
+      label: 'Quality Control',
+      icon: Icons.fact_check_outlined,
+      selectedIcon: Icons.fact_check,
+      path: RoutePaths.adminQualityControl,
+    ),
+    RoleNavItem(
+      label: 'Invoices & Billing',
+      icon: Icons.receipt_long_outlined,
+      selectedIcon: Icons.receipt_long,
+      path: RoutePaths.adminInvoices,
+    ),
+    RoleNavItem(
+      label: 'Vehicle Handover',
+      icon: Icons.key_outlined,
+      selectedIcon: Icons.key,
+      path: RoutePaths.adminHandover,
+    ),
   ];
 
   /// Canonical navigation items for Mechanic role (4 items).
@@ -115,6 +133,12 @@ class RoleNavigation {
       icon: Icons.receipt_long_outlined,
       selectedIcon: Icons.receipt_long,
       path: RoutePaths.customerEstimateApproval,
+    ),
+    RoleNavItem(
+      label: 'Invoices & Payments',
+      icon: Icons.account_balance_wallet_outlined,
+      selectedIcon: Icons.account_balance_wallet,
+      path: RoutePaths.customerInvoices,
     ),
   ];
 
