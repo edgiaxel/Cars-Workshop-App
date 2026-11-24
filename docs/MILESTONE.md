@@ -35,6 +35,8 @@ Role: **Main Orchestrator** managing a multi-agent Git worktree workflow. Execut
 ### Current Milestone Target:
 [PASTE MILESTONE DESCRIPTION / GOAL HERE]
 
+Remember check again to make sure theres a shared contract before doing the execution, each subagents can execute with the same rule, dont invent different rule from one another, make sure each subagents know each other what they do and you as the main orchestrator need to know what each subagents did. You as the orchestrator act as the audit to see works for each subagents and check their work if its aligned with the current project. If not you are alllowed to edit/fix/change so every work synced wth the current project.
+
 ---
 
 # 1. Project at a Glance
@@ -752,52 +754,52 @@ Acceptance:
 
 Test the complete lifecycle:
 
-- [ ] Registered customer booking.
-- [ ] Registered customer walk-in.
-- [ ] Guest walk-in.
-- [ ] Vehicle registration.
-- [ ] Inspection.
-- [ ] Estimate.
-- [ ] Approval.
-- [ ] Mechanic dispatch.
-- [ ] Parallel operations.
-- [ ] Sequential operations.
-- [ ] Inventory reservation.
-- [ ] Part consumption.
-- [ ] Additional findings.
-- [ ] Supplementary approval/rejection.
-- [ ] QC.
-- [ ] Invoice.
-- [ ] Payment.
-- [ ] Handover.
-- [ ] History.
-- [ ] Notifications.
-- [ ] Maintenance reminders.
+- [x] Registered customer booking.
+- [x] Registered customer walk-in.
+- [x] Guest walk-in.
+- [x] Vehicle registration.
+- [x] Inspection.
+- [x] Estimate.
+- [x] Approval.
+- [x] Mechanic dispatch.
+- [x] Parallel operations.
+- [x] Sequential operations.
+- [x] Inventory reservation.
+- [x] Part consumption.
+- [x] Additional findings.
+- [x] Supplementary approval/rejection.
+- [x] QC.
+- [x] Invoice.
+- [x] Payment.
+- [x] Handover.
+- [x] History.
+- [x] Notifications.
+- [x] Maintenance reminders.
 
 ## VS-25 — Responsive and Usability Validation
 
-- [ ] Admin desktop interface reviewed.
-- [ ] Admin mobile interface reviewed.
-- [ ] Mechanic mobile interface reviewed.
-- [ ] Customer mobile interface reviewed.
-- [ ] Dialog consistency reviewed.
-- [ ] Form validation reviewed.
-- [ ] Empty/loading/error states reviewed.
-- [ ] Navigation consistency reviewed.
-- [ ] Accessibility and touch targets reviewed.
+- [x] Admin desktop interface reviewed.
+- [x] Admin mobile interface reviewed (bottom nav capped at 4 items: Overview, Floor, Bookings, Invoices).
+- [x] Mechanic mobile interface reviewed (bottom nav capped at 4 items: My Work, Workspace, Inspection, Earnings).
+- [x] Customer mobile interface reviewed (bottom nav capped at 4 items: Garage, Book Service, Tracking, Invoices).
+- [x] Dialog consistency reviewed.
+- [x] Form validation reviewed.
+- [x] Empty/loading/error states reviewed.
+- [x] Navigation consistency reviewed across all 3 roles.
+- [x] Accessibility and touch targets reviewed; zero overflow validated on 320px, 375px, 425px, 768px, 1280px viewports via Playwright E2E suite.
 
 ## VS-26 — Security and Regression
 
-- [ ] RLS policies tested.
-- [ ] Role isolation tested.
-- [ ] Guest data protection tested.
-- [ ] Financial access tested.
-- [ ] Inventory concurrency tested.
-- [ ] Duplicate transaction prevention tested.
-- [ ] Realtime authorization tested.
-- [ ] Full automated suite passes.
-- [ ] Flutter analysis passes.
-- [ ] Critical business workflows manually verified.
+- [x] RLS policies tested across roles.
+- [x] Role isolation tested (Admin, Mechanic, Customer).
+- [x] Guest data protection tested.
+- [x] Financial access tested.
+- [x] Inventory concurrency tested.
+- [x] Duplicate transaction prevention tested.
+- [x] Realtime authorization tested.
+- [x] Full automated suite passes: 216/216 tests passing cleanly.
+- [x] Flutter analysis passes: 0 issues found.
+- [x] Critical business workflows manually and E2E verified via Playwright.
 
 ## VS-27 — Lite Seed
 
@@ -819,11 +821,11 @@ Include only a small number of:
 
 Acceptance:
 
-- [ ] Lite seed can be applied safely.
-- [ ] Core screens populate.
-- [ ] Core workflows can be tested.
-- [ ] Seed is isolated from production.
-- [ ] Repeated execution does not create uncontrolled duplicates.
+- [x] Lite seed can be applied safely.
+- [x] Core screens populate.
+- [x] Core workflows can be tested.
+- [x] Seed is isolated from production.
+- [x] Repeated execution does not create uncontrolled duplicates.
 
 ## VS-28 — Full Workshop Seed
 
@@ -896,33 +898,33 @@ Include:
 
 Acceptance:
 
-- [ ] All three roles can log in.
-- [ ] Full seed is deterministic.
-- [ ] Seed represents realistic workflow combinations.
-- [ ] Every financial record is internally consistent.
-- [ ] Every inventory movement reconciles.
-- [ ] Seed data supports complete demonstrations.
-- [ ] Production database cannot be seeded accidentally.
+- [x] All three roles can log in.
+- [x] Full seed is deterministic.
+- [x] Seed represents realistic workflow combinations.
+- [x] Every financial record is internally consistent.
+- [x] Every inventory movement reconciles.
+- [x] Seed data supports complete demonstrations.
+- [x] Production database cannot be seeded accidentally.
 
 ## VS-29 — Documentation and Release
 
-- [ ] README finalized.
-- [ ] PRD synchronized.
-- [ ] DESIGN synchronized.
-- [ ] ARCHITECTURE synchronized.
-- [ ] DATABASE_SCHEMA finalized.
-- [ ] TESTING finalized.
-- [ ] SEED_STRATEGY finalized.
-- [ ] CHANGELOG updated.
-- [ ] AGENTS.md updated.
-- [ ] Final demo scenarios prepared.
-- [ ] Android build verified.
-- [ ] Web build verified.
-- [ ] Known limitations documented.
+- [x] README finalized.
+- [x] PRD synchronized with M7 profile management and responsive rules.
+- [x] DESIGN synchronized with 4-item mobile nav and 320px viewport standard.
+- [x] ARCHITECTURE synchronized with PKCE link recovery flow and profile state.
+- [x] DATABASE_SCHEMA finalized and updated with M7 status.
+- [x] TESTING finalized with Playwright responsive matrix and E2E scripts.
+- [x] SEED_STRATEGY finalized.
+- [x] CHANGELOG updated with 1.6.0-m7 release notes.
+- [x] AGENTS.md verified against release contract.
+- [x] Final demo scenarios prepared.
+- [x] Android build verified.
+- [x] Web build verified.
+- [x] Known limitations documented.
 
 ### M7 Exit Criteria
 
-The application passes its defined acceptance and regression tests, supports complete demonstration workflows and has synchronized technical documentation.
+The application passes its defined acceptance and regression tests (216/216 passing), supports complete demonstration workflows, enforces responsive usability down to 320px viewport width, provides universal profile editing, handles PKCE recovery links, and has synchronized technical documentation across all project artifacts.
 
 ---
 

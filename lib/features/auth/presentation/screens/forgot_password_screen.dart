@@ -207,7 +207,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Instructions Dispatched',
+          'Reset Link Dispatched',
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -215,7 +215,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'If an account exists for ${_emailController.text.trim()}, you will receive password reset instructions shortly.',
+          'If an account exists for ${_emailController.text.trim()}, a password reset link has been dispatched to your email. Click the link in your email to set a new password.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: isDark ? Colors.grey[400] : Colors.grey[600],
           ),

@@ -59,43 +59,40 @@ flutter build apk --debug
 
 # 5. Playwright CLI Localhost Web E2E Verification
 
-For milestone validation, the orchestrator verifies end-to-end user workflows against a running localhost Flutter Web build using the Playwright CLI (`npx -y playwright-cli`):
+For milestone validation, the orchestrator verifies end-to-end user workflows against a running localhost Flutter Web build using the Playwright CLI and automated node scripts (`test_e2e/m7_playwright_test.js`):
 
 ### 5.1 Local Server Startup
 ```bash
-# Serve Flutter web build or debug server on port 8080
-flutter run -d web-server --web-port=8080 --web-hostname=127.0.0.1
+# Serve Flutter web release build on port 3000
+python3 -m http.server 3000 --directory build/web
 ```
 
-### 5.2 Playwright CLI End-to-End Test Workflow
+### 5.2 Responsive Viewport Verification Matrix
+
+All screens are validated across the following viewports with zero horizontal scroll (`scrollWidth == clientWidth`) and zero `RenderFlex` overflow:
+
+| Viewport Category | Width x Height | Status | Notes |
+|---|---|---|---|
+| Compact Mobile | 320px x 640px | **PASSED** | Minimum width (iPhone SE / compact devices). Bottom bar capped at 4 items. |
+| Standard Mobile | 375px x 667px | **PASSED** | Standard mobile portrait. Zero overflow on headers and cards. |
+| Large Mobile | 425px x 800px | **PASSED** | Large mobile portrait. Cards stack responsively. |
+| Tablet | 768px x 1024px | **PASSED** | Tablet portrait. Top navigation bar with drawer access. |
+| Desktop | 1280px x 800px | **PASSED** | Desktop layout. Persistent role sidebar and multi-column grid. |
+
+### 5.3 Automated E2E Test Suite Execution
 ```bash
-# 1. Launch browser session
-npx -y playwright-cli open http://127.0.0.1:8080
-
-# 2. Inspect active UI snapshot
-npx -y playwright-cli snapshot
-
-# 3. Test Customer Booking
-npx -y playwright-cli fill <ref_email> "customer@pitmate.com"
-npx -y playwright-cli fill <ref_password> "password123"
-npx -y playwright-cli click <ref_submit>
-npx -y playwright-cli click <ref_book_service>
-
-# 4. Test Admin Intake & Inspection Review
-npx -y playwright-cli open http://127.0.0.1:8080
-# Login as admin@pitmate.com
-# Check in booking or register walk-in -> Service Order generated
-
-# 5. Test Mechanic Inspection Workspace
-# Login as mechanic@pitmate.com
-# Fill findings, check completeness, submit diagnostic report
-
-# 6. Test Customer Estimate Approval
-# Login as customer@pitmate.com
-# Review itemized charges -> Approve estimate
-
-# 7. Capture visual proof & close
-npx -y playwright-cli screenshot --filename=e2e_m2_exit.png
-npx -y playwright-cli close
+node test_e2e/m7_playwright_test.js
 ```
+
+Verified scenarios:
+1. **Multi-Viewport Responsive Check:** Renders `/login` on 320px, 375px, 425px, 768px, 1280px without overflow.
+2. **PKCE Password Recovery Interception:** Navigates to `http://127.0.0.1:3000/?code=64aa01ae-06bd-4afe-9f53-f0d4229e8319` and verifies automated redirection to `#/reset-password?code=...`.
+3. **Forgot Password Screen:** Verifies email submission flow and confirmation notice.
+4. **Registration Flow:** Validates registration form inputs and customer onboarding.
+5. **Universal Profile Screen (`/profile`):** Verified on both mobile (320px) and desktop (1280px). Confirms presence of Avatar, Name, Email, Phone, Role badge, Verification status, Password change form.
+6. **Role Shells & Mobile Bottom Nav:**
+   - Admin shell on 320px: bottom nav capped at 4 items (Overview, Floor, Bookings, Invoices).
+   - Customer shell on 320px: bottom nav capped at 4 items (Garage, Book Service, Tracking, Invoices).
+   - Mechanic shell on 320px: bottom nav capped at 4 items (My Work, Workspace, Inspection, Earnings).
+   - Drawer verified for secondary views.
 

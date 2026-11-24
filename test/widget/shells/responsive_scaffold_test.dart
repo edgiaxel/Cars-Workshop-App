@@ -92,5 +92,56 @@ void main() {
       await tester.pumpAndSettle();
       expect(selectedIndex, 1);
     });
+
+    testWidgets('caps bottom navigation bar items to at most 4 on mobile even when navItems has 13 items', (tester) async {
+      tester.view.physicalSize = const Size(320, 600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final thirteenItems = List.generate(
+        13,
+        (i) => RoleNavItem(label: 'Item $i', icon: Icons.star, path: '/item-$i'),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: ResponsiveRoleScaffold(
+            roleTitle: 'Admin',
+            userName: 'Admin',
+            currentIndex: 0,
+            navItems: thirteenItems,
+            body: const SizedBox(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final bottomNav = tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
+      expect(bottomNav.items.length, lessThanOrEqualTo(4));
+    });
+
+    testWidgets('renders avatar button on desktop and mobile', (tester) async {
+      // Desktop
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(buildTestScaffold());
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('desktop_scaffold_avatar_button')), findsOneWidget);
+
+      // Mobile
+      tester.view.physicalSize = const Size(320, 600);
+      await tester.pumpWidget(buildTestScaffold());
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mobile_scaffold_avatar_button')), findsOneWidget);
+    });
   });
 }

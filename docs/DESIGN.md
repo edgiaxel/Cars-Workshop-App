@@ -104,15 +104,43 @@ The desktop sidebar should be collapsible.
 
 ### Mobile
 
-Use a simplified navigation structure:
+Use a simplified navigation structure capped at a maximum of 4 primary bottom navigation items per role to prevent crowding on compact mobile displays down to 320px width:
 
-- Overview.
-- Workshop.
-- Orders.
-- Inventory.
-- More.
+- **Admin Mobile Bottom Bar (Max 4):**
+  1. Overview (`/admin/overview`)
+  2. Floor (`/admin/floor`)
+  3. Bookings (`/admin/bookings`)
+  4. Invoices (`/admin/invoices`)
+- **Customer Mobile Bottom Bar (Max 4):**
+  1. My Garage (`/customer/garage`)
+  2. Book Service (`/customer/book`)
+  3. Tracking (`/customer/tracking`)
+  4. Invoices (`/customer/invoices`)
+- **Mechanic Mobile Bottom Bar (Max 4):**
+  1. My Work (`/mechanic/my-work`)
+  2. Workspace (`/mechanic/workspace`)
+  3. Inspection (`/mechanic/inspection`)
+  4. Earnings (`/mechanic/earnings`)
 
-The mobile interface must prioritize operational tasks over administrative configuration.
+All additional secondary or administrative views (Inventory, Catalog, Reports, Reminders, Settings) are accessible through the top navigation drawer menu.
+
+### Responsive Viewport Standards
+
+All layouts must render cleanly with zero horizontal scroll and zero `RenderFlex` overflow across:
+- **Compact Mobile:** 320px min width (e.g. iPhone SE / small Android).
+- **Standard Mobile:** 375px - 425px width.
+- **Tablet:** 768px width (collapsible sidebar or drawer navigation).
+- **Desktop:** 1024px - 1280px+ width (full persistent sidebar navigation).
+
+Card action rows and header button groupings must utilize responsive `Wrap` with vertical/horizontal run spacing rather than rigid `Row` structures to avoid horizontal clipping.
+
+### User Profile Screen (`/profile`)
+
+Accessible across all roles by tapping the user avatar in the header:
+- **Header Card:** User avatar, full display name, email, role badge, email verification badge, user ID copy chip.
+- **Personal Details Form:** Editable Full Name and Phone Number fields with primary action button ("Save Changes").
+- **Security & Credentials Card:** Email change flow (displays current verified email and note about verification link), Password change flow (New Password and Confirm Password inputs with strength validation).
+- **Account Metadata:** Role assignment, account creation date, and backend synchronization status.
 
 ## 2.2 Mechanic Navigation
 

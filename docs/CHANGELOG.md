@@ -22,6 +22,31 @@ Do not record planned functionality as completed.
 
 ---
 
+# [1.6.0-m7] — 2026-11-24
+
+### Added
+- **VS-24 Full Workflow Integration & Seed Verification (F-020):**
+  - Integrated end-to-end workshop lifecycle across all three roles (Admin, Mechanic, Customer).
+  - Validated deterministic seed dataset for busy 5-bay workshop simulation.
+- **VS-25 Profile Management & Mobile Navigation Optimization (F-021):**
+  - Universal profile editing screen (`/profile`, `ProfileScreen`) accessible to all authenticated roles via avatar tap on desktop header and mobile app bar.
+  - Personal details updates (Full Name, Phone Number) with live persistence to Supabase `public.profiles` and `public.customers`.
+  - Supabase Auth credentials management: Email modification with re-verification dispatch; Password change with confirmation.
+  - Role badge and email verification badge displays; User ID copy button.
+  - Mobile bottom navigation bar optimization: strictly capped at maximum 4 primary destinations per role to prevent crowded touch targets on small screens. Secondary destinations accessible via drawer.
+- **VS-26 Security, Recovery & Responsive Viewport Testing:**
+  - Supabase PKCE recovery link workaround: Router extracts `?code=<uuid>` from `Uri.base` and redirects to `/reset-password?code=<uuid>` for immediate credential update.
+  - Playwright visual E2E test suite (`test_e2e/m7_playwright_test.js`) verifying zero horizontal overflow across 5 viewport widths (320px, 375px, 425px, 768px, 1280px).
+  - 10 automated E2E screenshot artifacts captured and validated.
+  - Automated test suite expanded to 216 passing tests with zero analyzer issues.
+
+### Fixed
+- **Mobile Bottom Navigation Crowding:** Capped mobile bottom bar to 4 items in `ResponsiveRoleScaffold` with fallback to drawer menu.
+- **Web Hash Routing PKCE Recovery Parameter Loss:** Intercepted `Uri.base.queryParameters['code']` before the `#` fragment in `app_router.dart`.
+- **Responsive Flex Overflows on 320px Viewports:** Replaced static `Row` structures with responsive `Wrap` on profile header, email change card, and status badges.
+
+---
+
 # [1.5.0-m6] — 2026-11-24
 
 ### Added

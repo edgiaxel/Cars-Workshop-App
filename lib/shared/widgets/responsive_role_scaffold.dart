@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
@@ -31,6 +32,7 @@ class ResponsiveRoleScaffold extends StatelessWidget {
     required this.roleTitle,
     required this.body,
     required this.navItems,
+    this.mobileNavItems,
     this.currentIndex = 0,
     this.onNavIndexChanged,
     this.userName = 'Marcus T.',
@@ -46,6 +48,7 @@ class ResponsiveRoleScaffold extends StatelessWidget {
   final String roleTitle;
   final Widget body;
   final List<RoleNavItem> navItems;
+  final List<RoleNavItem>? mobileNavItems;
   final int currentIndex;
   final ValueChanged<int>? onNavIndexChanged;
   final String userName;
@@ -207,36 +210,53 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.accentRed,
-                        child: Text(
-                          userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              userName,
-                              style: AppTypography.labelLarge(
-                                color: textColor,
-                                fontWeight: FontWeight.w700,
+                        child: Tooltip(
+                          message: 'View Profile',
+                          child: InkWell(
+                            key: const Key('desktop_scaffold_avatar_button'),
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () => context.go(RoutePaths.profile),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: AppColors.accentRed,
+                                    child: Text(
+                                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          userName,
+                                          style: AppTypography.labelLarge(
+                                            color: textColor,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          userSubtitle,
+                                          style: AppTypography.bodySmall(
+                                            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                            Text(
-                              userSubtitle,
-                              style: AppTypography.bodySmall(
-                                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                       if (onLogout != null)
@@ -331,11 +351,38 @@ class ResponsiveRoleScaffold extends StatelessWidget {
     );
   }
 
+  List<RoleNavItem> _getEffectiveMobileNavItems() {
+    if (mobileNavItems != null && mobileNavItems!.isNotEmpty) {
+      return mobileNavItems!;
+    }
+    if (navItems.length <= 4) return navItems;
+    final floorItem = navItems.where((it) => it.path == RoutePaths.adminWorkshopFloor).firstOrNull;
+    if (floorItem != null) {
+      final overview = navItems.where((it) => it.path == RoutePaths.admin).firstOrNull;
+      final bookings = navItems.where((it) => it.path == RoutePaths.adminBookings).firstOrNull;
+      final invoices = navItems.where((it) => it.path == RoutePaths.adminInvoices).firstOrNull;
+      final candidates = [overview, floorItem, bookings, invoices].whereType<RoleNavItem>().toList();
+      if (candidates.length == 4) return candidates;
+    }
+    final garageItem = navItems.where((it) => it.path == RoutePaths.customerGarage).firstOrNull;
+    if (garageItem != null) {
+      final book = navItems.where((it) => it.path == RoutePaths.bookService).firstOrNull;
+      final tracking = navItems.where((it) => it.path == RoutePaths.customerTracking).firstOrNull;
+      final invoices = navItems.where((it) => it.path == RoutePaths.customerInvoices).firstOrNull;
+      final candidates = [garageItem, book, tracking, invoices].whereType<RoleNavItem>().toList();
+      if (candidates.length == 4) return candidates;
+    }
+    return navItems.take(4).toList();
+  }
+
   Widget _buildMobileLayout(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surfaceColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
     final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final effectiveItems = _getEffectiveMobileNavItems();
+    final currentItem = (currentIndex >= 0 && currentIndex < navItems.length) ? navItems[currentIndex] : null;
+    final activeMobileIndex = currentItem != null ? effectiveItems.indexWhere((it) => it.path == currentItem.path) : -1;
 
     return Scaffold(
       floatingActionButton: floatingActionButton,
@@ -402,12 +449,20 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(width: 4),
-                  CircleAvatar(
-                    radius: 15,
-                    backgroundColor: AppColors.racingRed,
-                    child: Text(
-                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                  Tooltip(
+                    message: 'View Profile',
+                    child: InkWell(
+                      key: const Key('mobile_scaffold_avatar_button'),
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () => context.go(RoutePaths.profile),
+                      child: CircleAvatar(
+                        radius: 15,
+                        backgroundColor: AppColors.racingRed,
+                        child: Text(
+                          userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -417,7 +472,7 @@ class ResponsiveRoleScaffold extends StatelessWidget {
         ),
       ),
       body: body,
-      bottomNavigationBar: navItems.isEmpty
+      bottomNavigationBar: effectiveItems.isEmpty
           ? null
           : Container(
               decoration: BoxDecoration(
@@ -425,31 +480,34 @@ class ResponsiveRoleScaffold extends StatelessWidget {
                 border: Border(top: BorderSide(color: borderColor, width: 1.0)),
               ),
               child: BottomNavigationBar(
-                currentIndex: navItems.isEmpty ? 0 : currentIndex.clamp(0, navItems.length - 1),
+                currentIndex: activeMobileIndex >= 0 ? activeMobileIndex : 0,
                 onTap: (index) {
-                  if (onNavIndexChanged != null) {
-                    onNavIndexChanged!(index);
-                  } else if (index >= 0 && index < navItems.length) {
-                    final item = navItems[index];
-                    if (item.path != null && index != currentIndex) {
+                  if (index >= 0 && index < effectiveItems.length) {
+                    final item = effectiveItems[index];
+                    if (onNavIndexChanged != null) {
+                      final originalIndex = navItems.indexOf(item);
+                      onNavIndexChanged!(originalIndex >= 0 ? originalIndex : index);
+                    } else if (item.path != null) {
                       context.go(item.path!);
                     }
                   }
                 },
                 type: BottomNavigationBarType.fixed,
                 backgroundColor: surfaceColor,
-                selectedItemColor: AppColors.racingRed,
+                selectedItemColor: activeMobileIndex >= 0
+                    ? AppColors.racingRed
+                    : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                 unselectedItemColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                selectedLabelStyle: TextStyle(
+                selectedLabelStyle: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  fontSize: navItems.length > 5 ? 9.5 : 11,
+                  fontSize: 11,
                 ),
-                unselectedLabelStyle: TextStyle(
+                unselectedLabelStyle: const TextStyle(
                   fontWeight: FontWeight.w500,
-                  fontSize: navItems.length > 5 ? 9.0 : 11,
+                  fontSize: 10.5,
                 ),
                 elevation: 8,
-                items: navItems.map((item) {
+                items: effectiveItems.map((item) {
                   return BottomNavigationBarItem(
                     icon: item.badge != null
                         ? Badge(

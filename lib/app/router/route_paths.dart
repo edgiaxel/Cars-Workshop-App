@@ -8,6 +8,8 @@ class RoutePaths {
   static const String register = '/register';
   static const String verifyOtp = '/verify-otp';
   static const String forgotPassword = '/forgot-password';
+  static const String resetPassword = '/reset-password';
+  static const String profile = '/profile';
 
   // Admin subsystem paths
   static const String admin = '/admin';

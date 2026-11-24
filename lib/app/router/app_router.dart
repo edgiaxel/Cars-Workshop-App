@@ -31,12 +31,20 @@ import 'package:pitmate/features/reports/presentation/admin_reports_screen.dart'
 import 'package:pitmate/features/reminders/presentation/admin_reminders_screen.dart';
 import 'package:pitmate/features/customer_tracking/presentation/customer_tracking_screen.dart';
 import 'package:pitmate/features/reminders/presentation/customer_reminders_screen.dart';
+import 'package:pitmate/features/auth/presentation/screens/reset_password_screen.dart';
+import 'package:pitmate/features/profile/presentation/profile_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Application router for PitMate connected to live authentication.
 final GoRouter appRouter = GoRouter(
   initialLocation: RoutePaths.root,
   redirect: (BuildContext context, GoRouterState state) {
+    // Intercept PKCE password recovery code from Supabase email link (state URI or browser Uri.base)
+    final code = state.uri.queryParameters['code'] ?? Uri.base.queryParameters['code'];
+    if (code != null && code.isNotEmpty && state.matchedLocation != RoutePaths.resetPassword) {
+      return '${RoutePaths.resetPassword}?code=$code';
+    }
+
     if (state.matchedLocation == RoutePaths.root) {
       try {
         final session = Supabase.instance.client.auth.currentSession;
@@ -82,6 +90,17 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RoutePaths.forgotPassword,
       builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: RoutePaths.resetPassword,
+      builder: (context, state) {
+        final code = state.uri.queryParameters['code'];
+        return ResetPasswordScreen(code: code);
+      },
+    ),
+    GoRoute(
+      path: RoutePaths.profile,
+      builder: (context, state) => const ProfileScreen(),
     ),
     GoRoute(
       path: RoutePaths.admin,

@@ -824,6 +824,14 @@ Use unique operation references or idempotency keys where duplicate execution co
 - Profiles reference Auth user IDs.
 - Roles are controlled by authorized administration.
 - Guest customer records are not authenticated users.
+- **PKCE Recovery Link Interception:** Supabase Auth password reset and confirmation emails deliver a recovery link with `?code=<uuid>` on the base URL (e.g., `http://127.0.0.1:3000/?code=...`). Because Flutter Web hash routing places the query parameters in `window.location.search` (`Uri.base`) prior to the `#` hash fragment, GoRouter's global redirect intercepts `state.uri.queryParameters['code'] ?? Uri.base.queryParameters['code']`. If present on root landing, the router immediately redirects the user to `/reset-password?code=<uuid>`, where the Supabase client handles the PKCE code exchange and permits credential updates.
+- **Profile Management & Mutation:** Profile updates (`/profile`) are synchronized bidirectionally. Display name and phone changes mutate `public.profiles` and `public.customers` (for customer users), while email and password modifications execute through Supabase Auth's `supabase.auth.updateUser(UserAttributes(...))`.
+
+## 8.1.1 Navigation & Responsive Shell Architecture
+
+- `ResponsiveRoleScaffold` enforces a maximum of 4 primary bottom navigation destinations on mobile viewports (`width < 768px`) to ensure clean spacing down to 320px viewport widths.
+- Overflow navigation items are retained in the full role drawer (`Drawer`).
+- User avatar on the header bar across all platforms is wired to `RoutePaths.profile` (`/profile`).
 
 ## 8.2 Authorization
 

@@ -1,4 +1,4 @@
-# PitMate Shared UI & Technical Contract (M6)
+# PitMate Shared UI & Technical Contract (M7)
 
 ## 1. Design Tokens & Visual Hierarchy (Antislop Compliant)
 - **Palette**: Use `AppColors` from `lib/app/theme/app_colors.dart`.
@@ -17,24 +17,36 @@
   - High contrast (WCAG AA 4.5:1 minimum).
   - All interactive elements must trigger functional mutations or navigation.
 
-## 2. Navigation & Layout Strict Rules
+## 2. Navigation & Layout Strict Rules (M7 Optimized)
 - **No Custom Scaffolds/Navbars**: Every screen MUST use `ResponsiveRoleScaffold` with canonical `RoleNavigation`.
-- **Navigation Configuration**:
-  - Admin: `RoleNavigation.adminNavItems` (13 items, including Reports currentIndex: 11, Reminders currentIndex: 12)
-  - Mechanic: `RoleNavigation.mechanicNavItems` (4 items)
-  - Customer: `RoleNavigation.customerNavItems` (7 items, including Invoices currentIndex: 4, Tracking currentIndex: 5, Reminders currentIndex: 6)
+- **Mobile Bottom Navigation Bar Capped at 4 Items**:
+  - To prevent layout overflow and squished icons on mobile screens down to 320px, `BottomNavigationBar` MUST contain at most 4 primary items:
+    - **Admin Mobile (4 items)**: Overview (`/admin`), Workshop Floor (`/admin/floor`), Bookings (`/admin/bookings`), Invoices (`/admin/invoices`).
+    - **Mechanic Mobile (4 items)**: My Work (`/mechanic`), Active Workspace (`/mechanic/operation`), Inspection (`/mechanic/inspection`), Earnings (`/mechanic/earnings`).
+    - **Customer Mobile (4 items)**: My Garage (`/customer/garage`), Book Service (`/customer/book-service`), Live Tracking (`/customer/tracking`), Invoices (`/customer/invoices`).
+  - All supplementary screens remain fully accessible on mobile via `_buildMobileDrawer` (opened via the menu icon button in the app bar) and on desktop (>=900px) via the permanent sidebar navigation rail.
 - **Universal Notification Center**: All roles access `NotificationBellButton` in `ResponsiveRoleScaffold.actions`.
-- **Zero Mock Data**: All queries and mutations MUST hit live Supabase tables (`notifications`, `maintenance_reminders`, `service_orders`, `vehicles`, `payments`) and transactional RPCs (`create_notification_event`, `mark_notification_read`, `generate_service_order_reminders`, `get_workshop_daily_metrics`, `get_workshop_monthly_metrics`, `get_customer_service_tracking`).
+- **Profile Navigation**: Tapping the user avatar in either the mobile app bar or desktop header MUST navigate to `/profile`.
 
 ## 3. Financial & Metrics Standard
 - **Integer Cents**: All monetary amounts stored and computed as `BIGINT` cents. No floating-point math.
 - **Formatting**: Always format via `CurrencyFormatter.formatIdr(cents)`. Example: `15000000` -> `"Rp 150.000"`.
 - **Revenue Distinction**: Always cleanly separate settled payments (`payments.amount_cents` with `payment_status = 'completed'`) from outstanding receivables (`invoices.outstanding_balance_cents`).
 
-## 4. Multi-Agent Isolation Boundaries (M6)
-- **Notifications Agent**: Owns `lib/features/notifications/` exclusively.
-- **Customer Tracking Agent**: Owns `lib/features/customer_tracking/` exclusively.
-- **Reminders Agent**: Owns `lib/features/reminders/` exclusively.
-- **Reports Agent**: Owns `lib/features/reports/` exclusively.
-- **No Shared File Editing**: Subagents do not edit router or theme files directly. Main orchestrator integrates all routes on `main`.
+## 4. Auth & Recovery Contract (PKCE Link Workaround)
+- Supabase sends password reset links formatted as `http://127.0.0.1:3000/?code=<uuid>`.
+- The root router intercepts any `code` query parameter on landing, calls `Supabase.client.auth.exchangeCodeForSession(code)`, and routes to `/reset-password?code=<uuid>`.
+- The `ResetPasswordScreen` renders the new password form, validates minimum length and confirmation match, and calls `Supabase.client.auth.updateUser(UserAttributes(password: newPassword))` to update credentials cleanly.
+
+## 5. Responsive Viewport Standards
+- **Lowest Mobile Width (320px)**: Zero horizontal scrolling or `RenderFlex` overflow. All text scales properly without collision.
+- **Standard Mobile (375px & 425px)**: Fluid card grids and responsive wrapping for metric badges.
+- **Tablet (768px)**: Adaptive column grids (2-column cards, collapsible metrics).
+- **Desktop (>=900px - 1024px+)**: Dual-pane layouts with persistent left sidebar navigation and desktop top bar.
+
+## 6. Multi-Agent Isolation Boundaries (M7)
+- **Profile & Auth Worktree**: Owns `lib/features/profile/` and `lib/features/auth/presentation/screens/reset_password_screen.dart`.
+- **Responsive Navigation Worktree**: Owns `lib/shared/navigation/` and `lib/shared/widgets/responsive_role_scaffold.dart`.
+- **Seed & Verification Worktree**: Owns `test_e2e/` and verification runners.
+- **Zero Mock Policy**: All features MUST query and mutate live Supabase PostgreSQL backend (`kxvoeqwelcmcvdfwxduu`).
 - **Handoff Output**: Every subagent MUST write `<feature>/HANDOFF.md` upon completion.

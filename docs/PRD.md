@@ -620,14 +620,28 @@ Completed operations undergo final verification.
 **Priority:** P0 for release preparation; execution deferred.
 
 **Acceptance criteria:**
-- [ ] Lite seed contains a small valid smoke-test dataset.
-- [ ] Full seed represents a busy five-bay workshop.
-- [ ] Seed includes all three roles.
-- [ ] Seed includes guest and registered customers.
-- [ ] Seed includes multiple workflow states.
-- [ ] Seed includes realistic stock movements and financial records.
-- [ ] Seed is deterministic and repeatable.
-- [ ] Seed never runs automatically against production.
+- [x] Lite seed contains a small valid smoke-test dataset.
+- [x] Full seed represents a busy five-bay workshop.
+- [x] Seed includes all three roles.
+- [x] Seed includes guest and registered customers.
+- [x] Seed includes multiple workflow states.
+- [x] Seed includes realistic stock movements and financial records.
+- [x] Seed is deterministic and repeatable.
+- [x] Seed never runs automatically against production.
+
+## F-021 — Profile and User Identity Management
+
+**Priority:** P0 for Milestone M7.
+
+**Acceptance criteria:**
+- [x] Universal profile management screen (`/profile`) accessible to all user roles (Admin, Mechanic, Customer).
+- [x] User avatar button on desktop header and mobile app bar navigates directly to `/profile`.
+- [x] Displays user metadata: full name, email, phone number, role badge, email verification badge, and user ID.
+- [x] Users can update display name and phone number with live persistence to `public.profiles` and `public.customers`.
+- [x] Users can initiate email address changes; Supabase Auth triggers verification links to the new address.
+- [x] Users can change their account password with validation and confirmation.
+- [x] Mobile bottom navigation bar is capped at a maximum of 4 primary destinations per role to prevent crowding on small screens (down to 320px); additional views remain accessible via the navigation drawer.
+- [x] Password recovery links (`?code=<uuid>`) delivered by Supabase Auth are intercepted on initial app load and routed to `/reset-password?code=<uuid>`.
 
 ---
 

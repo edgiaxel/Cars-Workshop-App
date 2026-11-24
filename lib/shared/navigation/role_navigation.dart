@@ -92,6 +92,34 @@ class RoleNavigation {
     ),
   ];
 
+  /// Canonical mobile bottom navigation items for Workshop Admin role (maximum 4 items).
+  static const List<RoleNavItem> adminMobileNavItems = [
+    RoleNavItem(
+      label: 'Overview',
+      icon: Icons.dashboard_outlined,
+      selectedIcon: Icons.dashboard,
+      path: RoutePaths.admin,
+    ),
+    RoleNavItem(
+      label: 'Floor',
+      icon: Icons.garage_outlined,
+      selectedIcon: Icons.garage,
+      path: RoutePaths.adminWorkshopFloor,
+    ),
+    RoleNavItem(
+      label: 'Bookings',
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month,
+      path: RoutePaths.adminBookings,
+    ),
+    RoleNavItem(
+      label: 'Invoices',
+      icon: Icons.receipt_long_outlined,
+      selectedIcon: Icons.receipt_long,
+      path: RoutePaths.adminInvoices,
+    ),
+  ];
+
   /// Canonical navigation items for Mechanic role (4 items).
   static const List<RoleNavItem> mechanicNavItems = [
     RoleNavItem(
@@ -163,6 +191,34 @@ class RoleNavigation {
       icon: Icons.notifications_active_outlined,
       selectedIcon: Icons.notifications_active,
       path: RoutePaths.customerReminders,
+    ),
+  ];
+
+  /// Canonical mobile bottom navigation items for Customer role (maximum 4 items).
+  static const List<RoleNavItem> customerMobileNavItems = [
+    RoleNavItem(
+      label: 'Garage',
+      icon: Icons.garage_outlined,
+      selectedIcon: Icons.garage,
+      path: RoutePaths.customerGarage,
+    ),
+    RoleNavItem(
+      label: 'Book',
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month,
+      path: RoutePaths.bookService,
+    ),
+    RoleNavItem(
+      label: 'Tracking',
+      icon: Icons.timeline_outlined,
+      selectedIcon: Icons.timeline,
+      path: RoutePaths.customerTracking,
+    ),
+    RoleNavItem(
+      label: 'Invoices',
+      icon: Icons.account_balance_wallet_outlined,
+      selectedIcon: Icons.account_balance_wallet,
+      path: RoutePaths.customerInvoices,
     ),
   ];
 
