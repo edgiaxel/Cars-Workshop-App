@@ -262,12 +262,7 @@ class _AdminInspectionReviewScreenState
             key: const Key('confirm-create-estimate-button'),
             onPressed: () {
               Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Estimate draft initialized from inspection findings.'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
+              context.go('${RoutePaths.adminEstimateBuilder}?orderId=$orderId');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.accentRed,

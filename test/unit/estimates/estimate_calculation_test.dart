@@ -23,25 +23,32 @@ void main() {
       expect(EstimateModel.calculateTax(0), 0);
       expect(EstimateModel.calculateTax(-1000), 0);
 
-      // Rounding check
+      // Rounding check (11% PPN integer truncation)
       expect(EstimateModel.calculateTax(100), 11);
-      expect(EstimateModel.calculateTax(99), 11);
-      expect(EstimateModel.calculateTax(90), 10);
+      expect(EstimateModel.calculateTax(99), 10);
+      expect(EstimateModel.calculateTax(90), 9);
+
+      // Post-discount tax check
+      expect(
+        EstimateModel.calculateTax(315000000, discountCents: 15000000),
+        33000000,
+      );
     });
 
-    test('grand total calculation accounts for subtotal, 11% tax, and discount', () {
+    test('grand total calculation accounts for subtotal, discount, and post-discount 11% tax', () {
       const subtotal = 315000000;
-      const tax = 34650000;
       const discount = 15000000; // Rp 150.000 discount
+      final tax = EstimateModel.calculateTax(subtotal, discountCents: discount);
+      expect(tax, 33000000);
 
       final total = EstimateModel.calculateGrandTotal(subtotal, tax, discount);
-      expect(total, 334650000);
+      expect(total, 333000000);
 
       // With zero discount
-      expect(EstimateModel.calculateGrandTotal(subtotal, tax, 0), 349650000);
+      expect(EstimateModel.calculateGrandTotal(subtotal, 34650000, 0), 349650000);
 
-      // Discount exceeding subtotal + tax does not become negative
-      expect(EstimateModel.calculateGrandTotal(100, 11, 200), 0);
+      // Discount exceeding subtotal clamps taxable base to 0
+      expect(EstimateModel.calculateGrandTotal(100, 0, 200), 0);
     });
 
     test('calculateSubtotalFromItems sums line totals correctly', () {

@@ -85,6 +85,31 @@ class _AdminPartRequestsScreenState extends ConsumerState<AdminPartRequestsScree
     }
   }
 
+  Future<void> _rejectRequest(PartRequestModel request) async {
+    try {
+      await _opsRepo.rejectRequest(
+        requestId: request.id,
+        reason: 'Rejected by admin',
+      );
+      _loadRequests();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Rejected request for ${request.partSku ?? "part"}.'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      showPitErrorDialog(
+        context,
+        title: 'REJECT FAILED',
+        message: e.toString().replaceAll('Exception: ', ''),
+      );
+    }
+  }
+
   Future<void> _openCustomFulfillDialog(PartRequestModel request) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final qtyController = TextEditingController(text: request.remainingQuantity.toString());
@@ -307,13 +332,19 @@ class _AdminPartRequestsScreenState extends ConsumerState<AdminPartRequestsScree
                   style: AppTypography.bodySmall(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                 ),
                 if (request.isPending || request.isPartiallyFulfilled)
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(foregroundColor: AppColors.accentRed),
+                        onPressed: () => _rejectRequest(request),
+                        child: const Text('REJECT'),
+                      ),
                       OutlinedButton(
                         onPressed: () => _openCustomFulfillDialog(request),
                         child: const Text('CUSTOM QTY'),
                       ),
-                      const SizedBox(width: 8),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
                         onPressed: () => _fulfillRequest(request, request.remainingQuantity),

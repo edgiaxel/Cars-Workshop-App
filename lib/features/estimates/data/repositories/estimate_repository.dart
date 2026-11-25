@@ -25,6 +25,12 @@ abstract class IEstimateRepository {
     String? notes,
     String? signatureToken,
   });
+  Future<Result<EstimateModel>> authorizeEstimateItems(
+    String estimateId, {
+    required List<String> approvedItemIds,
+    required List<String> rejectedItemIds,
+    String? notes,
+  });
   Future<Result<List<EstimateAuthorizationModel>>> fetchAuthorizations(String estimateId);
   Future<Result<Map<String, dynamic>?>> fetchServiceOrderSummary(String orderId);
 }
@@ -135,8 +141,8 @@ class EstimateRepository implements IEstimateRepository {
     try {
       EstimateModel savedEstimate;
 
-      if (estimate.id.isNotEmpty) {
-        // Update existing estimate header
+      if (estimate.id.isNotEmpty && estimate.status == EstimateStatus.draft) {
+        // Update existing draft estimate header in-place
         final updatedData = await _client
             .from('estimates')
             .update({
@@ -157,8 +163,21 @@ class EstimateRepository implements IEstimateRepository {
         // Delete existing items and re-insert fresh
         await _client.from('estimate_items').delete().eq('estimate_id', savedEstimate.id);
       } else {
-        // Insert new estimate draft
+        // Immutable revisioning: supersede prior non-draft estimate and bump revision_number
+        var nextRevision = estimate.revisionNumber;
+        if (estimate.id.isNotEmpty) {
+          await _client
+              .from('estimates')
+              .update({
+                'status': EstimateStatus.superseded.toDbString(),
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('id', estimate.id);
+          nextRevision = estimate.revisionNumber + 1;
+        }
+
         final insertPayload = estimate.toJson(includeId: false);
+        insertPayload['revision_number'] = nextRevision;
         insertPayload['status'] = EstimateStatus.draft.toDbString();
         insertPayload['created_at'] = DateTime.now().toIso8601String();
         insertPayload['updated_at'] = DateTime.now().toIso8601String();
@@ -266,6 +285,47 @@ class EstimateRepository implements IEstimateRepository {
     } catch (e) {
       return Result.failure(
         DatabaseException('Authorization failed: $e'),
+      );
+    }
+  }
+
+  @override
+  Future<Result<EstimateModel>> authorizeEstimateItems(
+    String estimateId, {
+    required List<String> approvedItemIds,
+    required List<String> rejectedItemIds,
+    String? notes,
+  }) async {
+    try {
+      final response = await _client.rpc(
+        'authorize_estimate_items',
+        params: {
+          'p_estimate_id': estimateId,
+          'p_approved_item_ids': approvedItemIds,
+          'p_rejected_item_ids': rejectedItemIds,
+          'p_notes': notes,
+        },
+      );
+
+      if (response == null) {
+        return const Result.failure(
+          DatabaseException('Item authorization RPC returned empty result'),
+        );
+      }
+
+      final updated = EstimateModel.fromJson(Map<String, dynamic>.from(response as Map));
+      return Result.success(updated);
+    } on sb.PostgrestException catch (e) {
+      return Result.failure(
+        DatabaseException('Authorization rejected: ${e.message}', code: e.code),
+      );
+    } on SocketException catch (e) {
+      return Result.failure(
+        NetworkException('Network connection error: ${e.message}'),
+      );
+    } catch (e) {
+      return Result.failure(
+        DatabaseException('Item authorization failed: $e'),
       );
     }
   }

@@ -5,6 +5,7 @@ import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
+import 'package:pitmate/core/utils/currency_formatter.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:pitmate/features/mechanic/data/models/mechanic_compensation_model.dart';
 import 'package:pitmate/features/mechanic/data/repositories/mechanic_compensation_repository.dart';
@@ -63,9 +64,7 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
     RoleNavigation.navigate(context, RoleNavigation.adminNavItems, index, currentIndex: 7);
   }
 
-  String _formatRp(int amount) {
-    return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
-  }
+  String _formatRp(int cents) => CurrencyFormatter.formatIdr(cents);
 
   Future<void> _openEditProfileDialog(MechanicCompensationProfile profile) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;

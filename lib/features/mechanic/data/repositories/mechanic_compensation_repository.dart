@@ -89,21 +89,11 @@ class MechanicCompensationRepository {
   /// Calculates and records incentive pool allocations for a completed task.
   Future<Map<String, dynamic>> generateTaskIncentives({
     required String taskId,
-    required String serviceOrderId,
-    required String leadMechanicId,
-    List<String> helperMechanicIds = const [],
-    required int incentiveAmountCents,
-    double leadPercentage = 70.0,
   }) async {
     final response = await _supabase.rpc(
       'generate_task_mechanic_incentives',
       params: {
         'p_task_id': taskId,
-        'p_service_order_id': serviceOrderId,
-        'p_lead_mechanic_id': leadMechanicId,
-        'p_helper_mechanic_ids': helperMechanicIds,
-        'p_incentive_amount_cents': incentiveAmountCents,
-        'p_lead_percentage': leadPercentage,
       },
     );
 

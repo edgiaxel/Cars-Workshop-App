@@ -7,6 +7,7 @@ import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/inventory/data/models/part_request_model.dart';
 import 'package:pitmate/features/inventory/data/models/service_task_part_consumption_model.dart';
 import 'package:pitmate/features/inventory/data/repositories/part_operations_repository.dart';
@@ -51,10 +52,11 @@ class _OperationWorkspaceScreenState
     });
 
     try {
-      // Find task by querying assigned mechanic tasks or matching ID
-      // Default mechanic: Max Verstappen
-      const mechanicId = '7294334d-7144-4c14-9d28-5f90e48a5fbb';
-      final tasks = await _operationsRepo.fetchTasksForMechanic(mechanicId);
+      final auth = ref.read(authNotifierProvider);
+      final mechanicId = auth is AuthAuthenticated ? auth.userProfile.id : '';
+      final tasks = mechanicId.isEmpty
+          ? <ServiceOrderTaskModel>[]
+          : await _operationsRepo.fetchTasksForMechanic(mechanicId);
       final match = tasks.firstWhere(
         (t) => t.id == widget.taskId,
         orElse: () => tasks.isNotEmpty

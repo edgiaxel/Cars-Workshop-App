@@ -33,6 +33,15 @@ class _FakeCustomerInvoiceRepository implements IInvoiceRepository {
   }
 
   @override
+  Future<Result<String>> recordRefund({
+    required String paymentId,
+    required int refundAmountCents,
+    required String refundReason,
+  }) async {
+    return const Result.success('ref-001');
+  }
+
+  @override
   Future<Result<List<InvoiceItemModel>>> fetchInvoiceItems(String invoiceId) async {
     return const Result.success([]);
   }

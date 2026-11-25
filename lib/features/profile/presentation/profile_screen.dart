@@ -144,11 +144,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       );
 
-      // Update public.profiles
+      // Update public.profiles (profiles table does not have company_name)
       await Supabase.instance.client.from('profiles').update({
         'full_name': newName,
         'phone_number': newPhone.isNotEmpty ? newPhone : null,
-        if (newCompany.isNotEmpty) 'company_name': newCompany,
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', user.id);
 

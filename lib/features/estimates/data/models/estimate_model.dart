@@ -98,15 +98,26 @@ class EstimateModel {
   /// Indonesian standard VAT rate (11% PPN).
   static const double vatRate = 0.11;
 
-  /// Calculates 11% PPN tax from taxable subtotal in cents using integer arithmetic.
-  static int calculateTax(int subtotalCents) {
-    if (subtotalCents <= 0) return 0;
-    return (subtotalCents * 11 / 100).round();
+  /// Calculates taxable subtotal after discount in cents.
+  static int calculateTaxableSubtotal(int subtotalCents, [int discountCents = 0]) {
+    final taxable = subtotalCents - discountCents;
+    return taxable < 0 ? 0 : taxable;
   }
 
-  /// Calculates grand total in cents: subtotal + tax - discount.
+  /// Calculates PPN tax from post-discount taxable subtotal in cents.
+  static int calculateTax(int subtotalCents, {int discountCents = 0, double taxPercent = 11.0}) {
+    final taxable = calculateTaxableSubtotal(subtotalCents, discountCents);
+    if (taxable <= 0) return 0;
+    if (taxPercent == 11.0) {
+      return (taxable * 11) ~/ 100;
+    }
+    return (taxable * taxPercent / 100).round();
+  }
+
+  /// Calculates grand total in cents: (subtotal - discount) + tax.
   static int calculateGrandTotal(int subtotalCents, int taxCents, int discountCents) {
-    final total = subtotalCents + taxCents - discountCents;
+    final taxable = calculateTaxableSubtotal(subtotalCents, discountCents);
+    final total = taxable + taxCents;
     return total < 0 ? 0 : total;
   }
 

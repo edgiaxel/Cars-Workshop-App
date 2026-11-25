@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../../data/auth_repository.dart';
@@ -209,8 +210,9 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  /// Development demo role switcher.
+  /// Development demo role switcher (disabled in release builds).
   void switchDemoRole(UserRole role) {
+    if (!kDebugMode) return;
     final demoProfile = UserProfile(
       id: 'demo-${role.name}-001',
       role: role,

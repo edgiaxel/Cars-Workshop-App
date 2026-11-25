@@ -45,23 +45,46 @@ final GoRouter appRouter = GoRouter(
       return '${RoutePaths.resetPassword}?code=$code';
     }
 
-    if (state.matchedLocation == RoutePaths.root) {
-      try {
-        final session = Supabase.instance.client.auth.currentSession;
-        if (session == null) {
+    final loc = state.matchedLocation;
+    const publicRoutes = {
+      RoutePaths.login,
+      RoutePaths.register,
+      RoutePaths.verifyOtp,
+      RoutePaths.forgotPassword,
+      RoutePaths.resetPassword,
+    };
+
+    try {
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session == null) {
+        if (!publicRoutes.contains(loc)) {
           return RoutePaths.login;
         }
-        final roleStr = session.user.userMetadata?['role'] as String?;
-        final role = UserRole.fromString(roleStr);
-        switch (role) {
-          case UserRole.admin:
-            return RoutePaths.admin;
-          case UserRole.mechanic:
-            return RoutePaths.mechanic;
-          case UserRole.customer:
-            return RoutePaths.customerGarage;
-        }
-      } catch (_) {
+        return null;
+      }
+
+      final roleStr = session.user.userMetadata?['role'] as String?;
+      final role = UserRole.fromString(roleStr);
+      final homeRoute = switch (role) {
+        UserRole.admin => RoutePaths.admin,
+        UserRole.mechanic => RoutePaths.mechanic,
+        UserRole.customer => RoutePaths.customerGarage,
+      };
+
+      if (loc == RoutePaths.root || loc == RoutePaths.login || loc == RoutePaths.register) {
+        return homeRoute;
+      }
+      if (loc.startsWith('/admin') && role != UserRole.admin) {
+        return homeRoute;
+      }
+      if (loc.startsWith('/mechanic') && role != UserRole.mechanic) {
+        return homeRoute;
+      }
+      if (loc.startsWith('/customer') && role != UserRole.customer) {
+        return homeRoute;
+      }
+    } catch (_) {
+      if (!publicRoutes.contains(loc)) {
         return RoutePaths.login;
       }
     }

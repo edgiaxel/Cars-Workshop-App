@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
+import 'package:pitmate/core/utils/currency_formatter.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
@@ -81,14 +82,7 @@ class _AdminReportsScreenState extends ConsumerState<AdminReportsScreen>
   }
 
   String _formatCurrency(double amount) {
-    final formattedNumber = amount.toStringAsFixed(2);
-    final parts = formattedNumber.split('.');
-    final intPart = parts[0];
-    final decPart = parts[1];
-
-    final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
-    final formattedInt = intPart.replaceAllMapped(reg, (Match m) => '${m[1]},');
-    return '\$$formattedInt.$decPart';
+    return CurrencyFormatter.formatIdr((amount * 100).round());
   }
 
   @override

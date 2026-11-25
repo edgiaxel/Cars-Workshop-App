@@ -5,7 +5,9 @@ import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
+import 'package:pitmate/core/utils/currency_formatter.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/mechanic/data/models/mechanic_compensation_model.dart';
 import 'package:pitmate/features/mechanic/data/repositories/mechanic_compensation_repository.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
@@ -31,8 +33,10 @@ class _MechanicEarningsScreenState
   List<MechanicEarningAllocation> _allocations = [];
   List<MechanicPayrollAdjustment> _adjustments = [];
 
-  // Default demo mechanic: Max Verstappen
-  static const String _mechanicId = '7294334d-7144-4c14-9d28-5f90e48a5fbb';
+  String get _mechanicId {
+    final auth = ref.read(authNotifierProvider);
+    return auth is AuthAuthenticated ? auth.userProfile.id : '';
+  }
 
   @override
   void initState() {
@@ -42,26 +46,29 @@ class _MechanicEarningsScreenState
 
   Future<void> _loadEarnings() async {
     setState(() => _isLoading = true);
+    final mechanicId = _mechanicId;
+    if (mechanicId.isEmpty) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
     try {
       final profiles = await _compRepo.fetchProfiles();
       final myProfile = profiles.firstWhere(
-        (p) => p.mechanicId == _mechanicId,
-        orElse: () => profiles.isNotEmpty
-            ? profiles.first
-            : MechanicCompensationProfile(
-                mechanicId: _mechanicId,
-                baseSalaryCents: 5000000,
-                incentivePercentage: 10.0,
-                defaultLeadSharePercentage: 70.0,
-                updatedAt: DateTime.now(),
-                mechanicName: 'Max Verstappen',
-              ),
+        (p) => p.mechanicId == mechanicId,
+        orElse: () => MechanicCompensationProfile(
+          mechanicId: mechanicId,
+          baseSalaryCents: 0,
+          incentivePercentage: 15.0,
+          defaultLeadSharePercentage: 65.0,
+          updatedAt: DateTime.now(),
+          mechanicName: 'Mechanic',
+        ),
       );
 
       final allocations = await _compRepo.fetchAllocationsForMechanic(
-        _mechanicId,
+        mechanicId,
       );
-      final adjustments = await _compRepo.fetchAdjustments(_mechanicId);
+      final adjustments = await _compRepo.fetchAdjustments(mechanicId);
 
       if (mounted) {
         setState(() {
@@ -89,9 +96,7 @@ class _MechanicEarningsScreenState
     );
   }
 
-  String _formatRp(int amount) {
-    return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
-  }
+  String _formatRp(int cents) => CurrencyFormatter.formatIdr(cents);
 
   @override
   Widget build(BuildContext context) {

@@ -46,6 +46,22 @@ class PartOperationsRepository {
     return PartRequestModel.fromJson(response as Map<String, dynamic>);
   }
 
+  /// Admin rejects or cancels a part request, releasing any reserved stock.
+  Future<PartRequestModel> rejectRequest({
+    required String requestId,
+    String? reason,
+  }) async {
+    final response = await _supabase.rpc(
+      'reject_part_request',
+      params: {
+        'p_request_id': requestId,
+        'p_reason': reason,
+      },
+    );
+
+    return PartRequestModel.fromJson(response as Map<String, dynamic>);
+  }
+
   /// Fetches pending or recent part requests for workshop floor.
   Future<List<PartRequestModel>> fetchRequests({String? serviceOrderId, String? status}) async {
     var query = _supabase.from('part_requests').select('*, parts(sku, name, unit_of_measurement), profiles(full_name)');

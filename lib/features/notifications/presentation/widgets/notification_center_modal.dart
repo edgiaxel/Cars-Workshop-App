@@ -30,12 +30,15 @@ class _NotificationCenterModalState extends ConsumerState<NotificationCenterModa
 
   IconData _iconForType(String type) {
     switch (type) {
+      case 'operational':
       case 'assignment':
         return Icons.handyman_outlined;
+      case 'authorization_request':
       case 'estimate_ready':
         return Icons.receipt_long_outlined;
       case 'qc_result':
         return Icons.fact_check_outlined;
+      case 'invoice':
       case 'invoice_issued':
       case 'payment_received':
         return Icons.payments_outlined;
@@ -43,6 +46,7 @@ class _NotificationCenterModalState extends ConsumerState<NotificationCenterModa
         return Icons.key_outlined;
       case 'reminder':
         return Icons.alarm_outlined;
+      case 'service_update':
       case 'service_status':
       default:
         return Icons.directions_car_outlined;
@@ -56,11 +60,15 @@ class _NotificationCenterModalState extends ConsumerState<NotificationCenterModa
       case 'handover_ready':
         return AppColors.success;
       case 'reminder':
+      case 'authorization_request':
       case 'estimate_ready':
         return AppColors.warning;
+      case 'operational':
       case 'assignment':
+      case 'invoice':
       case 'invoice_issued':
         return AppColors.accentRed;
+      case 'service_update':
       case 'service_status':
       default:
         return AppColors.info;

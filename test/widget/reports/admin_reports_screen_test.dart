@@ -115,8 +115,8 @@ void main() {
     expect(find.text('COMPLETED TODAY'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
     expect(find.text('20.0%'), findsOneWidget);
-    expect(find.text('\$1,500.00'), findsOneWidget);
-    expect(find.text('\$250.00'), findsOneWidget);
+    expect(find.text('Rp 1.500'), findsOneWidget);
+    expect(find.text('Rp 250'), findsOneWidget);
     expect(find.text('1 Bays Engaged'), findsOneWidget);
     expect(find.text('4 Bays Available'), findsOneWidget);
 
@@ -127,19 +127,19 @@ void main() {
     // Verify Monthly Financials & Breakdowns
     expect(find.text('MONTHLY FINANCIAL PERFORMANCE'), findsOneWidget);
     expect(find.text('12'), findsOneWidget);
-    expect(find.text('\$5,500.00'), findsOneWidget);
-    expect(find.text('\$1,200.00'), findsOneWidget);
-    expect(find.text('\$3,500.00'), findsOneWidget);
-    expect(find.text('\$4,300.00'), findsOneWidget);
+    expect(find.text('Rp 5.500'), findsOneWidget);
+    expect(find.text('Rp 1.200'), findsOneWidget);
+    expect(find.text('Rp 3.500'), findsOneWidget);
+    expect(find.text('Rp 4.300'), findsOneWidget);
 
     // Verify Top Consumed Parts & Mechanic Workload
     expect(find.text('Full Synthetic Engine Oil'), findsOneWidget);
     expect(find.text('SKU: OIL-5W30'), findsOneWidget);
     expect(find.text('15 units'), findsOneWidget);
-    expect(find.text('COGS: \$450.00'), findsOneWidget);
+    expect(find.text('COGS: Rp 450'), findsOneWidget);
 
     expect(find.text('Lewis Hamilton'), findsOneWidget);
     expect(find.text('8 operations completed'), findsOneWidget);
-    expect(find.text('\$750.00'), findsOneWidget);
+    expect(find.text('Rp 750'), findsOneWidget);
   });
 }

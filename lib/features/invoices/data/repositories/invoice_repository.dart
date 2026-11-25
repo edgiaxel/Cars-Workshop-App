@@ -41,6 +41,12 @@ abstract class IInvoiceRepository {
     String? adminId,
   });
 
+  Future<Result<String>> recordRefund({
+    required String paymentId,
+    required int refundAmountCents,
+    required String refundReason,
+  });
+
   Future<Result<List<Map<String, dynamic>>>> fetchEligibleServiceOrdersForInvoice();
 }
 
@@ -311,6 +317,38 @@ class InvoiceRepository implements IInvoiceRepository {
     } catch (e) {
       return Result.failure(
         DatabaseException('Failed to record payment: $e'),
+      );
+    }
+  }
+
+  @override
+  Future<Result<String>> recordRefund({
+    required String paymentId,
+    required int refundAmountCents,
+    required String refundReason,
+  }) async {
+    try {
+      final result = await _client.rpc(
+        'record_invoice_refund',
+        params: {
+          'p_payment_id': paymentId,
+          'p_refund_amount_cents': refundAmountCents,
+          'p_refund_reason': refundReason,
+        },
+      );
+
+      return Result.success(result.toString());
+    } on sb.PostgrestException catch (e) {
+      return Result.failure(
+        DatabaseException('Database error recording refund: ${e.message}', code: e.code),
+      );
+    } on SocketException catch (e) {
+      return Result.failure(
+        NetworkException('Network error recording refund: ${e.message}'),
+      );
+    } catch (e) {
+      return Result.failure(
+        DatabaseException('Failed to record refund: $e'),
       );
     }
   }
