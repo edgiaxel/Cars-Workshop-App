@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
-import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
+import 'package:pitmate/features/admin/presentation/widgets/dispatch_operations_modal.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/features/service_orders/data/models/service_order_model.dart';
 import 'package:pitmate/features/service_orders/data/repositories/service_order_repository.dart';
 import 'package:pitmate/features/workshop/data/models/workshop_bay_model.dart';
 import 'package:pitmate/features/workshop/data/repositories/workshop_bay_repository.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminWorkshopFloorScreen extends ConsumerStatefulWidget {
   const AdminWorkshopFloorScreen({super.key});
@@ -29,8 +33,10 @@ class _AdminWorkshopFloorScreenState
   final _orderRepo = ServiceOrderRepository();
 
   List<WorkshopBayModel> _bays = [];
+  List<ServiceOrderModel> _allActiveOrders = [];
   List<ServiceOrderModel> _unassignedOrders = [];
   bool _isLoading = true;
+  bool _isInitializingBays = false;
   String? _errorMessage;
 
   @override
@@ -39,7 +45,25 @@ class _AdminWorkshopFloorScreenState
     _loadFloorData();
   }
 
+  SupabaseClient? _tryGetClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _loadFloorData() async {
+    final client = _tryGetClient();
+    if (client == null) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -49,7 +73,6 @@ class _AdminWorkshopFloorScreenState
       final bays = await _bayRepo.fetchBays();
       final allOrders = await _orderRepo.fetchActiveOrders();
 
-      // Filter unassigned orders (orders not assigned to any bay or waiting)
       final occupiedOrderIds = bays
           .map((b) => b.currentServiceOrderId)
           .whereType<String>()
@@ -62,12 +85,15 @@ class _AdminWorkshopFloorScreenState
                 order.status == 'inspection_pending');
       }).toList();
 
+      if (!mounted) return;
       setState(() {
         _bays = bays;
+        _allActiveOrders = allOrders;
         _unassignedOrders = unassigned;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -75,11 +101,91 @@ class _AdminWorkshopFloorScreenState
     }
   }
 
+  Future<void> _initializeDefaultBays() async {
+    setState(() => _isInitializingBays = true);
+    try {
+      final bays = await _bayRepo.initializeDefaultBays();
+      if (!mounted) return;
+      setState(() {
+        _bays = bays;
+        _isInitializingBays = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Initialized ${bays.length} workshop bays.'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      _loadFloorData();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isInitializingBays = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to initialize bays: $e'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openDispatchModal(ServiceOrderModel order) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => DispatchOperationsModal(
+        serviceOrder: order,
+        onDispatched: _loadFloorData,
+      ),
+    );
+  }
+
+  Future<void> _openDispatchModalForBay(WorkshopBayModel bay) async {
+    final orderId = bay.currentServiceOrderId;
+    if (orderId == null) return;
+
+    ServiceOrderModel? matched;
+    for (final order in _allActiveOrders) {
+      if (order.id == orderId) {
+        matched = order;
+        break;
+      }
+    }
+    matched ??= await _orderRepo.fetchOrderById(orderId);
+    if (!mounted) return;
+    if (matched == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not locate service order details for dispatch.'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+    await _openDispatchModal(matched);
+  }
+
   Future<void> _showAssignBayModal(ServiceOrderModel order) async {
-    int selectedBayNum = 1;
+    if (_bays.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No bays initialized yet. Click "INITIALIZE 5 WORKSHOP BAYS" first.',
+          ),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    final firstAvailable = _bays.firstWhere(
+      (b) => !b.isOccupied || b.currentServiceOrderId == order.id,
+      orElse: () => _bays.first,
+    );
+    int selectedBayNum = firstAvailable.bayNumber;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    await showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -128,7 +234,7 @@ class _AdminWorkshopFloorScreenState
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'SELECT SERVICE BAY (1 - 5)',
+                    'SELECT SERVICE BAY (1 - ${_bays.length})',
                     style: AppTypography.labelSmall(
                       color: isDark
                           ? AppColors.textMutedDark
@@ -144,34 +250,25 @@ class _AdminWorkshopFloorScreenState
                       }
                     },
                     child: Column(
-                      children: List.generate(5, (index) {
-                        final bayNum = index + 1;
-                        final existingBay = _bays.firstWhere(
-                          (b) => b.bayNumber == bayNum,
-                          orElse: () => WorkshopBayModel(
-                            id: '',
-                            bayNumber: bayNum,
-                            name: 'Bay 0$bayNum',
-                            createdAt: DateTime.now(),
-                            updatedAt: DateTime.now(),
-                          ),
-                        );
-                        final isOccupied =
-                            existingBay.isOccupied &&
+                      children: _bays.map((existingBay) {
+                        final isOccupied = existingBay.isOccupied &&
                             existingBay.currentServiceOrderId != order.id;
 
                         return RadioListTile<int>(
-                          value: bayNum,
+                          value: existingBay.bayNumber,
                           title: Row(
                             children: [
-                              Text(
-                                existingBay.name,
-                                style: AppTypography.labelMedium(
-                                  color: isOccupied
-                                      ? AppColors.danger
-                                      : (isDark
+                              Expanded(
+                                child: Text(
+                                  existingBay.name,
+                                  style: AppTypography.labelMedium(
+                                    color: isOccupied
+                                        ? AppColors.danger
+                                        : (isDark
                                             ? AppColors.textPrimaryDark
                                             : AppColors.graphitePrimary),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -183,13 +280,13 @@ class _AdminWorkshopFloorScreenState
                           ),
                           subtitle:
                               isOccupied && existingBay.vehiclePlate != null
-                              ? Text(
-                                  'Current: ${existingBay.vehiclePlate} (${existingBay.currentOrderNumber ?? ''})',
-                                  style: const TextStyle(fontSize: 12),
-                                )
-                              : null,
+                                  ? Text(
+                                      'Current: ${existingBay.vehiclePlate} (${existingBay.currentOrderNumber ?? ''})',
+                                      style: const TextStyle(fontSize: 12),
+                                    )
+                                  : null,
                         );
-                      }),
+                      }).toList(),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -252,17 +349,22 @@ class _AdminWorkshopFloorScreenState
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark
-        ? AppColors.textPrimaryDark
-        : AppColors.graphitePrimary;
+    final textColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final auth = ref.watch(authNotifierProvider);
+    final userName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
+    final totalBays = _bays.length;
     final occupiedCount = _bays.where((b) => b.isOccupied).length;
-    final telemetryNotice =
-        '$occupiedCount/5 BAYS ACTIVE (${occupiedCount * 20}%)';
+    final pct = totalBays > 0 ? ((occupiedCount / totalBays) * 100).round() : 0;
+    final telemetryNotice = totalBays > 0
+        ? '$occupiedCount/$totalBays BAYS ACTIVE ($pct%)'
+        : 'NO BAYS CONFIGURED';
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Workshop Dispatch',
-      userName: 'Toto Wolf',
+      userName: userName,
       userSubtitle: 'Workshop Director',
       currentIndex: 2,
       onNavIndexChanged: (i) => RoleNavigation.navigate(
@@ -278,6 +380,7 @@ class _AdminWorkshopFloorScreenState
         if (context.mounted) context.go(RoutePaths.login);
       },
       actions: [
+        const NotificationBellButton(),
         IconButton(
           icon: const Icon(Icons.refresh, size: 20),
           onPressed: _loadFloorData,
@@ -287,74 +390,79 @@ class _AdminWorkshopFloorScreenState
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: AppColors.danger,
-                    size: 40,
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.danger,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(_errorMessage!, style: TextStyle(color: textColor)),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _loadFloorData,
+                        child: const Text('RETRY'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(_errorMessage!, style: TextStyle(color: textColor)),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _loadFloorData,
-                    child: const Text('RETRY'),
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadFloorData,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 18.0,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1040),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // 1. Live Telemetry Header Banner
-                        _buildFloorHeader(isDark, textColor, occupiedCount),
-                        const SizedBox(height: 16),
-
-                        // 2. Physical 5-Bay Grid
-                        Text(
-                          'PHYSICAL WORKSHOP BAYS',
-                          style: AppTypography.labelLarge(
-                            color: textColor,
-                            fontWeight: FontWeight.w700,
-                          ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadFloorData,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 18.0,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1040),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildFloorHeader(
+                              isDark,
+                              textColor,
+                              occupiedCount,
+                              totalBays,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'PHYSICAL WORKSHOP BAYS',
+                              style: AppTypography.labelLarge(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildBaysGrid(isDark, textColor),
+                            const SizedBox(height: 24),
+                            Text(
+                              'UNASSIGNED / AWAITING BAY DISPATCH (${_unassignedOrders.length})',
+                              style: AppTypography.labelLarge(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildUnassignedQueue(isDark, textColor),
+                          ],
                         ),
-                        const SizedBox(height: 10),
-                        _buildBaysGrid(isDark, textColor),
-                        const SizedBox(height: 24),
-
-                        // 3. Waiting & Unassigned Vehicles
-                        Text(
-                          'UNASSIGNED / AWAITING BAY DISPATCH (${_unassignedOrders.length})',
-                          style: AppTypography.labelLarge(
-                            color: textColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        _buildUnassignedQueue(isDark, textColor),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
     );
   }
 
-  Widget _buildFloorHeader(bool isDark, Color textColor, int occupiedCount) {
+  Widget _buildFloorHeader(
+    bool isDark,
+    Color textColor,
+    int occupiedCount,
+    int totalBays,
+  ) {
     return PitCard(
       accentBorderLeft: AppColors.accentRed,
       child: LayoutBuilder(
@@ -381,7 +489,9 @@ class _AdminWorkshopFloorScreenState
               borderRadius: AppSpacing.roundedSmall,
             ),
             child: Text(
-              '$occupiedCount / 5 OCCUPIED',
+              totalBays > 0
+                  ? '$occupiedCount / $totalBays OCCUPIED'
+                  : '0 BAYS INITIALIZED',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -403,7 +513,7 @@ class _AdminWorkshopFloorScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '5-BAY OPERATIONS CONSOLE',
+                            'WORKSHOP OPERATIONS CONSOLE',
                             style: AppTypography.headlineSmall(
                               color: textColor,
                             ),
@@ -457,9 +567,12 @@ class _AdminWorkshopFloorScreenState
                   children: [
                     Row(
                       children: [
-                        Text(
-                          'PITMATE 5-BAY OPERATIONS CONSOLE',
-                          style: AppTypography.headlineMedium(color: textColor),
+                        Flexible(
+                          child: Text(
+                            'PITMATE BAY OPERATIONS CONSOLE',
+                            style: AppTypography.headlineMedium(color: textColor),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Container(
@@ -501,6 +614,74 @@ class _AdminWorkshopFloorScreenState
   }
 
   Widget _buildBaysGrid(bool isDark, Color textColor) {
+    if (_bays.isEmpty) {
+      return PitCard(
+        accentBorderLeft: AppColors.warning,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.warehouse_outlined,
+                    color: AppColors.warning,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'No workshop bays configured yet.',
+                          style: AppTypography.headlineSmall(color: textColor),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Initialize the 5 standard PitMate service bays to enable bay check-ins and technician job dispatch.',
+                          style: AppTypography.bodySmall(
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ElevatedButton.icon(
+                key: const Key('btn_initialize_bays'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentRed,
+                  foregroundColor: Colors.white,
+                ),
+                icon: _isInitializingBays
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.add_business_outlined, size: 18),
+                label: Text(
+                  _isInitializingBays
+                      ? 'INITIALIZING BAYS...'
+                      : 'INITIALIZE 5 WORKSHOP BAYS',
+                ),
+                onPressed: _isInitializingBays ? null : _initializeDefaultBays,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final crossAxisCount = constraints.maxWidth > 700 ? 3 : 1;
@@ -510,15 +691,18 @@ class _AdminWorkshopFloorScreenState
           children: _bays.map((bay) {
             final cardWidth = constraints.maxWidth > 700
                 ? (constraints.maxWidth - (crossAxisCount - 1) * 12) /
-                      crossAxisCount
+                    crossAxisCount
                 : constraints.maxWidth;
+            final canDispatch =
+                bay.isOccupied &&
+                bay.currentOrderStatus == 'estimate_approved' &&
+                bay.currentServiceOrderId != null;
 
             return SizedBox(
               width: cardWidth,
               child: PitCard(
-                accentBorderLeft: bay.isOccupied
-                    ? AppColors.accentRed
-                    : AppColors.success,
+                accentBorderLeft:
+                    bay.isOccupied ? AppColors.accentRed : AppColors.success,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -565,7 +749,7 @@ class _AdminWorkshopFloorScreenState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        bay.vehicleModel ?? 'Standard Spec',
+                        bay.vehicleModel ?? 'Vehicle Assigned',
                         style: AppTypography.bodySmall(
                           color: isDark
                               ? AppColors.textSecondaryDark
@@ -574,13 +758,32 @@ class _AdminWorkshopFloorScreenState
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Order: ${bay.currentOrderNumber ?? ''}',
+                        'Order: ${bay.currentOrderNumber ?? ''} (${bay.currentOrderStatus ?? 'active'})',
                         style: AppTypography.telemetrySmall(
                           color: isDark
                               ? AppColors.textMutedDark
                               : AppColors.textMutedLight,
                         ),
                       ),
+                      if (canDispatch) ...[
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            key: Key('btn_dispatch_bay_${bay.bayNumber}'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.accentRed,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppSpacing.roundedSmall,
+                              ),
+                            ),
+                            icon: const Icon(Icons.send_rounded, size: 16),
+                            label: const Text('DISPATCH OPERATIONS'),
+                            onPressed: () => _openDispatchModalForBay(bay),
+                          ),
+                        ),
+                      ],
                     ] else ...[
                       Container(
                         height: 54,
@@ -626,12 +829,13 @@ class _AdminWorkshopFloorScreenState
 
     return Column(
       children: _unassignedOrders.map((order) {
+        final canDispatch = order.status == 'estimate_approved';
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: PitCard(
             child: LayoutBuilder(
               builder: (context, c) {
-                final isCompact = c.maxWidth < 500;
+                final isCompact = c.maxWidth < 540;
                 final iconBox = Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -667,18 +871,31 @@ class _AdminWorkshopFloorScreenState
                   ],
                 );
 
-                final assignBtn = ElevatedButton.icon(
-                  key: Key('btn_assign_bay_${order.id}'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accentRed,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppSpacing.roundedSmall,
+                final actionButtons = Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      key: Key('btn_assign_bay_${order.id}'),
+                      icon: const Icon(Icons.login, size: 16),
+                      label: const Text('ASSIGN BAY'),
+                      onPressed: () => _showAssignBayModal(order),
                     ),
-                  ),
-                  icon: const Icon(Icons.login, size: 16),
-                  label: const Text('ASSIGN BAY'),
-                  onPressed: () => _showAssignBayModal(order),
+                    if (canDispatch)
+                      ElevatedButton.icon(
+                        key: Key('btn_dispatch_ops_${order.id}'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accentRed,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppSpacing.roundedSmall,
+                          ),
+                        ),
+                        icon: const Icon(Icons.send_rounded, size: 16),
+                        label: const Text('DISPATCH OPERATIONS'),
+                        onPressed: () => _openDispatchModal(order),
+                      ),
+                  ],
                 );
 
                 if (isCompact) {
@@ -693,7 +910,7 @@ class _AdminWorkshopFloorScreenState
                         ],
                       ),
                       const SizedBox(height: 10),
-                      assignBtn,
+                      actionButtons,
                     ],
                   );
                 }
@@ -703,7 +920,8 @@ class _AdminWorkshopFloorScreenState
                     iconBox,
                     const SizedBox(width: 12),
                     Expanded(child: detailsCol),
-                    assignBtn,
+                    const SizedBox(width: 12),
+                    actionButtons,
                   ],
                 );
               },

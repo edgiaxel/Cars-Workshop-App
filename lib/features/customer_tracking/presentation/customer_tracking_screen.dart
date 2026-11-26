@@ -91,7 +91,7 @@ class _CustomerTrackingScreenState extends ConsumerState<CustomerTrackingScreen>
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authNotifierProvider);
-    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'Customer Member';
+    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
     final subtextColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
@@ -105,6 +105,10 @@ class _CustomerTrackingScreenState extends ConsumerState<CustomerTrackingScreen>
       onNavIndexChanged: _onNavChanged,
       navItems: RoleNavigation.customerNavItems,
       telemetryNotice: _summary.hasActiveOrder ? 'ACTIVE WORKSHOP TELEMETRY' : null,
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       actions: [
         const NotificationBellButton(),
         IconButton(

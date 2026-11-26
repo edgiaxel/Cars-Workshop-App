@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../app/router/route_paths.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -9,6 +12,9 @@ import '../../../../shared/navigation/role_navigation.dart';
 import '../../../../shared/widgets/pit_card.dart';
 import '../../../../shared/widgets/responsive_role_scaffold.dart';
 import '../../../../shared/widgets/status_badge.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import '../data/models/invoice_model.dart';
 import '../data/repositories/invoice_repository.dart';
 
@@ -141,10 +147,13 @@ class _AdminInvoicesScreenState extends ConsumerState<AdminInvoicesScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final auth = ref.watch(authNotifierProvider);
+    final userName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Workshop Admin',
-      userName: 'Marcus T.',
+      userName: userName,
       userSubtitle: 'Finance & Operations',
       currentIndex: 9,
       navItems: RoleNavigation.adminNavItems,
@@ -154,7 +163,12 @@ class _AdminInvoicesScreenState extends ConsumerState<AdminInvoicesScreen>
         index,
         currentIndex: 9,
       ),
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       actions: [
+        const NotificationBellButton(),
         IconButton(
           icon: const Icon(Icons.refresh),
           tooltip: 'Refresh Invoices',
@@ -1022,25 +1036,55 @@ class _AdminInvoicesScreenState extends ConsumerState<AdminInvoicesScreen>
   // ACTION: Generate Service Order Invoice Dialog
   // ==========================================
   void _openGenerateInvoiceDialog() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     final eligibleOrdersResult = await _repo.fetchEligibleServiceOrdersForInvoice();
+
+    double taxPercent = 11.0;
+    try {
+      final settings = await Supabase.instance.client
+          .from('workshop_settings')
+          .select('tax_percent')
+          .limit(1)
+          .maybeSingle();
+      if (settings != null && settings['tax_percent'] is num) {
+        taxPercent = (settings['tax_percent'] as num).toDouble();
+      }
+    } catch (_) {}
+
     if (!mounted) return;
     setState(() => _isLoading = false);
 
+    if (eligibleOrdersResult.isFailure) {
+      setState(() {
+        _errorMessage = eligibleOrdersResult.exceptionOrNull?.message;
+      });
+    }
     final eligibleOrders = eligibleOrdersResult.dataOrNull ?? [];
 
     showDialog<void>(
       context: context,
       builder: (ctx) => _GenerateInvoiceDialog(
         eligibleOrders: eligibleOrders,
-        onGenerate: (serviceOrderId, taxPercent, discountCents, depositCents, insuranceCents) async {
+        initialTaxPercent: taxPercent,
+        onGenerate: (
+          serviceOrderId,
+          resolvedTaxPercent,
+          discountCents,
+          discountReason,
+          depositCents,
+          insuranceCents,
+        ) async {
           Navigator.pop(ctx);
           setState(() => _isLoading = true);
 
           final res = await _repo.generateInvoice(
             serviceOrderId: serviceOrderId,
-            taxPercent: taxPercent,
+            taxPercent: resolvedTaxPercent,
             discountCents: discountCents,
+            discountReason: discountReason,
             depositCents: depositCents,
             insuranceCents: insuranceCents,
           );
@@ -1693,14 +1737,17 @@ class _DigitalReceiptDialog extends StatelessWidget {
 class _GenerateInvoiceDialog extends StatefulWidget {
   const _GenerateInvoiceDialog({
     required this.eligibleOrders,
+    this.initialTaxPercent = 11.0,
     required this.onGenerate,
   });
 
   final List<Map<String, dynamic>> eligibleOrders;
+  final double initialTaxPercent;
   final Function(
     String serviceOrderId,
     double taxPercent,
     int discountCents,
+    String? discountReason,
     int depositCents,
     int insuranceCents,
   ) onGenerate;
@@ -1711,8 +1758,9 @@ class _GenerateInvoiceDialog extends StatefulWidget {
 
 class _GenerateInvoiceDialogState extends State<_GenerateInvoiceDialog> {
   String? _selectedOrderId;
-  final double _taxPercent = 11.0;
+  late double _taxPercent;
   final TextEditingController _discountController = TextEditingController(text: '0');
+  final TextEditingController _discountReasonController = TextEditingController();
   final TextEditingController _depositController = TextEditingController(text: '0');
   final TextEditingController _insuranceController = TextEditingController(text: '0');
   final TextEditingController _manualOrderIdController = TextEditingController();
@@ -1724,6 +1772,7 @@ class _GenerateInvoiceDialogState extends State<_GenerateInvoiceDialog> {
   @override
   void initState() {
     super.initState();
+    _taxPercent = widget.initialTaxPercent;
     if (widget.eligibleOrders.isNotEmpty) {
       _selectedOrderId = widget.eligibleOrders.first['id'] as String?;
     }
@@ -1732,6 +1781,7 @@ class _GenerateInvoiceDialogState extends State<_GenerateInvoiceDialog> {
   @override
   void dispose() {
     _discountController.dispose();
+    _discountReasonController.dispose();
     _depositController.dispose();
     _insuranceController.dispose();
     _manualOrderIdController.dispose();
@@ -1882,6 +1932,24 @@ class _GenerateInvoiceDialogState extends State<_GenerateInvoiceDialog> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.space12),
+                if (_discountCents > 0) ...[
+                  Text(
+                    'DISCOUNT REASON (AUDIT)',
+                    style: AppTypography.labelSmall(
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  TextField(
+                    key: const Key('input_invoice_discount_reason'),
+                    controller: _discountReasonController,
+                    decoration: InputDecoration(
+                      hintText: 'Reason for promotional or loyalty discount',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space12),
+                ],
 
                 Row(
                   children: [
@@ -1959,10 +2027,12 @@ class _GenerateInvoiceDialogState extends State<_GenerateInvoiceDialog> {
                       onPressed: () {
                         final orderId = _selectedOrderId ?? _manualOrderIdController.text.trim();
                         if (orderId.isNotEmpty) {
+                          final reason = _discountReasonController.text.trim();
                           widget.onGenerate(
                             orderId,
                             _taxPercent,
                             _discountCents,
+                            reason.isEmpty ? null : reason,
                             _depositCents,
                             _insuranceCents,
                           );

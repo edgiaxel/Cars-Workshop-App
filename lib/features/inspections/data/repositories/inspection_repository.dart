@@ -26,6 +26,7 @@ abstract class IInspectionRepository {
     String? mechanicId,
   });
   Future<Result<ServiceOrderTelemetry?>> fetchOrderTelemetry(String orderId);
+  Future<Result<List<Map<String, dynamic>>>> fetchInspectionsList();
 }
 
 /// Supabase implementation of [IInspectionRepository].
@@ -283,6 +284,41 @@ class InspectionRepository implements IInspectionRepository {
     } catch (e) {
       return Result.failure(
         DatabaseException('Failed to fetch service order telemetry: $e', originalException: e),
+      );
+    }
+  }
+
+  @override
+  Future<Result<List<Map<String, dynamic>>>> fetchInspectionsList() async {
+    final client = _client;
+    if (client == null) {
+      return const Result.failure(
+        NetworkException('Supabase client is not initialized.'),
+      );
+    }
+
+    try {
+      final res = await client
+          .from('inspections')
+          .select('''
+            id, service_order_id, mechanic_id, status, summary, started_at, completed_at, created_at, updated_at,
+            service_orders(
+              id, order_number, status, odometer, customer_complaint, assigned_bay, fuel_level,
+              customers(full_name, phone_number),
+              vehicles(license_plate, make, model, year)
+            ),
+            mechanic:profiles!mechanic_id(full_name)
+          ''')
+          .order('created_at', ascending: false);
+
+      return Result.success((res as List).cast<Map<String, dynamic>>());
+    } on SocketException catch (e) {
+      return Result.failure(
+        NetworkException('Network error fetching inspections list: ${e.message}', originalException: e),
+      );
+    } catch (e) {
+      return Result.failure(
+        DatabaseException('Failed to fetch inspections list: $e', originalException: e),
       );
     }
   }

@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
+import 'package:pitmate/app/theme/app_colors.dart';
+import 'package:pitmate/app/theme/app_spacing.dart';
+import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/inspections/data/models/inspection_finding_model.dart';
+import 'package:pitmate/features/inspections/data/models/inspection_model.dart';
+import 'package:pitmate/features/inspections/data/models/service_order_telemetry.dart';
+import 'package:pitmate/features/inspections/data/repositories/inspection_repository.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/shared/navigation/role_navigation.dart';
+import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
-
-import '../../../app/theme/app_colors.dart';
-import '../../../app/theme/app_spacing.dart';
-import '../../../app/theme/app_typography.dart';
-import '../../../shared/widgets/pit_card.dart';
-import '../../../shared/widgets/status_badge.dart';
-import '../../inspections/data/models/inspection_finding_model.dart';
-import '../../inspections/data/models/inspection_model.dart';
-import '../../inspections/data/models/service_order_telemetry.dart';
-import '../../inspections/data/repositories/inspection_repository.dart';
+import 'package:pitmate/shared/widgets/status_badge.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Admin Inspection & Diagnostic Review Screen (UI-A08).
-/// Allows workshop admins and service advisors to review technician diagnostic findings,
-/// view critical severity alerts, and initiate estimate preparation.
 class AdminInspectionReviewScreen extends ConsumerStatefulWidget {
   const AdminInspectionReviewScreen({
     super.key,
@@ -42,6 +42,11 @@ class _AdminInspectionReviewScreenState
     extends ConsumerState<AdminInspectionReviewScreen> {
   late final IInspectionRepository _repository;
   bool _isLoading = true;
+  String? _errorMessage;
+
+  List<Map<String, dynamic>> _availableInspections = [];
+  String? _selectedInspectionId;
+  String? _selectedOrderId;
 
   InspectionModel? _inspection;
   ServiceOrderTelemetry? _telemetry;
@@ -55,144 +60,162 @@ class _AdminInspectionReviewScreenState
     _loadReviewData();
   }
 
-  Future<void> _loadReviewData() async {
+  bool get _hasSupabaseOrInjectedRepo {
+    if (widget.repository != null) return true;
+    try {
+      Supabase.instance.client;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _loadReviewData({
+    String? overrideOrderId,
+    String? overrideInspectionId,
+  }) async {
+    if (!_hasSupabaseOrInjectedRepo) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
-    final orderId = widget.serviceOrderId ?? 'SO-2026-0143';
-
     try {
-      // 1. Fetch telemetry
-      final telemetryResult = await _repository.fetchOrderTelemetry(orderId);
-      if (telemetryResult.isSuccess && telemetryResult.dataOrNull != null) {
-        _telemetry = telemetryResult.dataOrNull;
-      } else {
-        _telemetry = const ServiceOrderTelemetry(
-          orderId: 'SO-2026-0143',
-          orderNumber: 'SO-2026-0143',
-          customerName: 'Alex Pratama',
-          customerPhone: '+62 812-9988-7766',
-          licensePlate: 'B 9912 SPO',
-          make: 'Honda',
-          model: 'Civic Type R (FL5)',
-          year: 2023,
-          odometer: 14250,
-          customerComplaint:
-              'Brake judder at high speeds, spongy pedal feel on deceleration',
-          assignedBay: 'Bay 02 • Hoist B',
-          fuelLevel: '75%',
-          status: 'estimate_pending',
+      String? targetOrderId = overrideOrderId ?? widget.serviceOrderId;
+      String? targetInspectionId = overrideInspectionId ?? widget.inspectionId;
+
+      if (targetOrderId == null && targetInspectionId == null) {
+        final listRes = await _repository.fetchInspectionsList();
+        if (listRes.isFailure) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = listRes.exceptionOrNull?.message ??
+                  'Failed to load inspections.';
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+
+        final list = listRes.dataOrNull ?? [];
+        _availableInspections = list;
+        if (list.isEmpty) {
+          if (mounted) {
+            setState(() {
+              _telemetry = null;
+              _inspection = null;
+              _findings = [];
+              _selectedInspectionId = null;
+              _selectedOrderId = null;
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+
+        final preferred = list.firstWhere(
+          (row) => row['status'] == 'completed',
+          orElse: () => list.first,
         );
-      }
-
-      // 2. Fetch inspection
-      if (widget.inspectionId != null) {
-        final inspRes = await _repository.fetchInspectionById(widget.inspectionId!);
-        if (inspRes.isSuccess) {
-          _inspection = inspRes.dataOrNull;
-        }
-      } else {
-        final inspRes = await _repository.fetchInspectionByOrderId(orderId);
-        if (inspRes.isSuccess) {
-          _inspection = inspRes.dataOrNull;
+        targetInspectionId = preferred['id'] as String?;
+        targetOrderId = preferred['service_order_id'] as String?;
+      } else if (_availableInspections.isEmpty) {
+        final listRes = await _repository.fetchInspectionsList();
+        if (listRes.isSuccess) {
+          _availableInspections = listRes.dataOrNull ?? [];
         }
       }
 
-      // Fallback inspection if not found or demo
-      _inspection ??= InspectionModel(
-        id: 'insp-demo-0143',
-        serviceOrderId: orderId,
-        mechanicId: 'mech-dian',
-        status: InspectionStatus.completed,
-        summary:
-            'Front braking system requires immediate pad replacement and rotor skimming due to high-temperature glazing. Powertrain and battery in excellent condition.',
-        startedAt: DateTime.now().subtract(const Duration(hours: 2)),
-        completedAt: DateTime.now().subtract(const Duration(minutes: 30)),
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        updatedAt: DateTime.now().subtract(const Duration(minutes: 30)),
-      );
+      _selectedInspectionId = targetInspectionId;
+      _selectedOrderId = targetOrderId;
 
-      // 3. Fetch findings
-      final findingsRes = await _repository.fetchInspectionFindings(_inspection!.id);
-      if (findingsRes.isSuccess && findingsRes.dataOrNull != null && findingsRes.dataOrNull!.isNotEmpty) {
-        _findings = findingsRes.dataOrNull!;
-      } else {
-        // Fallback demo findings
-        _findings = [
-          InspectionFinding(
-            id: 'find-1',
-            inspectionId: _inspection!.id,
-            category: 'Powertrain',
-            itemName: 'Engine Oil',
-            condition: FindingCondition.good,
-            severity: SeverityLevel.low,
-            notes: 'Oil level at max mark, clean amber color.',
-            recommendedAction: 'Next oil service due at 20,000 KM.',
-            createdAt: DateTime.now(),
-          ),
-          InspectionFinding(
-            id: 'find-2',
-            inspectionId: _inspection!.id,
-            category: 'Brakes & Suspension',
-            itemName: 'Front Brake Pads',
-            condition: FindingCondition.critical,
-            severity: SeverityLevel.urgent,
-            notes: 'Pad material down to 2.5mm (service limit 3.0mm). Heat glaze on inner pads.',
-            recommendedAction: 'Replace front brake pad set with Brembo track/street compound.',
-            createdAt: DateTime.now(),
-          ),
-          InspectionFinding(
-            id: 'find-3',
-            inspectionId: _inspection!.id,
-            category: 'Brakes & Suspension',
-            itemName: 'Rotors',
-            condition: FindingCondition.fair,
-            severity: SeverityLevel.medium,
-            notes: 'Brake judder caused by uneven surface deposits. Thickness within spec (30.8mm).',
-            recommendedAction: 'Precision on-car rotor skimming / resurfacing.',
-            createdAt: DateTime.now(),
-          ),
-          InspectionFinding(
-            id: 'find-4',
-            inspectionId: _inspection!.id,
-            category: 'Electrical & Battery',
-            itemName: 'Battery Health',
-            condition: FindingCondition.good,
-            severity: SeverityLevel.low,
-            notes: 'Resting voltage 12.6V, cranking healthy.',
-            recommendedAction: 'Pass - no action required.',
-            createdAt: DateTime.now(),
-          ),
-          InspectionFinding(
-            id: 'find-5',
-            inspectionId: _inspection!.id,
-            category: 'Fluids & Filters',
-            itemName: 'Cabin Filter',
-            condition: FindingCondition.fair,
-            severity: SeverityLevel.low,
-            notes: 'Dust build-up noted inside pleats.',
-            recommendedAction: 'Replace activated carbon cabin pollen filter.',
-            createdAt: DateTime.now(),
-          ),
-          InspectionFinding(
-            id: 'find-6',
-            inspectionId: _inspection!.id,
-            category: 'Tires & Chassis',
-            itemName: 'Tire Tread Depth',
-            condition: FindingCondition.good,
-            severity: SeverityLevel.low,
-            notes: '5.2mm remaining uniformly across Michelin Pilot Sport 4S.',
-            recommendedAction: 'Pass.',
-            createdAt: DateTime.now(),
-          ),
-        ];
+      if (targetOrderId == null || targetOrderId.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _telemetry = null;
+            _inspection = null;
+            _findings = [];
+            _isLoading = false;
+          });
+        }
+        return;
       }
-    } catch (_) {
-      // Fallback data already populated
-    } finally {
+
+      final telemetryResult =
+          await _repository.fetchOrderTelemetry(targetOrderId);
+      if (telemetryResult.isFailure) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = telemetryResult.exceptionOrNull?.message ??
+                'Failed to load service order telemetry.';
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+      _telemetry = telemetryResult.dataOrNull;
+
+      if (targetInspectionId != null && targetInspectionId.isNotEmpty) {
+        final inspRes =
+            await _repository.fetchInspectionById(targetInspectionId);
+        if (inspRes.isFailure) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = inspRes.exceptionOrNull?.message ??
+                  'Failed to load inspection record.';
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+        _inspection = inspRes.dataOrNull;
+      } else {
+        final inspRes =
+            await _repository.fetchInspectionByOrderId(targetOrderId);
+        if (inspRes.isFailure) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = inspRes.exceptionOrNull?.message ??
+                  'Failed to load inspection for order.';
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+        _inspection = inspRes.dataOrNull;
+      }
+
+      if (_inspection != null) {
+        _selectedInspectionId = _inspection!.id;
+        final findingsRes =
+            await _repository.fetchInspectionFindings(_inspection!.id);
+        if (findingsRes.isSuccess) {
+          _findings = findingsRes.dataOrNull ?? [];
+        } else {
+          _findings = [];
+          _errorMessage = findingsRes.exceptionOrNull?.message;
+        }
+      } else {
+        _findings = [];
+      }
+
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load inspection review: $e';
+          _isLoading = false;
+        });
       }
     }
   }
@@ -229,25 +252,27 @@ class _AdminInspectionReviewScreenState
       return;
     }
 
-    final orderId = _telemetry?.orderId ?? widget.serviceOrderId ?? '';
+    final orderId =
+        _telemetry?.orderId ?? _selectedOrderId ?? widget.serviceOrderId ?? '';
+    final orderNum = _telemetry?.orderNumber ?? orderId;
     final inspId = _inspection?.id ?? '';
 
-    // If estimate builder route exists or show confirmation
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.calculate_outlined, color: AppColors.accentRed, size: 28),
-            const SizedBox(width: 8),
-            Text(
-              'CREATE ESTIMATE',
-              style: AppTypography.headlineSmall(),
+            const Icon(
+              Icons.calculate_outlined,
+              color: AppColors.accentRed,
+              size: 28,
             ),
+            const SizedBox(width: 8),
+            Text('CREATE ESTIMATE', style: AppTypography.headlineSmall()),
           ],
         ),
         content: Text(
-          'Diagnostic findings from Inspection $inspId will be imported into Estimate Builder for Service Order $orderId.\n\n• $_criticalCount Critical items requiring immediate authorization\n• $_fairCount Fair items recommended for maintenance',
+          'Diagnostic findings from inspection ${inspId.isNotEmpty ? inspId : orderNum} will be loaded into Estimate Builder for Service Order $orderNum.\n\n• $_criticalCount Critical items requiring immediate authorization\n• $_fairCount Fair items recommended for maintenance',
           style: AppTypography.bodyMedium(),
         ),
         actions: [
@@ -255,7 +280,9 @@ class _AdminInspectionReviewScreenState
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               'CANCEL',
-              style: AppTypography.labelLarge(color: AppColors.textSecondaryLight),
+              style: AppTypography.labelLarge(
+                color: AppColors.textSecondaryLight,
+              ),
             ),
           ),
           ElevatedButton(
@@ -288,13 +315,21 @@ class _AdminInspectionReviewScreenState
         isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
     final secondaryTextColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final auth = ref.watch(authNotifierProvider);
+    final userName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Diagnostic Review',
-      userName: 'Toto Wolf',
+      userName: userName,
       userSubtitle: 'Workshop Director',
       currentIndex: 4,
-      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.adminNavItems, i, currentIndex: 4),
+      onNavIndexChanged: (i) => RoleNavigation.navigate(
+        context,
+        RoleNavigation.adminNavItems,
+        i,
+        currentIndex: 4,
+      ),
       navItems: RoleNavigation.adminNavItems,
       showBackButton: true,
       onBack: () {
@@ -310,8 +345,14 @@ class _AdminInspectionReviewScreenState
       },
       telemetryNotice: _inspection != null
           ? 'STATUS: ${_inspection!.status.displayName.toUpperCase()}'
-          : 'DIAGNOSTIC TELEMETRY ACTIVE',
+          : 'NO ACTIVE INSPECTION',
       actions: [
+        const NotificationBellButton(),
+        IconButton(
+          icon: const Icon(Icons.refresh, size: 20),
+          tooltip: 'Refresh Inspections',
+          onPressed: () => _loadReviewData(),
+        ),
         if (_inspection != null)
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -327,45 +368,235 @@ class _AdminInspectionReviewScreenState
       ],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 960),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 1. Vehicle and Order Telemetry Header
-                      _buildHeaderCard(isDark, textColor, secondaryTextColor),
-                      const SizedBox(height: 16),
+          : _buildBodyContent(isDark, textColor, secondaryTextColor),
+    );
+  }
 
-                      // 2. Metric Summary Counters
-                      _buildSummaryCounters(isDark, textColor),
-                      const SizedBox(height: 16),
-
-                      // 3. Master Technician Summary
-                      if (_inspection?.summary != null) ...[
-                        _buildMasterSummaryCard(isDark, textColor, secondaryTextColor),
-                        const SizedBox(height: 16),
-                      ],
-
-                      // 4. Diagnostic Filter Tabs
-                      _buildFilterRow(isDark),
-                      const SizedBox(height: 12),
-
-                      // 5. Findings List
-                      _buildFindingsList(isDark, textColor, secondaryTextColor),
-                      const SizedBox(height: 24),
-
-                      // 6. Action Button: Create Estimate from Findings
-                      _buildActionButton(),
-                      const SizedBox(height: 32),
-                    ],
+  Widget _buildBodyContent(
+    bool isDark,
+    Color textColor,
+    Color secondaryTextColor,
+  ) {
+    if (_errorMessage != null && _telemetry == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 540),
+            child: PitCard(
+              accentBorderLeft: AppColors.danger,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: AppColors.danger,
+                    size: 40,
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Unable to Load Inspection Review',
+                    style: AppTypography.headlineSmall(color: textColor),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodySmall(color: secondaryTextColor),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => _loadReviewData(),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('RETRY'),
+                  ),
+                ],
               ),
             ),
+          ),
+        ),
+      );
+    }
+
+    if (_telemetry == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: PitCard(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.fact_check_outlined,
+                    size: 48,
+                    color: AppColors.textMutedDark,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No vehicle inspections recorded yet',
+                    style: AppTypography.headlineSmall(color: textColor),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Check in a vehicle on the Workshop Floor and complete a mechanic inspection to review diagnostic findings here.',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyMedium(color: secondaryTextColor),
+                  ),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _loadReviewData(),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('REFRESH'),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accentRed,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () =>
+                            context.go(RoutePaths.adminWorkshopFloor),
+                        icon: const Icon(Icons.warehouse_outlined, size: 18),
+                        label: const Text('OPEN WORKSHOP FLOOR'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 960),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_errorMessage != null) ...[
+                PitCard(
+                  accentBorderLeft: AppColors.danger,
+                  child: Text(
+                    _errorMessage!,
+                    style: AppTypography.bodySmall(color: AppColors.danger),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (_availableInspections.isNotEmpty) ...[
+                _buildInspectionSelector(isDark, textColor, secondaryTextColor),
+                const SizedBox(height: 16),
+              ],
+              _buildHeaderCard(isDark, textColor, secondaryTextColor),
+              const SizedBox(height: 16),
+              _buildSummaryCounters(isDark, textColor),
+              const SizedBox(height: 16),
+              if (_inspection?.summary != null &&
+                  _inspection!.summary!.isNotEmpty) ...[
+                _buildMasterSummaryCard(isDark, textColor, secondaryTextColor),
+                const SizedBox(height: 16),
+              ],
+              _buildFilterRow(isDark),
+              const SizedBox(height: 12),
+              _buildFindingsList(isDark, textColor, secondaryTextColor),
+              const SizedBox(height: 24),
+              _buildActionButton(),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInspectionSelector(
+    bool isDark,
+    Color textColor,
+    Color secondaryTextColor,
+  ) {
+    final currentValue = _availableInspections.any(
+            (row) => row['id'] == _selectedInspectionId)
+        ? _selectedInspectionId
+        : null;
+
+    return PitCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Icon(Icons.directions_car, size: 18, color: secondaryTextColor),
+          const SizedBox(width: 10),
+          Text(
+            'INSPECTION RECORD',
+            style: AppTypography.labelSmall(
+              color: secondaryTextColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                key: const Key('dropdown_inspection_selector'),
+                value: currentValue,
+                isExpanded: true,
+                items: _availableInspections.map((row) {
+                  final id = row['id'] as String? ?? '';
+                  final so = row['service_orders'] as Map<String, dynamic>?;
+                  final veh = so?['vehicles'] as Map<String, dynamic>?;
+                  final orderNum =
+                      so?['order_number'] as String? ?? 'Service Order';
+                  final plate = veh?['license_plate'] as String? ?? '';
+                  final model = veh?['model'] as String? ?? '';
+                  final status =
+                      (row['status'] as String? ?? '').toUpperCase();
+                  final label = [
+                    orderNum,
+                    if (plate.isNotEmpty) plate,
+                    if (model.isNotEmpty) model,
+                    if (status.isNotEmpty) '[$status]',
+                  ].join(' • ');
+
+                  return DropdownMenuItem<String>(
+                    value: id,
+                    child: Text(
+                      label,
+                      style: AppTypography.bodyMedium(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (nextId) {
+                  if (nextId == null) return;
+                  final row = _availableInspections.firstWhere(
+                    (r) => r['id'] == nextId,
+                    orElse: () => <String, dynamic>{},
+                  );
+                  final orderId = row['service_order_id'] as String?;
+                  if (orderId != null) {
+                    _loadReviewData(
+                      overrideOrderId: orderId,
+                      overrideInspectionId: nextId,
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -412,9 +643,7 @@ class _AdminInspectionReviewScreenState
           const SizedBox(height: 10),
           Text(
             telemetry.vehicleDisplayName,
-            style: AppTypography.headlineMedium(
-              color: textColor,
-            ),
+            style: AppTypography.headlineMedium(color: textColor),
           ),
           const SizedBox(height: 4),
           Row(
@@ -459,7 +688,8 @@ class _AdminInspectionReviewScreenState
         _buildCounterCard(
           label: 'TOTAL CHECKED',
           count: _findings.length,
-          color: isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
+          color:
+              isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary,
           isDark: isDark,
         ),
         const SizedBox(width: 8),
@@ -540,8 +770,11 @@ class _AdminInspectionReviewScreenState
         children: [
           Row(
             children: [
-              const Icon(Icons.assignment_outlined,
-                  size: 20, color: AppColors.accentRed),
+              const Icon(
+                Icons.assignment_outlined,
+                size: 20,
+                color: AppColors.accentRed,
+              ),
               const SizedBox(width: 8),
               Text(
                 'TECHNICIAN MASTER SUMMARY',
@@ -627,6 +860,17 @@ class _AdminInspectionReviewScreenState
     Color textColor,
     Color secondaryTextColor,
   ) {
+    if (_findings.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24.0),
+        alignment: Alignment.center,
+        child: Text(
+          'No diagnostic findings recorded for this inspection yet.',
+          style: AppTypography.bodyMedium(color: secondaryTextColor),
+        ),
+      );
+    }
+
     final findings = _filteredFindings;
 
     if (findings.isEmpty) {
@@ -692,7 +936,8 @@ class _AdminInspectionReviewScreenState
                         if (finding.condition != FindingCondition.good) ...[
                           const SizedBox(width: 6),
                           StatusBadge(
-                            label: '${finding.severity.displayName.toUpperCase()} PRIORITY',
+                            label:
+                                '${finding.severity.displayName.toUpperCase()} PRIORITY',
                             type: finding.severity == SeverityLevel.urgent
                                 ? StatusBadgeType.danger
                                 : StatusBadgeType.warning,
@@ -763,7 +1008,7 @@ class _AdminInspectionReviewScreenState
       height: 52,
       child: ElevatedButton(
         key: const Key('create-estimate-button'),
-        onPressed: _navigateToEstimate,
+        onPressed: _telemetry == null ? null : _navigateToEstimate,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.accentRed,
           foregroundColor: Colors.white,

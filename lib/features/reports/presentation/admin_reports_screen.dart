@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/core/utils/currency_formatter.dart';
@@ -89,7 +91,7 @@ class _AdminReportsScreenState extends ConsumerState<AdminReportsScreen>
   Widget build(BuildContext context) {
     final auth = ref.watch(authNotifierProvider);
     final userName =
-        auth is AuthAuthenticated ? auth.userProfile.fullName : 'Toto Wolf';
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
@@ -108,6 +110,10 @@ class _AdminReportsScreenState extends ConsumerState<AdminReportsScreen>
       onNavIndexChanged: _onNavChanged,
       navItems: RoleNavigation.adminNavItems,
       telemetryNotice: 'FINANCIAL TELEMETRY',
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       actions: [
         const NotificationBellButton(),
         IconButton(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
@@ -105,7 +107,7 @@ class _AdminRemindersScreenState extends ConsumerState<AdminRemindersScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authNotifierProvider);
-    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'Toto Wolf';
+    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
     final subtextColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
@@ -118,6 +120,10 @@ class _AdminRemindersScreenState extends ConsumerState<AdminRemindersScreen> {
       onNavIndexChanged: _onNavChanged,
       navItems: RoleNavigation.adminNavItems,
       telemetryNotice: '${_reminders.length} QUEUED REMINDERS',
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       actions: [
         const NotificationBellButton(),
         IconButton(

@@ -2,48 +2,150 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
-import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
+import 'package:pitmate/features/service_operations/data/models/service_order_task_model.dart';
+import 'package:pitmate/features/service_operations/data/repositories/service_operations_repository.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Mechanic Home Screen matching screens/mechanic_home_my_work_2 prototype:
-/// - Shift telemetry header (Bay indicator, shift hours)
-/// - Compact workload metrics (Assigned, In Progress, On Hold, Passed QC)
-/// - Current Active Job focal card (Honda Civic Type R FL5, K20C1, task checklist progress)
-/// - Assigned jobs queue (BMW 320i F30 LCI, Subaru WRX STI)
+/// Live Mechanic Home & Assigned Operations Queue.
 class MechanicHomeScreen extends ConsumerStatefulWidget {
-  const MechanicHomeScreen({super.key});
+  const MechanicHomeScreen({
+    super.key,
+    this.initialInspections,
+    this.initialTasks,
+  });
+
+  final List<Map<String, dynamic>>? initialInspections;
+  final List<ServiceOrderTaskModel>? initialTasks;
 
   @override
   ConsumerState<MechanicHomeScreen> createState() => _MechanicHomeScreenState();
 }
 
 class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
+  final _operationsRepo = ServiceOperationsRepository();
+
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<Map<String, dynamic>> _inspections = [];
+  List<ServiceOrderTaskModel> _tasks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialInspections != null || widget.initialTasks != null) {
+      _inspections = List.from(widget.initialInspections ?? const []);
+      _tasks = List.from(widget.initialTasks ?? const []);
+      _isLoading = false;
+    } else {
+      _loadWorkQueue();
+    }
+  }
+
+  SupabaseClient? _tryGetClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _loadWorkQueue() async {
+    final client = _tryGetClient();
+    if (client == null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final auth = ref.read(authNotifierProvider);
+      final mechanicId = auth is AuthAuthenticated
+          ? auth.userProfile.id
+          : (client.auth.currentUser?.id ?? '');
+
+      if (mechanicId.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _inspections = [];
+            _tasks = [];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // Unassigned inspections (mechanic_id IS NULL) will return service_orders=null
+      // due to RLS until claimed by the mechanic, so never discard rows with null join.
+      final inspFuture = client
+          .from('inspections')
+          .select(
+            'id, service_order_id, mechanic_id, status, created_at, '
+            'service_orders(id, order_number, status, assigned_bay, customer_complaint, '
+            'vehicles(license_plate, make, model, year), customers(full_name))',
+          )
+          .inFilter('status', ['assigned', 'in_progress'])
+          .or('mechanic_id.is.null,mechanic_id.eq.$mechanicId')
+          .order('created_at', ascending: false);
+
+      final tasksFuture = _operationsRepo.fetchTasksForMechanic(mechanicId);
+
+      final results = await Future.wait<dynamic>([
+        inspFuture.then((r) => r),
+        tasksFuture,
+      ]);
+      final rawInspections = List<Map<String, dynamic>>.from(results[0] as List);
+      final loadedTasks = results[1] as List<ServiceOrderTaskModel>;
+
+      if (!mounted) return;
+      setState(() {
+        _inspections = rawInspections;
+        _tasks = loadedTasks;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load work queue: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark
-        ? AppColors.textPrimaryDark
-        : AppColors.graphitePrimary;
-    String mechanicName = 'Max Verstappen';
-    try {
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      final name = currentUser?.userMetadata?['full_name'] as String?;
-      if (name != null && name.isNotEmpty) {
-        mechanicName = name;
-      }
-    } catch (_) {}
+    final textColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final mutedColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final auth = ref.watch(authNotifierProvider);
+    final mechanicName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
+
+    final assignedCount = _tasks.where((t) => !t.isCompleted).length;
+    final inProgressCount = _tasks.where((t) => t.isInProgress).length;
+    final completedCount = _tasks.where((t) => t.isCompleted).length;
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Mechanic Telemetry',
       userName: mechanicName,
-      userSubtitle: 'Lead Performance Tech',
+      userSubtitle: 'Workshop Technician',
       currentIndex: 0,
       onNavIndexChanged: (i) => RoleNavigation.navigate(
         context,
@@ -52,303 +154,155 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
         currentIndex: 0,
       ),
       navItems: RoleNavigation.mechanicNavItems,
-      telemetryNotice: 'BAY 02 TELEMETRY ONLINE',
+      telemetryNotice:
+          '${_inspections.length} INSPECTIONS • $assignedCount OPEN TASKS',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();
         if (context.mounted) context.go(RoutePaths.login);
       },
       actions: [
+        const NotificationBellButton(),
         IconButton(
-          key: const Key('btn_mechanic_earnings_action'),
-          icon: const Icon(Icons.account_balance_wallet_outlined, size: 22),
-          onPressed: () => context.push(RoutePaths.mechanicEarnings),
-          tooltip: 'My Earnings & Incentives',
-        ),
-        IconButton(
-          icon: const Icon(Icons.notifications_none, size: 22),
-          onPressed: () {},
-          tooltip: 'Notifications',
+          key: const Key('btn_refresh_mechanic_home'),
+          icon: const Icon(Icons.refresh, size: 20),
+          tooltip: 'Refresh Work Queue',
+          onPressed: _loadWorkQueue,
         ),
       ],
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 18.0),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 860),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 1. Shift Telemetry Header
-                _buildShiftTelemetryHeader(isDark, textColor),
-                const SizedBox(height: 14),
-
-                // 2. Workload Metrics (Assigned: 4, In Progress: 1, On Hold: 2, Passed QC: 1)
-                _buildWorkloadMetrics(isDark, textColor),
-                const SizedBox(height: 18),
-
-                // 3. Current Active Job Focal Point Card
-                _buildActiveJobCard(isDark, textColor),
-                const SizedBox(height: 20),
-
-                // 4. Assigned Jobs Queue
-                _buildQueueSection(isDark, textColor),
-              ],
-            ),
-          ),
-        ),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: PitCard(
+                      accentBorderLeft: AppColors.danger,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppColors.danger,
+                            size: 38,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodyMedium(color: textColor),
+                          ),
+                          const SizedBox(height: 14),
+                          ElevatedButton.icon(
+                            onPressed: _loadWorkQueue,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('RETRY'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadWorkQueue,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 18.0,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 960),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildKpiRow(
+                              isDark,
+                              textColor,
+                              mutedColor,
+                              _inspections.length,
+                              assignedCount,
+                              inProgressCount,
+                              completedCount,
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'VEHICLE INSPECTIONS (${_inspections.length})',
+                              style: AppTypography.labelLarge(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildInspectionsSection(
+                              isDark,
+                              textColor,
+                              mutedColor,
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              'ASSIGNED REPAIR OPERATIONS (${_tasks.length})',
+                              style: AppTypography.labelLarge(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildTasksSection(
+                              isDark,
+                              textColor,
+                              mutedColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
     );
   }
 
-  Widget _buildShiftTelemetryHeader(bool isDark, Color textColor) {
-    return PitCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              Text(
-                'GOOD MORNING, DIAN S.',
-                style: AppTypography.headlineMedium(color: textColor),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.surfaceElevatedDark
-                      : AppColors.surfaceElevatedLight,
-                  borderRadius: AppSpacing.roundedSmall,
-                  border: Border.all(
-                    color: isDark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'ACTIVE SHIFT',
-                      style: AppTypography.telemetrySmall(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.precision_manufacturing,
-                    size: 16,
-                    color: AppColors.accentRed,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Bay 02 • Hoist B',
-                    style: AppTypography.labelMedium(
-                      color: textColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                '•',
-                style: TextStyle(
-                  color: isDark
-                      ? AppColors.textMutedDark
-                      : AppColors.textMutedLight,
-                ),
-              ),
-              Text(
-                'Morning Shift (08:00 – 17:00)',
-                style: AppTypography.bodySmall(
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildKpiRow(
+    bool isDark,
+    Color textColor,
+    Color mutedColor,
+    int inspectionsCount,
+    int openTasksCount,
+    int inProgressCount,
+    int completedCount,
+  ) {
+    final cards = [
+      ('PENDING INSPECTIONS', '$inspectionsCount', AppColors.warning),
+      ('ASSIGNED TASKS', '$openTasksCount', AppColors.info),
+      ('IN PROGRESS', '$inProgressCount', AppColors.accentRed),
+      ('COMPLETED TASKS', '$completedCount', AppColors.success),
+    ];
 
-  Widget _buildWorkloadMetrics(bool isDark, Color textColor) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 650;
-        final columns = isNarrow ? 2 : 4;
-        final cardWidth = (constraints.maxWidth - (columns - 1) * 12) / columns;
-
-        final cards = [
-          _buildMetricCard(
-            title: 'ASSIGNED',
-            count: '4',
-            subtext: 'TOTAL',
-            color: textColor,
-            width: cardWidth,
-            isDark: isDark,
-          ),
-          _buildMetricCard(
-            title: 'IN PROGRESS',
-            count: '1',
-            subtext: 'ACTIVE',
-            color: AppColors.accentRed,
-            accentLeft: AppColors.accentRed,
-            width: cardWidth,
-            isDark: isDark,
-          ),
-          _buildMetricCard(
-            title: 'ON HOLD',
-            count: '2',
-            subtext: 'PARTS',
-            color: AppColors.warning,
-            width: cardWidth,
-            isDark: isDark,
-          ),
-          _buildMetricCard(
-            title: 'PASSED QC',
-            count: '1',
-            subtext: 'READY',
-            color: AppColors.success,
-            width: cardWidth,
-            isDark: isDark,
-          ),
-        ];
-
-        return Wrap(spacing: 12, runSpacing: 12, children: cards);
-      },
-    );
-  }
-
-  Widget _buildMetricCard({
-    required String title,
-    required String count,
-    required String subtext,
-    required Color color,
-    Color? accentLeft,
-    required double width,
-    required bool isDark,
-  }) {
-    return SizedBox(
-      width: width,
-      child: PitCard(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        accentBorderLeft: accentLeft,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: AppTypography.telemetrySmall(
-                color:
-                    accentLeft ??
-                    (isDark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight),
-                fontWeight: FontWeight.w700,
-              ).copyWith(fontSize: 9.5),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(count, style: AppTypography.headlineLarge(color: color)),
-                Text(
-                  subtext,
-                  style: AppTypography.telemetrySmall(
-                    color: isDark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                  ).copyWith(fontSize: 9),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActiveJobCard(bool isDark, Color textColor) {
-    return PitCard(
-      accentBorderTop: AppColors.accentRed,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  StatusBadge.inProgress('ACTIVE JOB', icon: Icons.play_arrow),
-                  const SizedBox(width: 8),
-                  Text(
-                    'SO-2026-0143',
-                    style: AppTypography.telemetryMedium(
-                      color: textColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.surfaceElevatedDark
-                      : AppColors.surfaceElevatedLight,
-                  borderRadius: AppSpacing.roundedSmall,
-                  border: Border.all(
-                    color: isDark
-                        ? AppColors.borderDark
-                        : AppColors.borderLight,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+        final cols = constraints.maxWidth > 640 ? 4 : 2;
+        final width = (constraints.maxWidth - (cols - 1) * 12) / cols;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: cards.map((c) {
+            return SizedBox(
+              width: width,
+              child: PitCard(
+                accentBorderLeft: c.$3,
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.location_on,
-                      size: 14,
-                      color: AppColors.accentRed,
-                    ),
-                    const SizedBox(width: 4),
                     Text(
-                      'Bay 02 • Hoist B',
-                      style: AppTypography.telemetrySmall(
+                      c.$1,
+                      style: AppTypography.labelSmall(color: mutedColor),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      c.$2,
+                      style: AppTypography.telemetryLarge(
                         color: textColor,
                         fontWeight: FontWeight.w700,
                       ),
@@ -356,345 +310,233 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
                   ],
                 ),
               ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildInspectionsSection(
+    bool isDark,
+    Color textColor,
+    Color mutedColor,
+  ) {
+    if (_inspections.isEmpty) {
+      return PitCard(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+          child: Row(
+            children: [
+              Icon(Icons.fact_check_outlined, color: mutedColor, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'No pending vehicle inspections queued right now.',
+                  style: AppTypography.bodyMedium(color: mutedColor),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
+        ),
+      );
+    }
 
-          // Vehicle Info Banner
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.surfaceElevatedDark
-                  : AppColors.surfaceElevatedLight,
-              borderRadius: AppSpacing.roundedMedium,
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.directions_car,
-                  color: AppColors.accentRed,
-                  size: 24,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Honda Civic Type R (FL5)',
-                        style: AppTypography.labelLarge(
-                          color: textColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.plateBackground,
-                              borderRadius: AppSpacing.roundedSmall,
-                              border: Border.all(
-                                color: AppColors.borderStrongDark,
-                              ),
-                            ),
-                            child: Text(
-                              'B 9912 SPO',
-                              style: AppTypography.telemetrySmall(
-                                color: AppColors.plateText,
-                                fontWeight: FontWeight.w700,
-                              ).copyWith(fontSize: 10),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '2.0L Turbo K20C1',
-                            style: AppTypography.bodySmall(
-                              color: isDark
-                                  ? AppColors.textMutedDark
-                                  : AppColors.textMutedLight,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+    return Column(
+      children: _inspections.map((row) {
+        final inspId = row['id'] as String? ?? '';
+        final serviceOrderId = row['service_order_id'] as String? ?? '';
+        final isUnassigned = row['mechanic_id'] == null;
+        final so = row['service_orders'] as Map<String, dynamic>?;
+        final vehicle = so?['vehicles'] as Map<String, dynamic>?;
+        final customer = so?['customers'] as Map<String, dynamic>?;
 
-          // Procedure
-          Text(
-            'PROCEDURE',
-            style: AppTypography.telemetrySmall(
-              color: isDark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            'Brake Rotor & Pad Bedding + High-Temp Fluid Flush',
-            style: AppTypography.bodyMedium(
-              color: textColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
+        final titleText = so == null
+            ? 'Pending Vehicle Inspection (Unassigned)'
+            : '${so['order_number'] ?? 'Service Order'} • ${vehicle?['make'] ?? ''} ${vehicle?['model'] ?? ''}'
+                .trim();
 
-          // Driver Complaint Note
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.backgroundDark
-                  : AppColors.backgroundLight,
-              borderRadius: AppSpacing.roundedSmall,
-              border: const Border(
-                left: BorderSide(color: AppColors.warning, width: 3),
-              ),
-            ),
+        final subtitleParts = <String>[
+          if (vehicle?['license_plate'] != null)
+            'Plate: ${vehicle!['license_plate']}',
+          if (customer?['full_name'] != null)
+            'Owner: ${customer!['full_name']}',
+          if (so?['assigned_bay'] != null) 'Bay: ${so!['assigned_bay']}',
+          if (so?['customer_complaint'] != null)
+            'Complaint: ${so!['customer_complaint']}',
+          if (so == null)
+            'Tap Claim & Inspect to open full vehicle telemetry & diagnostic sheet.',
+        ];
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: PitCard(
+            accentBorderLeft:
+                isUnassigned ? AppColors.warning : AppColors.info,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(
-                      Icons.chat_bubble_outline,
-                      size: 14,
-                      color: AppColors.warning,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'DRIVER COMPLAINT',
-                      style: AppTypography.telemetrySmall(
-                        color: AppColors.warning,
-                        fontWeight: FontWeight.w700,
+                    Expanded(
+                      child: Text(
+                        titleText,
+                        style: AppTypography.headlineSmall(color: textColor),
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    StatusBadge(
+                      label: isUnassigned ? 'AWAITING CLAIM' : 'IN PROGRESS',
+                      type: isUnassigned
+                          ? StatusBadgeType.warning
+                          : StatusBadgeType.inProgress,
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
-                  '“Customer reported slight pedal sponginess after 3 track laps at Sentul. Check caliper piston seals.”',
-                  style: AppTypography.bodySmall(
-                    color: textColor,
-                    fontWeight: FontWeight.w400,
-                  ).copyWith(fontStyle: FontStyle.italic),
+                  subtitleParts.join(' • '),
+                  style: AppTypography.bodySmall(color: mutedColor),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  key: Key('btn_inspect_$inspId'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accentRed,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppSpacing.roundedSmall,
+                    ),
+                  ),
+                  icon: Icon(
+                    isUnassigned ? Icons.assignment_ind : Icons.play_arrow,
+                    size: 18,
+                  ),
+                  label: Text(
+                    isUnassigned ? 'CLAIM & INSPECT' : 'CONTINUE INSPECTION',
+                  ),
+                  onPressed: () {
+                    context.go(
+                      '${RoutePaths.mechanicInspection}?orderId=$serviceOrderId&inspectionId=$inspId',
+                    );
+                  },
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-
-          // Verification Tasks Progress (3 of 5, 60%)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'VERIFICATION TASKS',
-                style: AppTypography.telemetrySmall(
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                '3 of 5 (60%)',
-                style: AppTypography.telemetrySmall(
-                  color: textColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: const LinearProgressIndicator(
-              value: 0.60,
-              minHeight: 6,
-              backgroundColor: AppColors.borderLight,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.accentRed),
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Action Buttons
-          ElevatedButton.icon(
-            key: const Key('btn_open_active_job_workspace'),
-            onPressed: () {
-              context.push(RoutePaths.mechanicOperation);
-            },
-            icon: const Icon(Icons.arrow_forward, size: 18),
-            label: const Text('OPEN ACTIVE JOB WORKSPACE'),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.assignment_late, size: 16),
-                  label: const Text('Report Finding'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.build_circle, size: 16),
-                  label: const Text('Request Part'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildQueueSection(bool isDark, Color textColor) {
+  Widget _buildTasksSection(
+    bool isDark,
+    Color textColor,
+    Color mutedColor,
+  ) {
+    if (_tasks.isEmpty) {
+      return PitCard(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+          child: Row(
+            children: [
+              Icon(Icons.build_circle_outlined, color: mutedColor, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'No repair operations assigned to your bay yet.',
+                  style: AppTypography.bodyMedium(color: mutedColor),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'ASSIGNED JOBS QUEUE',
-              style: AppTypography.headlineSmall(color: textColor),
-            ),
-            Text(
-              '3 Queued',
-              style: AppTypography.telemetrySmall(
-                color: isDark
-                    ? AppColors.textMutedDark
-                    : AppColors.textMutedLight,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
+      children: _tasks.map((task) {
+        Color statusColor = AppColors.info;
+        if (task.isCompleted) statusColor = AppColors.success;
+        if (task.isInProgress) statusColor = AppColors.accentRed;
+        if (task.isPaused) statusColor = AppColors.warning;
 
-        // Queued Job 1
-        PitCard(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'SO-2026-0144',
-                        style: AppTypography.telemetrySmall(
-                          color: textColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.plateBackground,
-                          borderRadius: AppSpacing.roundedSmall,
-                          border: Border.all(color: AppColors.borderStrongDark),
-                        ),
-                        child: Text(
-                          'B 3021 RFS',
-                          style: AppTypography.telemetrySmall(
-                            color: AppColors.plateText,
-                            fontWeight: FontWeight.w700,
-                          ).copyWith(fontSize: 10),
-                        ),
-                      ),
-                    ],
-                  ),
-                  StatusBadge.warning('AWAITING AUTH', icon: Icons.pending),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'BMW 320i F30 LCI — Ignition Coil #3 Replacement',
-                style: AppTypography.bodySmall(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
+        final doneChecks = task.checklists.where((c) => c.isCompleted).length;
+        final totalChecks = task.checklists.length;
 
-        // Queued Job 2
-        PitCard(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'SO-2026-0140',
-                        style: AppTypography.telemetrySmall(
-                          color: textColor,
-                          fontWeight: FontWeight.w700,
-                        ),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: PitCard(
+            accentBorderLeft: statusColor,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        task.title,
+                        style: AppTypography.headlineSmall(color: textColor),
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.plateBackground,
-                          borderRadius: AppSpacing.roundedSmall,
-                          border: Border.all(color: AppColors.borderStrongDark),
-                        ),
-                        child: Text(
-                          'B 1555 ZT',
-                          style: AppTypography.telemetrySmall(
-                            color: AppColors.plateText,
-                            fontWeight: FontWeight.w700,
-                          ).copyWith(fontSize: 10),
-                        ),
-                      ),
-                    ],
-                  ),
-                  StatusBadge.success('QC READY', icon: Icons.check_circle),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Subaru WRX STI — Transmission Gear Oil Flush',
-                style: AppTypography.bodySmall(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
+                    ),
+                    const SizedBox(width: 8),
+                    StatusBadge(
+                      label: task.status.label.toUpperCase(),
+                      color: statusColor,
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  [
+                    if (task.orderNumber != null) task.orderNumber!,
+                    if (task.vehiclePlate != null) task.vehiclePlate!,
+                    if (task.vehicleModel != null) task.vehicleModel!,
+                    'Est: ${task.estimatedDurationMinutes}m',
+                    if (totalChecks > 0)
+                      'Checklist: $doneChecks/$totalChecks',
+                  ].join(' • '),
+                  style: AppTypography.bodySmall(color: mutedColor),
+                ),
+                if (task.description != null &&
+                    task.description!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    task.description!,
+                    style: AppTypography.bodySmall(color: textColor),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  key: Key('btn_open_task_${task.id}'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: task.isCompleted
+                        ? (isDark
+                            ? AppColors.surfaceElevatedDark
+                            : AppColors.graphitePrimary)
+                        : AppColors.accentRed,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppSpacing.roundedSmall,
+                    ),
+                  ),
+                  icon: const Icon(Icons.build_outlined, size: 18),
+                  label: Text(
+                    task.isCompleted ? 'VIEW WORKSPACE' : 'OPEN WORKSPACE',
+                  ),
+                  onPressed: () {
+                    context.go(
+                      '${RoutePaths.mechanicOperation}?taskId=${task.id}',
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 }

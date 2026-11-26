@@ -10,6 +10,7 @@ import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart'
 import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/mechanic/data/models/mechanic_compensation_model.dart';
 import 'package:pitmate/features/mechanic/data/repositories/mechanic_compensation_repository.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
@@ -61,7 +62,6 @@ class _MechanicEarningsScreenState
           incentivePercentage: 15.0,
           defaultLeadSharePercentage: 65.0,
           updatedAt: DateTime.now(),
-          mechanicName: 'Mechanic',
         ),
       );
 
@@ -105,7 +105,11 @@ class _MechanicEarningsScreenState
         ? AppColors.textPrimaryDark
         : AppColors.graphitePrimary;
 
-    final baseSalary = _profile?.baseSalaryCents ?? 5000000;
+    final auth = ref.watch(authNotifierProvider);
+    final authName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
+
+    final baseSalary = _profile?.baseSalaryCents ?? 0;
     final totalIncentives = _allocations.fold<int>(
       0,
       (sum, a) => sum + a.allocatedCents,
@@ -118,7 +122,7 @@ class _MechanicEarningsScreenState
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Mechanic Compensation',
-      userName: _profile?.mechanicName ?? 'Max Verstappen',
+      userName: _profile?.mechanicName ?? authName,
       userSubtitle: 'Senior Pit Technician',
       currentIndex: 3,
       showBackButton: true,
@@ -131,6 +135,7 @@ class _MechanicEarningsScreenState
         if (context.mounted) context.go(RoutePaths.login);
       },
       actions: [
+        const NotificationBellButton(),
         IconButton(
           icon: const Icon(Icons.refresh),
           tooltip: 'Refresh Earnings',
@@ -264,7 +269,7 @@ class _MechanicEarningsScreenState
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          'Order: ${a.orderNumber ?? "SO-000"} • Role: ${a.roleInTask.toUpperCase()} (${a.sharePercentage}%)',
+                                          '${a.orderNumber != null ? "Order: ${a.orderNumber} • " : ""}Role: ${a.roleInTask.toUpperCase()} (${a.sharePercentage}%)',
                                           style: AppTypography.bodySmall(
                                             color: isDark
                                                 ? AppColors.textSecondaryDark

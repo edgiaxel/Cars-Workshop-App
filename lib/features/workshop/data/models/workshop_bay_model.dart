@@ -38,6 +38,7 @@ class WorkshopBayModel {
     required this.name,
     this.status = BayStatus.available,
     this.currentServiceOrderId,
+    this.currentOrderStatus,
     required this.createdAt,
     required this.updatedAt,
     this.currentOrderNumber,
@@ -52,6 +53,7 @@ class WorkshopBayModel {
   final String name;
   final BayStatus status;
   final String? currentServiceOrderId;
+  final String? currentOrderStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -87,6 +89,7 @@ class WorkshopBayModel {
       name: json['name'] as String? ?? '',
       status: BayStatus.fromString(json['status'] as String?),
       currentServiceOrderId: json['current_service_order_id'] as String?,
+      currentOrderStatus: order?['status'] as String?,
       createdAt: parsedCreated,
       updatedAt: parsedUpdated,
       currentOrderNumber: order?['order_number'] as String?,
@@ -114,6 +117,7 @@ class WorkshopBayModel {
     String? name,
     BayStatus? status,
     String? currentServiceOrderId,
+    String? currentOrderStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? currentOrderNumber,
@@ -128,6 +132,7 @@ class WorkshopBayModel {
       name: name ?? this.name,
       status: status ?? this.status,
       currentServiceOrderId: currentServiceOrderId ?? this.currentServiceOrderId,
+      currentOrderStatus: currentOrderStatus ?? this.currentOrderStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       currentOrderNumber: currentOrderNumber ?? this.currentOrderNumber,

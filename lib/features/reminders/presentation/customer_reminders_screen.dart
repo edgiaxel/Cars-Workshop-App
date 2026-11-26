@@ -134,7 +134,7 @@ class _CustomerRemindersScreenState extends ConsumerState<CustomerRemindersScree
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authNotifierProvider);
-    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'Customer Member';
+    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
     final subtextColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
@@ -147,6 +147,10 @@ class _CustomerRemindersScreenState extends ConsumerState<CustomerRemindersScree
       onNavIndexChanged: _onNavChanged,
       navItems: RoleNavigation.customerNavItems,
       telemetryNotice: _reminders.isNotEmpty ? '${_reminders.length} ACTIVE REMINDERS' : null,
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       actions: [
         const NotificationBellButton(),
         IconButton(

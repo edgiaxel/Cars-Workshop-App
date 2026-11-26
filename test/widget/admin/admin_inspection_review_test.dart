@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pitmate/app/theme/app_theme.dart';
 import 'package:pitmate/core/utils/result.dart';
@@ -64,6 +65,24 @@ class FakeAdminReviewRepository implements IInspectionRepository {
   @override
   Future<Result<ServiceOrderTelemetry?>> fetchOrderTelemetry(String orderId) async {
     return Result.success(telemetry);
+  }
+
+  @override
+  Future<Result<List<Map<String, dynamic>>>> fetchInspectionsList() async {
+    return Result.success([
+      {
+        'id': inspection.id,
+        'service_order_id': inspection.serviceOrderId,
+        'status': inspection.status.value,
+        'service_orders': {
+          'order_number': telemetry.orderNumber,
+          'vehicles': {
+            'license_plate': telemetry.licensePlate,
+            'model': telemetry.model,
+          },
+        },
+      },
+    ]);
   }
 }
 
@@ -132,13 +151,15 @@ void main() {
   ];
 
   Widget buildScreen(FakeAdminReviewRepository repo, {VoidCallback? onCreateEstimate}) {
-    return MaterialApp(
-      theme: AppTheme.lightTheme,
-      home: AdminInspectionReviewScreen(
-        serviceOrderId: 'so-101',
-        inspectionId: 'insp-101',
-        repository: repo,
-        onCreateEstimate: onCreateEstimate,
+    return ProviderScope(
+      child: MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: AdminInspectionReviewScreen(
+          serviceOrderId: 'so-101',
+          inspectionId: 'insp-101',
+          repository: repo,
+          onCreateEstimate: onCreateEstimate,
+        ),
       ),
     );
   }
@@ -191,6 +212,8 @@ void main() {
 
       // Tap CRITICAL filter tab
       final criticalTab = find.byKey(const Key('filter-tab-CRITICAL'));
+      await tester.ensureVisible(criticalTab);
+      await tester.pumpAndSettle();
       await tester.tap(criticalTab);
       await tester.pumpAndSettle();
 
@@ -201,6 +224,8 @@ void main() {
 
       // Tap GOOD filter tab
       final goodTab = find.byKey(const Key('filter-tab-GOOD'));
+      await tester.ensureVisible(goodTab);
+      await tester.pumpAndSettle();
       await tester.tap(goodTab);
       await tester.pumpAndSettle();
 

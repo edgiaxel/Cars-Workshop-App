@@ -344,7 +344,7 @@ class _AdminQcScreenState extends ConsumerState<AdminQcScreen> {
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
 
     final authState = ref.watch(authNotifierProvider);
-    String userName = 'Marcus T.';
+    String userName = 'User';
     if (authState is AuthAuthenticated) {
       userName = authState.userProfile.fullName;
     }

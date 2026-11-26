@@ -2,26 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
-import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/bookings/data/models/booking_model.dart';
 import 'package:pitmate/features/bookings/data/repositories/booking_repository.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// UI-C05: Customer Appointments & Bookings Tracking Screen.
+/// Customer Appointments & Bookings Tracking Screen.
 class CustomerAppointmentsScreen extends ConsumerStatefulWidget {
   const CustomerAppointmentsScreen({
     super.key,
     this.bookingRepository,
+    this.initialBookings,
+    this.initialCustomerId,
   });
 
   final BookingRepository? bookingRepository;
+  final List<BookingModel>? initialBookings;
+  final String? initialCustomerId;
 
   @override
   ConsumerState<CustomerAppointmentsScreen> createState() =>
@@ -30,85 +36,92 @@ class CustomerAppointmentsScreen extends ConsumerStatefulWidget {
 
 class _CustomerAppointmentsScreenState
     extends ConsumerState<CustomerAppointmentsScreen> {
-
   late final BookingRepository _repo;
 
   bool _isLoading = false;
+  String? _errorMessage;
   String? _customerId;
   BookingStatus? _filterStatus;
-
-  static final List<BookingModel> _fallbackBookings = [
-    BookingModel(
-      id: 'bk-sample-01',
-      customerId: 'cust-fallback-01',
-      vehicleId: 'v-fallback-1',
-      bookingDate: DateTime.now().add(const Duration(days: 2)),
-      timeSlot: '10:00 - 12:00',
-      serviceType: 'Brake Service',
-      customerNotes: 'Brake pedal feels soft during hard stopping.',
-      status: BookingStatus.confirmed,
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      updatedAt: DateTime.now(),
-      vehiclePlate: 'B 2044 RFS',
-      vehicleMake: 'Toyota',
-      vehicleModel: 'GR Yaris',
-    ),
-    BookingModel(
-      id: 'bk-sample-02',
-      customerId: 'cust-fallback-01',
-      vehicleId: 'v-fallback-2',
-      bookingDate: DateTime.now().add(const Duration(days: 5)),
-      timeSlot: '08:00 - 10:00',
-      serviceType: 'Periodic Service',
-      customerNotes: '15,000 KM service interval and oil change.',
-      status: BookingStatus.pending,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      vehiclePlate: 'B 9912 SPO',
-      vehicleMake: 'Honda',
-      vehicleModel: 'Civic Type R (FL5)',
-    ),
-  ];
-
-  List<BookingModel> _bookings = List.from(_fallbackBookings);
-
-
+  List<BookingModel> _bookings = [];
 
   @override
   void initState() {
     super.initState();
     _repo = widget.bookingRepository ?? BookingRepository();
-    _loadBookings();
+    if (widget.initialBookings != null) {
+      _bookings = List.from(widget.initialBookings!);
+      _customerId = widget.initialCustomerId;
+    } else {
+      _loadBookings();
+    }
+  }
+
+  SupabaseClient? _tryGetClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _loadBookings() async {
-    setState(() => _isLoading = true);
-    try {
-      final client = Supabase.instance.client;
-      final user = client.auth.currentUser;
+    final client = _tryGetClient();
+    if (client == null && widget.bookingRepository == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
 
-      if (user != null) {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      String? custId = widget.initialCustomerId;
+      if (custId == null && client != null) {
+        final user = client.auth.currentUser;
+        if (user == null) {
+          if (mounted) {
+            setState(() {
+              _bookings = [];
+              _isLoading = false;
+            });
+          }
+          return;
+        }
         final custData = await client
             .from('customers')
             .select('id')
             .eq('profile_id', user.id)
             .maybeSingle();
-
-        if (custData != null) {
-          _customerId = custData['id'] as String;
-          final loaded = await _repo.fetchCustomerBookings(_customerId!);
-          if (mounted && loaded.isNotEmpty) {
-            setState(() {
-              _bookings = loaded;
-            });
-            return;
-          }
-        }
+        custId = custData?['id'] as String?;
       }
-    } catch (_) {
-      // Fallback for widget testing or offline execution
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+
+      _customerId = custId;
+      if (_customerId == null) {
+        if (mounted) {
+          setState(() {
+            _bookings = [];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      final loaded = await _repo.fetchCustomerBookings(_customerId!);
+      if (mounted) {
+        setState(() {
+          _bookings = loaded;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -141,28 +154,36 @@ class _CustomerAppointmentsScreenState
       try {
         await _repo.updateBookingStatus(booking.id, BookingStatus.cancelled);
         await _loadBookings();
-      } catch (_) {
-        setState(() {
-          final index = _bookings.indexWhere((b) => b.id == booking.id);
-          if (index != -1) {
-            _bookings[index] = _bookings[index].copyWith(status: BookingStatus.cancelled);
-          }
-        });
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Appointment has been cancelled.'),
-            backgroundColor: AppColors.warning,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Appointment has been cancelled.'),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to cancel appointment: ${e.toString().replaceAll('Exception: ', '')}',
+              ),
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
       }
     }
   }
 
   void _onNavChanged(int index) {
-    RoleNavigation.navigate(context, RoleNavigation.customerNavItems, index, currentIndex: 2);
+    RoleNavigation.navigate(
+      context,
+      RoleNavigation.customerNavItems,
+      index,
+      currentIndex: 2,
+    );
   }
 
   Color _statusAccent(BookingStatus status) {
@@ -201,6 +222,8 @@ class _CustomerAppointmentsScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final auth = ref.watch(authNotifierProvider);
+    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     final filtered = _bookings.where((b) {
       if (_filterStatus != null && b.status != _filterStatus) return false;
@@ -209,7 +232,7 @@ class _CustomerAppointmentsScreenState
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Service Appointments',
-      userName: 'Customer Member',
+      userName: userName,
       userSubtitle: 'Verified Member',
       currentIndex: 2,
       onNavIndexChanged: _onNavChanged,
@@ -220,6 +243,7 @@ class _CustomerAppointmentsScreenState
         if (context.mounted) context.go(RoutePaths.login);
       },
       actions: [
+        const NotificationBellButton(),
         IconButton(
           icon: const Icon(Icons.refresh, size: 20),
           onPressed: _loadBookings,
@@ -245,7 +269,6 @@ class _CustomerAppointmentsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Section Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -281,7 +304,29 @@ class _CustomerAppointmentsScreenState
                 ),
                 const SizedBox(height: 16),
 
-                // Status Filter Chips
+                if (_errorMessage != null) ...[
+                  PitCard(
+                    accentBorderLeft: AppColors.danger,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: AppColors.danger),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: AppTypography.bodySmall(color: AppColors.danger),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _loadBookings,
+                          child: const Text('RETRY'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -336,7 +381,9 @@ class _CustomerAppointmentsScreenState
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'No appointments found for the selected filter.',
+                            _bookings.isEmpty
+                                ? 'No service appointments booked yet.'
+                                : 'No appointments match the selected filter.',
                             style: AppTypography.bodyMedium(
                               color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
@@ -372,14 +419,14 @@ class _CustomerAppointmentsScreenState
   }
 
   Widget _buildBookingCard(BookingModel booking, bool isDark, Color textColor) {
-    final canCancel = booking.status == BookingStatus.pending || booking.status == BookingStatus.confirmed;
+    final canCancel =
+        booking.status == BookingStatus.pending || booking.status == BookingStatus.confirmed;
 
     return PitCard(
       accentBorderLeft: _statusAccent(booking.status),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row: Service type and Status Badge
           Wrap(
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -401,8 +448,6 @@ class _CustomerAppointmentsScreenState
             ],
           ),
           const SizedBox(height: 10),
-
-          // Date, Window, and Vehicle plate
           Wrap(
             spacing: 16,
             runSpacing: 8,
@@ -450,13 +495,10 @@ class _CustomerAppointmentsScreenState
             ],
           ),
           const SizedBox(height: 8),
-
-          // Vehicle model info
           Text(
             booking.vehicleDescription,
             style: AppTypography.labelLarge(color: textColor, fontWeight: FontWeight.w700),
           ),
-
           if (booking.customerNotes != null && booking.customerNotes!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Container(
@@ -482,7 +524,6 @@ class _CustomerAppointmentsScreenState
               ),
             ),
           ],
-
           if (booking.adminNotes != null && booking.adminNotes!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Container(
@@ -507,7 +548,6 @@ class _CustomerAppointmentsScreenState
               ),
             ),
           ],
-
           if (canCancel) ...[
             const SizedBox(height: 12),
             const Divider(height: 1),

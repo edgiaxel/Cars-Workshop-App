@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pitmate/app/theme/app_theme.dart';
 import 'package:pitmate/core/utils/result.dart';
@@ -115,15 +116,22 @@ class FakeInspectionRepository implements IInspectionRepository {
         );
     return Result.success(telemetry);
   }
+
+  @override
+  Future<Result<List<Map<String, dynamic>>>> fetchInspectionsList() async {
+    return const Result.success([]);
+  }
 }
 
 void main() {
   Widget buildScreen(FakeInspectionRepository repo) {
-    return MaterialApp(
-      theme: AppTheme.lightTheme,
-      home: InspectionWorkspaceScreen(
-        serviceOrderId: 'SO-2026-0143',
-        repository: repo,
+    return ProviderScope(
+      child: MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: InspectionWorkspaceScreen(
+          serviceOrderId: 'SO-2026-0143',
+          repository: repo,
+        ),
       ),
     );
   }

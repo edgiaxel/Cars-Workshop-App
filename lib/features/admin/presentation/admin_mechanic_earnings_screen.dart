@@ -7,8 +7,10 @@ import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/core/utils/currency_formatter.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/mechanic/data/models/mechanic_compensation_model.dart';
 import 'package:pitmate/features/mechanic/data/repositories/mechanic_compensation_repository.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/pit_error_dialog.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
@@ -68,7 +70,10 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
 
   Future<void> _openEditProfileDialog(MechanicCompensationProfile profile) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final salaryController = TextEditingController(text: profile.baseSalaryCents.toString());
+    // Database stores cents (BIGINT); form accepts whole IDR and converts * 100 on save.
+    final salaryController = TextEditingController(
+      text: (profile.baseSalaryCents ~/ 100).toString(),
+    );
     final incentiveController = TextEditingController(text: profile.incentivePercentage.toStringAsFixed(1));
     final splitController = TextEditingController(text: profile.defaultLeadSharePercentage.toStringAsFixed(1));
 
@@ -147,7 +152,7 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
               try {
                 await _compRepo.updateProfile(
                   mechanicId: profile.mechanicId,
-                  baseSalaryCents: salary,
+                  baseSalaryCents: salary * 100,
                   incentivePercentage: incentive,
                   defaultLeadSharePercentage: split,
                 );
@@ -180,7 +185,7 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
   Future<void> _openAdjustmentDialog(String mechanicId, String mechanicName) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     String selectedType = 'bonus';
-    final amountController = TextEditingController(text: '250000');
+    final amountController = TextEditingController();
     final reasonController = TextEditingController();
 
     await showDialog<void>(
@@ -224,6 +229,7 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     labelText: 'Adjustment Amount (Rp)',
+                    hintText: '250000',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -264,7 +270,7 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
                 try {
                   await _compRepo.adjustCompensation(
                     mechanicId: mechanicId,
-                    amountCents: amount,
+                    amountCents: amount * 100,
                     type: selectedType,
                     reason: reason,
                   );
@@ -303,14 +309,26 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
     final totalBaseSalary = _profiles.fold<int>(0, (sum, p) => sum + p.baseSalaryCents);
     final totalAdjustments = _adjustments.fold<int>(0, (sum, a) => sum + (a.isDeduction ? -a.amountCents : a.amountCents));
 
+    final auth = ref.watch(authNotifierProvider);
+    final userName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
+
     return ResponsiveRoleScaffold(
       roleTitle: 'Mechanic Compensation',
-      userName: 'Toto Wolf',
+      userName: userName,
       userSubtitle: 'Workshop Director',
       currentIndex: 7,
       onNavIndexChanged: _onNavChanged,
       navItems: RoleNavigation.adminNavItems,
       telemetryNotice: '${_profiles.length} ACTIVE TECHNICIANS',
+      actions: [
+        const NotificationBellButton(),
+        IconButton(
+          icon: const Icon(Icons.refresh, size: 20),
+          tooltip: 'Refresh Payroll',
+          onPressed: _loadData,
+        ),
+      ],
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();
         if (context.mounted) context.go(RoutePaths.login);
@@ -390,7 +408,7 @@ class _AdminMechanicEarningsScreenState extends ConsumerState<AdminMechanicEarni
                                                     style: AppTypography.headlineSmall(color: textColor).copyWith(fontWeight: FontWeight.w700),
                                                   ),
                                                   Text(
-                                                    profile.mechanicEmail ?? 'technician@pitmate.com',
+                                                    profile.mechanicEmail ?? 'Active Mechanic',
                                                     style: AppTypography.bodySmall(
                                                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                                     ),

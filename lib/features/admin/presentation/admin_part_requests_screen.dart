@@ -6,6 +6,8 @@ import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/features/inventory/data/models/part_request_model.dart';
 import 'package:pitmate/features/inventory/data/repositories/part_operations_repository.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
@@ -167,10 +169,13 @@ class _AdminPartRequestsScreenState extends ConsumerState<AdminPartRequestsScree
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pendingCount = _requests.where((r) => r.isPending).length;
+    final auth = ref.watch(authNotifierProvider);
+    final userName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Floor Part Coordination',
-      userName: 'Toto Wolf',
+      userName: userName,
       userSubtitle: 'Workshop Director',
       currentIndex: 6,
       onNavIndexChanged: _onNavChanged,
@@ -181,6 +186,7 @@ class _AdminPartRequestsScreenState extends ConsumerState<AdminPartRequestsScree
         if (context.mounted) context.go(RoutePaths.login);
       },
       actions: [
+        const NotificationBellButton(),
         IconButton(
           icon: const Icon(Icons.refresh),
           tooltip: 'Refresh Requests',

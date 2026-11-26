@@ -6,6 +6,8 @@ import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/features/inventory/data/models/inventory_transaction_model.dart';
 import 'package:pitmate/features/inventory/data/models/part_model.dart';
 import 'package:pitmate/features/inventory/data/repositories/inventory_repository.dart';
@@ -122,7 +124,7 @@ class _AdminInventoryScreenState extends ConsumerState<AdminInventoryScreen> {
                     controller: nameController,
                     decoration: const InputDecoration(
                       labelText: 'Part Name *',
-                      hintText: 'e.g. Motul 300V 5W-30',
+                      hintText: 'e.g. Synthetic Engine Oil 5W-30',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -663,10 +665,13 @@ class _AdminInventoryScreenState extends ConsumerState<AdminInventoryScreen> {
     final lowStockCount = _parts.where((p) => p.isLowStock).length;
     final outOfStockCount = _parts.where((p) => p.isOutOfStock).length;
     final totalValuation = _parts.fold<int>(0, (sum, p) => sum + p.totalValuationCents);
+    final auth = ref.watch(authNotifierProvider);
+    final userName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Inventory & Stock Management',
-      userName: 'Toto Wolf',
+      userName: userName,
       userSubtitle: 'Workshop Director',
       currentIndex: 5,
       onNavIndexChanged: _onNavChanged,
@@ -677,6 +682,7 @@ class _AdminInventoryScreenState extends ConsumerState<AdminInventoryScreen> {
         if (context.mounted) context.go(RoutePaths.login);
       },
       actions: [
+        const NotificationBellButton(),
         IconButton(
           icon: const Icon(Icons.refresh),
           tooltip: 'Refresh Inventory',

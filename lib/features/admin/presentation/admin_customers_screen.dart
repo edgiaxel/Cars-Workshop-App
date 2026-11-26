@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
-import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
+import 'package:pitmate/features/admin/presentation/widgets/customer_intake_modal.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
@@ -34,19 +37,24 @@ class AdminCustomerEntry {
   final String phoneNumber;
   final String email;
   final CustomerType customerType;
-  final String accountTier; // 'individual' or 'company'
+  final String accountTier;
   final String? companyName;
-  final List<String> vehicles; // License plates
+  final List<String> vehicles;
   final int totalVisits;
   final String lastVisitDate;
 }
 
-/// Admin Customers Screen connected live to Supabase:
-/// - List customers with badges for "Registered Customer" vs "Guest Customer" and "Individual" vs "Company"
-/// - Search by name, phone, or plate
-/// - Add Walk-in Guest (individual only) OR manually Register New Customer (individual or company)
+/// Admin Customers Screen connected live to Supabase.
 class AdminCustomersScreen extends ConsumerStatefulWidget {
-  const AdminCustomersScreen({super.key});
+  const AdminCustomersScreen({
+    super.key,
+    this.initialCustomers,
+    this.onAddCustomerOverride,
+  });
+
+  final List<AdminCustomerEntry>? initialCustomers;
+  final Future<AdminCustomerEntry> Function(Map<String, dynamic> payload)?
+      onAddCustomerOverride;
 
   @override
   ConsumerState<AdminCustomersScreen> createState() =>
@@ -54,73 +62,46 @@ class AdminCustomersScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
-
   String _searchQuery = '';
   CustomerType? _filterType;
   bool _isLoading = false;
-
-  static const List<AdminCustomerEntry> _defaultCustomers = [
-    AdminCustomerEntry(
-      id: 'cust-1',
-      fullName: 'Alex Pratama',
-      phoneNumber: '+62 812-3456-7890',
-      email: 'alex.pratama@example.com',
-      customerType: CustomerType.registered,
-      accountTier: 'individual',
-      vehicles: ['B 1234 ABC', 'B 5678 DEF'],
-      totalVisits: 12,
-      lastVisitDate: '2026-10-15',
-    ),
-    AdminCustomerEntry(
-      id: 'cust-2',
-      fullName: 'Bambang Soediro (Walk-in)',
-      phoneNumber: '+62 818-9876-5432',
-      email: 'Walk-in Guest',
-      customerType: CustomerType.guest,
-      accountTier: 'individual',
-      vehicles: ['B 9999 XYZ'],
-      totalVisits: 1,
-      lastVisitDate: '2026-11-20',
-    ),
-    AdminCustomerEntry(
-      id: 'cust-3',
-      fullName: 'Rian Hidayat',
-      phoneNumber: '+62 813-2222-3333',
-      email: 'rian.h@example.com',
-      customerType: CustomerType.registered,
-      accountTier: 'individual',
-      vehicles: ['B 8080 RFS'],
-      totalVisits: 5,
-      lastVisitDate: '2026-11-02',
-    ),
-    AdminCustomerEntry(
-      id: 'cust-4',
-      fullName: 'Hendra Wijaya (Guest)',
-      phoneNumber: '+62 817-4444-5555',
-      email: 'Walk-in Guest',
-      customerType: CustomerType.guest,
-      accountTier: 'individual',
-      vehicles: ['B 7777 WXY'],
-      totalVisits: 2,
-      lastVisitDate: '2026-11-18',
-    ),
-  ];
-
-  List<AdminCustomerEntry> _customers = List.from(_defaultCustomers);
+  String? _errorMessage;
+  List<AdminCustomerEntry> _customers = [];
 
   @override
   void initState() {
     super.initState();
-    _loadCustomersFromDb();
+    if (widget.initialCustomers != null) {
+      _customers = List.from(widget.initialCustomers!);
+    } else {
+      _loadCustomersFromDb();
+    }
+  }
+
+  SupabaseClient? _tryGetClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _loadCustomersFromDb() async {
-    setState(() => _isLoading = true);
+    final client = _tryGetClient();
+    if (client == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
-      final client = Supabase.instance.client;
       final data = await client
           .from('customers')
-          .select('*, vehicles(*)')
+          .select('*, vehicles(license_plate), service_orders(id)')
           .order('created_at', ascending: false);
 
       final mapped = (data as List).map((row) {
@@ -129,6 +110,7 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
             .where((p) => p.isNotEmpty)
             .toList();
 
+        final orderCount = (row['service_orders'] as List? ?? []).length;
         final isGuest = (row['is_guest'] as bool?) ?? false;
         final custTypeStr = (row['customer_type'] as String?) ?? 'individual';
 
@@ -141,24 +123,28 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
           accountTier: custTypeStr,
           companyName: row['company_name'] as String?,
           vehicles: vehiclesList,
-          totalVisits: isGuest ? 1 : 4,
-          lastVisitDate: isGuest ? 'Walk-in Intake' : 'Active Account',
+          totalVisits: orderCount,
+          lastVisitDate: orderCount == 0
+              ? 'No visits yet'
+              : '$orderCount service order${orderCount == 1 ? '' : 's'}',
         );
       }).toList();
 
-      if (mounted && mapped.isNotEmpty) {
+      if (mounted) {
         setState(() {
           _customers = mapped;
+          _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('Database load fallback: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
     }
   }
-
-
 
   void _openCustomerIntakeModal() {
     showModalBottomSheet<void>(
@@ -167,16 +153,19 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
       backgroundColor: Colors.transparent,
       builder: (modalContext) {
         return _AdminNewCustomerSheet(
+          onAddCustomerOverride: widget.onAddCustomerOverride,
           onCustomerAdded: (newCustomer) {
             setState(() {
               _customers = [newCustomer, ..._customers];
             });
-            _loadCustomersFromDb();
+            if (widget.onAddCustomerOverride == null) {
+              _loadCustomersFromDb();
+            }
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Customer "${newCustomer.fullName}" saved to live database.',
+                    'Customer "${newCustomer.fullName}" saved.',
                   ),
                   backgroundColor: AppColors.success,
                 ),
@@ -188,12 +177,28 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
     );
   }
 
+  void _openServiceOrderIntakeForCustomer(AdminCustomerEntry customer) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CustomerIntakeModal(
+        initialCustomerId: customer.id,
+        onIntakeCompleted: (_) {
+          _loadCustomersFromDb();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark
         ? AppColors.textPrimaryDark
         : AppColors.graphitePrimary;
+    final auth = ref.watch(authNotifierProvider);
+    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     final filtered = _customers.where((c) {
       if (_filterType != null && c.customerType != _filterType) return false;
@@ -214,7 +219,7 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Customer Registry',
-      userName: 'Toto Wolf',
+      userName: userName,
       userSubtitle: 'Workshop Director',
       showBackButton: true,
       onBack: () => context.go(RoutePaths.admin),
@@ -223,10 +228,16 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
         if (context.mounted) context.go(RoutePaths.login);
       },
       currentIndex: 1,
-      onNavIndexChanged: (i) => RoleNavigation.navigate(context, RoleNavigation.adminNavItems, i, currentIndex: 1),
+      onNavIndexChanged: (i) => RoleNavigation.navigate(
+        context,
+        RoleNavigation.adminNavItems,
+        i,
+        currentIndex: 1,
+      ),
       navItems: RoleNavigation.adminNavItems,
       telemetryNotice: 'DISPATCH TELEMETRY ACTIVE',
       actions: [
+        const NotificationBellButton(),
         IconButton(
           icon: const Icon(Icons.refresh, size: 20),
           onPressed: _loadCustomersFromDb,
@@ -241,7 +252,29 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top telemetry KPI summary cards
+                if (_errorMessage != null) ...[
+                  PitCard(
+                    accentBorderLeft: AppColors.danger,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: AppColors.danger),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: AppTypography.bodySmall(color: AppColors.danger),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _loadCustomersFromDb,
+                          child: const Text('RETRY'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isNarrow = constraints.maxWidth < 600;
@@ -348,7 +381,6 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Search, Filter & New Customer Intake CTA
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isNarrow = constraints.maxWidth < 500;
@@ -402,7 +434,6 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Filter Chips
                 Wrap(
                   spacing: 8,
                   children: [
@@ -452,7 +483,9 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'No customers match the current query.',
+                            _customers.isEmpty
+                                ? 'No customers in the registry yet.'
+                                : 'No customers match the current query.',
                             style: AppTypography.bodyMedium(
                               color: isDark
                                   ? AppColors.textSecondaryDark
@@ -464,7 +497,6 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                     ),
                   )
                 else
-                  // Customer List Cards
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -504,14 +536,14 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
             backgroundColor: isCompany
                 ? AppColors.info.withValues(alpha: 0.2)
                 : (isRegistered
-                      ? AppColors.success.withValues(alpha: 0.2)
-                      : AppColors.warning.withValues(alpha: 0.2)),
+                    ? AppColors.success.withValues(alpha: 0.2)
+                    : AppColors.warning.withValues(alpha: 0.2)),
             child: Icon(
               isCompany
                   ? Icons.business
                   : (isRegistered
-                        ? Icons.verified_user
-                        : Icons.person_outline),
+                      ? Icons.verified_user
+                      : Icons.person_outline),
               size: 20,
               color: isCompany
                   ? AppColors.info
@@ -590,14 +622,8 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
           );
 
           final actionBtn = OutlinedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Selected customer: ${customer.fullName}'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+            key: Key('intake-so-btn-${customer.id}'),
+            onPressed: () => _openServiceOrderIntakeForCustomer(customer),
             child: const Text('INTAKE SO'),
           );
 
@@ -632,8 +658,6 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
               const SizedBox(height: 12),
               const Divider(height: 1),
               const SizedBox(height: 10),
-
-              // Registered Vehicles Tags
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -706,9 +730,14 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
 
 /// Admin New Customer Sheet supporting Walk-in Guest OR Manual Customer Registration.
 class _AdminNewCustomerSheet extends StatefulWidget {
-  const _AdminNewCustomerSheet({required this.onCustomerAdded});
+  const _AdminNewCustomerSheet({
+    required this.onCustomerAdded,
+    this.onAddCustomerOverride,
+  });
 
   final ValueChanged<AdminCustomerEntry> onCustomerAdded;
+  final Future<AdminCustomerEntry> Function(Map<String, dynamic> payload)?
+      onAddCustomerOverride;
 
   @override
   State<_AdminNewCustomerSheet> createState() => _AdminNewCustomerSheetState();
@@ -717,8 +746,9 @@ class _AdminNewCustomerSheet extends StatefulWidget {
 class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
   final _formKey = GlobalKey<FormState>();
 
-  // Mode: 0 = Walk-in Guest (Individual), 1 = Register Account Manually
   int _intakeMode = 0;
+  bool _isSubmitting = false;
+  String? _submitError;
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -729,7 +759,7 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
   final _yearController = TextEditingController();
   final _mileageController = TextEditingController();
   final _companyNameController = TextEditingController();
-  String _customerType = 'individual'; // for manual registration
+  String _customerType = 'individual';
 
   @override
   void dispose() {
@@ -746,7 +776,12 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _isSubmitting) return;
+
+    setState(() {
+      _isSubmitting = true;
+      _submitError = null;
+    });
 
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim();
@@ -758,11 +793,25 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
         ? _companyNameController.text.trim()
         : null;
 
-    String customerId = 'cust-${DateTime.now().millisecondsSinceEpoch}';
-
     try {
+      if (widget.onAddCustomerOverride != null) {
+        final created = await widget.onAddCustomerOverride!({
+          'full_name': name,
+          'phone_number': phone,
+          'email': email,
+          'customer_type': custType,
+          'company_name': compName,
+          'is_guest': isGuest,
+          'license_plate': plate,
+          'make': _makeController.text.trim(),
+          'model': _modelController.text.trim(),
+        });
+        widget.onCustomerAdded(created);
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+
       final client = Supabase.instance.client;
-      // 1. Insert customer into Supabase
       final customerInsert = await client
           .from('customers')
           .insert({
@@ -776,9 +825,8 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
           .select()
           .single();
 
-      customerId = customerInsert['id'] as String;
+      final customerId = customerInsert['id'] as String;
 
-      // 2. Insert initial vehicle if plate provided
       if (plate.isNotEmpty) {
         await client.from('vehicles').insert({
           'customer_id': customerId,
@@ -789,31 +837,35 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
           'model': _modelController.text.trim().isNotEmpty
               ? _modelController.text.trim()
               : 'Standard',
-          'year':
-              int.tryParse(_yearController.text.trim()) ?? DateTime.now().year,
+          'year': int.tryParse(_yearController.text.trim()) ?? DateTime.now().year,
           'mileage': int.tryParse(_mileageController.text.trim()) ?? 0,
           'notes': isGuest ? 'Walk-in Intake' : 'Admin Registered Customer',
         });
       }
+
+      final newEntry = AdminCustomerEntry(
+        id: customerId,
+        fullName: name,
+        phoneNumber: phone,
+        email: email.isNotEmpty ? email : (isGuest ? 'Walk-in Guest' : '-'),
+        customerType: isGuest ? CustomerType.guest : CustomerType.registered,
+        accountTier: custType,
+        companyName: compName,
+        vehicles: plate.isNotEmpty ? [plate] : [],
+        totalVisits: 0,
+        lastVisitDate: 'No visits yet',
+      );
+
+      widget.onCustomerAdded(newEntry);
+      if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      debugPrint('Database insert fallback: $e');
+      if (mounted) {
+        setState(() {
+          _submitError = e.toString().replaceAll('Exception: ', '');
+          _isSubmitting = false;
+        });
+      }
     }
-
-    final newEntry = AdminCustomerEntry(
-      id: customerId,
-      fullName: name,
-      phoneNumber: phone,
-      email: email.isNotEmpty ? email : (isGuest ? 'Walk-in Guest' : '-'),
-      customerType: isGuest ? CustomerType.guest : CustomerType.registered,
-      accountTier: custType,
-      companyName: compName,
-      vehicles: plate.isNotEmpty ? [plate] : [],
-      totalVisits: 1,
-      lastVisitDate: 'Today (Intake)',
-    );
-
-    widget.onCustomerAdded(newEntry);
-    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -878,7 +930,22 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
               ),
               const SizedBox(height: 12),
 
-              // Intake Mode Segmented Button
+              if (_submitError != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withValues(alpha: 0.12),
+                    borderRadius: AppSpacing.roundedSmall,
+                    border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    _submitError!,
+                    style: AppTypography.bodySmall(color: AppColors.danger),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               SegmentedButton<int>(
                 segments: const [
                   ButtonSegment(
@@ -899,7 +966,6 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
               ),
               const SizedBox(height: 14),
 
-              // Policy information box
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -926,7 +992,6 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
               ),
               const SizedBox(height: 16),
 
-              // If Manual Registration: select Individual vs Company
               if (_intakeMode == 1) ...[
                 Row(
                   children: [
@@ -956,7 +1021,7 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                     textCapitalization: TextCapitalization.words,
                     decoration: const InputDecoration(
                       labelText: 'Company / Fleet Name',
-                      hintText: 'e.g. Aston Martin F1 Team',
+                      hintText: 'e.g. Aston Martin Racing',
                       prefixIcon: Icon(Icons.business_outlined, size: 20),
                     ),
                     validator: (val) => val == null || val.trim().isEmpty
@@ -967,7 +1032,6 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                 ],
               ],
 
-              // Full Name
               TextFormField(
                 key: const Key('guest-name-input'),
                 controller: _nameController,
@@ -985,7 +1049,6 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
               ),
               const SizedBox(height: 14),
 
-              // Phone Number
               TextFormField(
                 key: const Key('guest-phone-input'),
                 controller: _phoneController,
@@ -1001,7 +1064,6 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
               ),
               const SizedBox(height: 14),
 
-              // Email (required for manual registration, optional for guest)
               if (_intakeMode == 1) ...[
                 TextFormField(
                   controller: _emailController,
@@ -1022,7 +1084,6 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                 const SizedBox(height: 14),
               ],
 
-              // Vehicle Section Header
               Text(
                 'INITIAL VEHICLE INTAKE',
                 style: AppTypography.labelMedium(
@@ -1033,7 +1094,6 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
               ),
               const SizedBox(height: 8),
 
-              // License Plate
               TextFormField(
                 key: const Key('guest-plate-input'),
                 controller: _plateController,
@@ -1068,7 +1128,7 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                       controller: _makeController,
                       decoration: const InputDecoration(
                         labelText: 'Make',
-                        hintText: 'Toyota',
+                        hintText: 'Honda',
                       ),
                     ),
                   ),
@@ -1078,7 +1138,7 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
                       controller: _modelController,
                       decoration: const InputDecoration(
                         labelText: 'Model',
-                        hintText: 'Innova Reborn',
+                        hintText: 'Civic RS',
                       ),
                     ),
                   ),
@@ -1088,12 +1148,21 @@ class _AdminNewCustomerSheetState extends State<_AdminNewCustomerSheet> {
 
               ElevatedButton(
                 key: const Key('submit-guest-intake-button'),
-                onPressed: _submit,
-                child: Text(
-                  _intakeMode == 0
-                      ? 'CREATE WALK-IN GUEST RECORD'
-                      : 'REGISTER CUSTOMER RECORD',
-                ),
+                onPressed: _isSubmitting ? null : _submit,
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        _intakeMode == 0
+                            ? 'CREATE WALK-IN GUEST RECORD'
+                            : 'REGISTER CUSTOMER RECORD',
+                      ),
               ),
             ],
           ),

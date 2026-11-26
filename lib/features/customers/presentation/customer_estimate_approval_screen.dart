@@ -2,22 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
-import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/estimates/data/models/estimate_authorization_model.dart';
 import 'package:pitmate/features/estimates/data/models/estimate_item_model.dart';
 import 'package:pitmate/features/estimates/data/models/estimate_model.dart';
 import 'package:pitmate/features/estimates/data/repositories/estimate_repository.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 /// Customer Estimate Approval Screen (UI-C08).
-/// Allows customers to inspect full itemized quotes sent by the workshop,
-/// transparently review parts vs labor charges, and submit legal digital authorization
-/// or decline work with audit logging.
+/// Loads estimates from Supabase and records per-item authorization via
+/// `authorize_estimate_items` so invoice generation computes approved items accurately.
 class CustomerEstimateApprovalScreen extends ConsumerStatefulWidget {
   const CustomerEstimateApprovalScreen({
     super.key,
@@ -25,12 +28,18 @@ class CustomerEstimateApprovalScreen extends ConsumerStatefulWidget {
     this.serviceOrderId,
     this.initialEstimate,
     this.initialItems,
+    this.initialVehicleName,
+    this.initialLicensePlate,
+    this.initialOrderNumber,
   });
 
   final String? estimateId;
   final String? serviceOrderId;
   final EstimateModel? initialEstimate;
   final List<EstimateItemModel>? initialItems;
+  final String? initialVehicleName;
+  final String? initialLicensePlate;
+  final String? initialOrderNumber;
 
   @override
   ConsumerState<CustomerEstimateApprovalScreen> createState() =>
@@ -43,123 +52,181 @@ class _CustomerEstimateApprovalScreenState
   String? _errorMessage;
   String? _successMessage;
 
-  // Header info
-  String _vehicleName = 'Honda Civic Type R (FL5)';
-  String _licensePlate = 'B 5678 CIV';
-  String _orderNumber = 'SO-202611-0001';
+  String _vehicleName = '';
+  String _licensePlate = '';
+  String _orderNumber = '';
   final String _workshopName = 'PitMate Performance Workshop';
 
-  late EstimateModel _estimate;
-  late List<EstimateItemModel> _items;
+  EstimateModel? _estimate;
+  List<EstimateItemModel> _items = [];
   List<EstimateAuthorizationModel> _authorizations = [];
+  List<Map<String, dynamic>> _availableEstimates = [];
+  String? _selectedEstimateId;
+  final Set<String> _selectedOptionalItemIds = {};
 
   @override
   void initState() {
     super.initState();
-    _initEstimate();
-    _loadLiveEstimate();
-  }
-
-  void _initEstimate() {
     if (widget.initialEstimate != null) {
-      _estimate = widget.initialEstimate!;
-      _items = widget.initialItems != null
-          ? List.from(widget.initialItems!)
-          : [];
+      _estimate = widget.initialEstimate;
+      _items = widget.initialItems != null ? List.from(widget.initialItems!) : [];
+      _vehicleName = widget.initialVehicleName ?? '';
+      _licensePlate = widget.initialLicensePlate ?? '';
+      _orderNumber = widget.initialOrderNumber ?? '';
+      _syncOptionalSelection();
     } else {
-      _estimate = EstimateModel(
-        id: widget.estimateId ?? 'mock-est-001',
-        serviceOrderId: widget.serviceOrderId ?? 'mock-order-001',
-        revisionNumber: 1,
-        status: EstimateStatus.sent,
-        subtotalCents: 315000000,
-        taxCents: 34650000,
-        discountCents: 0,
-        totalCents: 349650000,
-        notes: 'All parts OEM specification. Includes professional brake caliper service and track bleed.',
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        updatedAt: DateTime.now().subtract(const Duration(hours: 2)),
-      );
-
-      _items = [
-        EstimateItemModel.create(
-          id: 'item-1',
-          estimateId: _estimate.id,
-          itemType: EstimateItemType.part,
-          description: 'Honda OEM Brembo Front Brake Pad Set (FL5)',
-          quantity: 1,
-          unitPriceCents: 220000000,
-          isOptional: false,
-        ),
-        EstimateItemModel.create(
-          id: 'item-2',
-          estimateId: _estimate.id,
-          itemType: EstimateItemType.part,
-          description: 'Motul RBF 660 High-Temp Racing Brake Fluid (500ml)',
-          quantity: 2,
-          unitPriceCents: 22500000,
-          isOptional: false,
-        ),
-        EstimateItemModel.create(
-          id: 'item-3',
-          estimateId: _estimate.id,
-          itemType: EstimateItemType.labor,
-          description: 'Front Brake Overhaul & Precision Bleeding Service',
-          quantity: 1,
-          unitPriceCents: 50000000,
-          isOptional: false,
-        ),
-      ];
+      _loadLiveEstimate();
     }
   }
 
-  Future<void> _loadLiveEstimate() async {
-    final estId = widget.estimateId;
-    final orderId = widget.serviceOrderId;
-    if (estId == null && orderId == null) return;
+  void _syncOptionalSelection() {
+    _selectedOptionalItemIds.clear();
+    for (final item in _items) {
+      if (item.isOptional && item.authorizationStatus != AuthorizationStatus.rejected) {
+        _selectedOptionalItemIds.add(item.id);
+      }
+    }
+  }
 
-    setState(() => _isLoading = true);
+  sb.SupabaseClient? _tryGetClient() {
+    try {
+      return sb.Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _loadLiveEstimate({String? overrideEstimateId}) async {
+    final estId = overrideEstimateId ?? widget.estimateId;
+    final orderId = overrideEstimateId == null ? widget.serviceOrderId : null;
+    final client = _tryGetClient();
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
       final repo = ref.read(estimateRepositoryProvider);
-
       EstimateModel? loadedEstimate;
+      String? resolvedOrderId = orderId;
+
       if (estId != null && estId.isNotEmpty) {
         final res = await repo.fetchEstimateById(estId);
-        res.when(success: (e) => loadedEstimate = e, failure: (_) {});
+        res.when(
+          success: (e) {
+            loadedEstimate = e;
+            resolvedOrderId ??= e?.serviceOrderId;
+          },
+          failure: (err) => _errorMessage = err.message,
+        );
       } else if (orderId != null && orderId.isNotEmpty) {
         final res = await repo.fetchEstimateByOrderId(orderId);
-        res.when(success: (e) => loadedEstimate = e, failure: (_) {});
+        res.when(
+          success: (e) => loadedEstimate = e,
+          failure: (err) => _errorMessage = err.message,
+        );
+      } else if (client != null) {
+        final user = client.auth.currentUser;
+        if (user != null) {
+          final cust = await client
+              .from('customers')
+              .select('id')
+              .eq('profile_id', user.id)
+              .maybeSingle();
 
-        final orderRes = await repo.fetchServiceOrderSummary(orderId);
+          if (cust != null) {
+            final custId = cust['id'] as String;
+            final rows = await client
+                .from('estimates')
+                .select('''
+                  *,
+                  service_orders!inner(
+                    id, order_number, customer_id,
+                    vehicles(make, model, license_plate)
+                  )
+                ''')
+                .eq('service_orders.customer_id', custId)
+                .order('updated_at', ascending: false);
+
+            final allRows = (rows as List).cast<Map<String, dynamic>>();
+            final activeRows = allRows
+                .where((r) => r['status'] != 'superseded' && r['status'] != 'draft')
+                .toList();
+            final candidates = activeRows.isNotEmpty
+                ? activeRows
+                : allRows.where((r) => r['status'] != 'superseded').toList();
+
+            // Prioritize estimates currently awaiting customer decision.
+            candidates.sort((a, b) {
+              final aSent = a['status'] == 'sent' ? 0 : 1;
+              final bSent = b['status'] == 'sent' ? 0 : 1;
+              return aSent.compareTo(bSent);
+            });
+
+            _availableEstimates = candidates;
+            if (candidates.isNotEmpty) {
+              final chosen = candidates.first;
+              _selectedEstimateId = chosen['id'] as String;
+              loadedEstimate = EstimateModel.fromJson(chosen);
+              final so = chosen['service_orders'] as Map<String, dynamic>?;
+              resolvedOrderId = so?['id'] as String?;
+            }
+          }
+        }
+      }
+
+      if (resolvedOrderId != null && resolvedOrderId!.isNotEmpty) {
+        final orderRes = await repo.fetchServiceOrderSummary(resolvedOrderId!);
         orderRes.when(
           success: (orderData) {
-            if (orderData != null && mounted) {
+            if (orderData != null) {
               final veh = orderData['vehicles'] as Map<String, dynamic>?;
-              setState(() {
-                _orderNumber = (orderData['order_number'] as String?) ?? _orderNumber;
-                if (veh != null) {
-                  _vehicleName = '${veh['make'] ?? ''} ${veh['model'] ?? ''}';
-                  _licensePlate = (veh['license_plate'] as String?) ?? _licensePlate;
-                }
-              });
+              _orderNumber = (orderData['order_number'] as String?) ?? '';
+              if (veh != null) {
+                _vehicleName = '${veh['make'] ?? ''} ${veh['model'] ?? ''}'.trim();
+                _licensePlate = (veh['license_plate'] as String?) ?? '';
+              }
             }
           },
-          failure: (_) {},
+          failure: (err) => _errorMessage ??= err.message,
         );
       }
 
-      if (loadedEstimate != null && mounted) {
+      if (loadedEstimate != null) {
         final itemsRes = await repo.fetchEstimateItems(loadedEstimate!.id);
         final authRes = await repo.fetchAuthorizations(loadedEstimate!.id);
 
+        if (mounted) {
+          setState(() {
+            _estimate = loadedEstimate;
+            _selectedEstimateId = loadedEstimate!.id;
+            itemsRes.when(
+              success: (items) {
+                _items = items;
+                _syncOptionalSelection();
+              },
+              failure: (err) => _errorMessage ??= err.message,
+            );
+            authRes.when(
+              success: (auths) => _authorizations = auths,
+              failure: (_) {},
+            );
+          });
+        }
+      } else if (mounted) {
         setState(() {
-          _estimate = loadedEstimate!;
-          itemsRes.when(success: (items) => _items = items, failure: (_) {});
-          authRes.when(success: (auths) => _authorizations = auths, failure: (_) {});
+          _estimate = null;
+          _items = [];
+          _authorizations = [];
         });
       }
     } catch (e) {
-      debugPrint('Fallback loading live estimate: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+        });
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -184,6 +251,9 @@ class _CustomerEstimateApprovalScreenState
   }
 
   Future<void> _handleApproveEstimate() async {
+    final est = _estimate;
+    if (est == null) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {
@@ -197,7 +267,7 @@ class _CustomerEstimateApprovalScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'By confirming, you authorize PitMate to commence repairs as itemized for ${_estimate.formattedTotal}.',
+                'By confirming, you authorize PitMate to commence repairs as itemized for ${est.formattedTotal}.',
                 style: AppTypography.bodyMedium(),
               ),
               const SizedBox(height: 12),
@@ -214,7 +284,7 @@ class _CustomerEstimateApprovalScreenState
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'A digital signature token will be securely generated and appended to this service order.',
+                        'Your authorization will be recorded in the workshop audit ledger.',
                         style: AppTypography.bodySmall(color: AppColors.success),
                       ),
                     ),
@@ -247,74 +317,68 @@ class _CustomerEstimateApprovalScreenState
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _successMessage = null;
     });
 
-    final signatureToken = 'SIG-AUTH-${DateTime.now().millisecondsSinceEpoch}';
+    final approvedIds = <String>[];
+    final rejectedIds = <String>[];
+    for (final item in _items) {
+      if (item.id.isEmpty) continue;
+      if (!item.isOptional || _selectedOptionalItemIds.contains(item.id)) {
+        approvedIds.add(item.id);
+      } else {
+        rejectedIds.add(item.id);
+      }
+    }
 
     try {
       final repo = ref.read(estimateRepositoryProvider);
-      final result = await repo.authorizeEstimate(
-        _estimate.id,
-        EstimateStatus.approved,
-        notes: 'Customer approved full estimate via digital portal',
-        signatureToken: signatureToken,
+      // Use authorizeEstimateItems so estimate_items.authorization_status is marked approved in DB.
+      final result = await repo.authorizeEstimateItems(
+        est.id,
+        approvedItemIds: approvedIds,
+        rejectedItemIds: rejectedIds,
+        notes: 'Customer approved estimate via portal',
       );
 
-      result.when(
-        success: (updated) {
-          if (mounted) {
-            setState(() {
-              _estimate = updated;
-              _successMessage = 'Estimate authorized successfully. Repair work is now queued.';
-              _authorizations.insert(
-                0,
-                EstimateAuthorizationModel(
-                  id: 'auth-now',
-                  estimateId: updated.id,
-                  authorizedBy: 'customer-uid',
-                  status: EstimateStatus.approved,
-                  signatureToken: signatureToken,
-                  notes: 'Customer approved full estimate via digital portal',
-                  authorizedAt: DateTime.now(),
-                ),
-              );
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Estimate authorized! Workshop notified.'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          }
+      if (!mounted) return;
+      await result.when(
+        success: (updated) async {
+          final authRes = await repo.fetchAuthorizations(updated.id);
+          final itemsRes = await repo.fetchEstimateItems(updated.id);
+          if (!mounted) return;
+          setState(() {
+            _estimate = updated;
+            _successMessage = 'Estimate authorized successfully. Repair work is now queued.';
+            authRes.when(success: (auths) => _authorizations = auths, failure: (_) {});
+            itemsRes.when(success: (items) => _items = items, failure: (_) {});
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Estimate authorized! Workshop notified.'),
+              backgroundColor: AppColors.success,
+            ),
+          );
         },
         failure: (err) {
-          // If in test environment without backend RPC, simulate client-side approval
-          if (mounted) {
-            setState(() {
-              _estimate = _estimate.copyWith(status: EstimateStatus.approved);
-              _authorizations.insert(
-                0,
-                EstimateAuthorizationModel(
-                  id: 'auth-simulated',
-                  estimateId: _estimate.id,
-                  authorizedBy: 'customer-user',
-                  status: EstimateStatus.approved,
-                  signatureToken: signatureToken,
-                  notes: 'Customer approved via digital portal',
-                  authorizedAt: DateTime.now(),
-                ),
-              );
-              _successMessage = 'Estimate authorized successfully.';
-            });
-          }
+          setState(() {
+            _errorMessage = err.message;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(err.message),
+              backgroundColor: AppColors.danger,
+            ),
+          );
         },
       );
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _estimate = _estimate.copyWith(status: EstimateStatus.approved);
-          _successMessage = 'Estimate authorized successfully.';
-        });
+        final msg = e.toString().replaceAll('Exception: ', '');
+        setState(() => _errorMessage = msg);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: AppColors.danger),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -322,8 +386,10 @@ class _CustomerEstimateApprovalScreenState
   }
 
   Future<void> _handleRejectEstimate() async {
-    final reasonController = TextEditingController();
+    final est = _estimate;
+    if (est == null) return;
 
+    final reasonController = TextEditingController();
     final reason = await showDialog<String>(
       context: context,
       builder: (ctx) {
@@ -378,61 +444,47 @@ class _CustomerEstimateApprovalScreenState
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _successMessage = null;
     });
+
+    final allIds = _items.map((i) => i.id).where((id) => id.isNotEmpty).toList();
 
     try {
       final repo = ref.read(estimateRepositoryProvider);
-      final result = await repo.authorizeEstimate(
-        _estimate.id,
-        EstimateStatus.rejected,
+      final result = await repo.authorizeEstimateItems(
+        est.id,
+        approvedItemIds: const [],
+        rejectedItemIds: allIds,
         notes: reason.isNotEmpty ? reason : 'Customer rejected repair estimate',
       );
 
-      result.when(
-        success: (updated) {
-          if (mounted) {
-            setState(() {
-              _estimate = updated;
-              _successMessage = 'Estimate declined. Service advisor notified.';
-              _authorizations.insert(
-                0,
-                EstimateAuthorizationModel(
-                  id: 'auth-declined',
-                  estimateId: updated.id,
-                  authorizedBy: 'customer-uid',
-                  status: EstimateStatus.rejected,
-                  notes: reason,
-                  authorizedAt: DateTime.now(),
-                ),
-              );
-            });
-          }
+      if (!mounted) return;
+      await result.when(
+        success: (updated) async {
+          final authRes = await repo.fetchAuthorizations(updated.id);
+          final itemsRes = await repo.fetchEstimateItems(updated.id);
+          if (!mounted) return;
+          setState(() {
+            _estimate = updated;
+            _successMessage = 'Estimate declined. Service advisor notified.';
+            authRes.when(success: (auths) => _authorizations = auths, failure: (_) {});
+            itemsRes.when(success: (items) => _items = items, failure: (_) {});
+          });
         },
         failure: (err) {
-          if (mounted) {
-            setState(() {
-              _estimate = _estimate.copyWith(status: EstimateStatus.rejected);
-              _authorizations.insert(
-                0,
-                EstimateAuthorizationModel(
-                  id: 'auth-declined-sim',
-                  estimateId: _estimate.id,
-                  authorizedBy: 'customer-uid',
-                  status: EstimateStatus.rejected,
-                  notes: reason,
-                  authorizedAt: DateTime.now(),
-                ),
-              );
-              _successMessage = 'Estimate declined.';
-            });
-          }
+          setState(() => _errorMessage = err.message);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(err.message), backgroundColor: AppColors.danger),
+          );
         },
       );
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _estimate = _estimate.copyWith(status: EstimateStatus.rejected);
-        });
+        final msg = e.toString().replaceAll('Exception: ', '');
+        setState(() => _errorMessage = msg);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: AppColors.danger),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -445,10 +497,12 @@ class _CustomerEstimateApprovalScreenState
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
     final mutedColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
     final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
+    final auth = ref.watch(authNotifierProvider);
+    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Estimate Review',
-      userName: 'Alex Pratama',
+      userName: userName,
       userSubtitle: 'Customer Member',
       showBackButton: true,
       onBack: () {
@@ -458,10 +512,29 @@ class _CustomerEstimateApprovalScreenState
           context.go(RoutePaths.customerGarage);
         }
       },
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       navItems: RoleNavigation.customerNavItems,
       currentIndex: 3,
-      onNavIndexChanged: (index) => RoleNavigation.navigate(context, RoleNavigation.customerNavItems, index, currentIndex: 3),
-      telemetryNotice: 'ESTIMATE: ${_estimate.revisionLabel.toUpperCase()}',
+      onNavIndexChanged: (index) => RoleNavigation.navigate(
+        context,
+        RoleNavigation.customerNavItems,
+        index,
+        currentIndex: 3,
+      ),
+      telemetryNotice: _estimate != null
+          ? 'ESTIMATE: ${_estimate!.revisionLabel.toUpperCase()}'
+          : null,
+      actions: [
+        const NotificationBellButton(),
+        IconButton(
+          icon: const Icon(Icons.refresh, size: 20),
+          tooltip: 'Refresh Estimates',
+          onPressed: () => _loadLiveEstimate(overrideEstimateId: _selectedEstimateId),
+        ),
+      ],
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
@@ -469,82 +542,168 @@ class _CustomerEstimateApprovalScreenState
                 color: AppColors.racingRed,
               ),
             )
-          : SingleChildScrollView(
-              padding: AppSpacing.p24,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Top Overview Card
-                  _buildHeaderCard(context, isDark, textColor, mutedColor, borderColor),
-                  const SizedBox(height: 16),
+          : _estimate == null
+              ? _buildEmptyState(context, isDark, textColor, mutedColor)
+              : SingleChildScrollView(
+                  padding: AppSpacing.p24,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_availableEstimates.length > 1) ...[
+                        DropdownButtonFormField<String>(
+                          key: const Key('customer_estimate_selector'),
+                          isExpanded: true,
+                          initialValue: _selectedEstimateId,
+                          decoration: const InputDecoration(
+                            labelText: 'Select Estimate',
+                            prefixIcon: Icon(Icons.description_outlined),
+                          ),
+                          items: _availableEstimates.map((row) {
+                            final so = row['service_orders'] as Map<String, dynamic>?;
+                            final veh = so?['vehicles'] as Map<String, dynamic>?;
+                            final plate = veh?['license_plate'] ?? '';
+                            final orderNum = so?['order_number'] ?? '';
+                            final rev = row['revision_number'] ?? 1;
+                            final status = row['status'] ?? '';
+                            return DropdownMenuItem<String>(
+                              value: row['id'] as String,
+                              child: Text('$orderNum ($plate) - Rev $rev [$status]'),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              _loadLiveEstimate(overrideEstimateId: val);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
 
-                  // Authorization status banner (immutable audit)
-                  if (_estimate.status == EstimateStatus.approved) ...[
-                    _buildApprovalSuccessCard(isDark, borderColor),
-                    const SizedBox(height: 16),
-                  ] else if (_estimate.status == EstimateStatus.rejected) ...[
-                    _buildRejectionBanner(isDark, borderColor),
-                    const SizedBox(height: 16),
-                  ],
+                      _buildHeaderCard(context, isDark, textColor, mutedColor, borderColor),
+                      const SizedBox(height: 16),
 
-                  if (_errorMessage != null) ...[
-                    Container(
-                      padding: AppSpacing.p12,
-                      decoration: BoxDecoration(
-                        color: AppColors.danger.withValues(alpha: 0.12),
-                        borderRadius: AppSpacing.roundedSmall,
-                        border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: AppTypography.bodyMedium(color: AppColors.danger),
-                      ),
+                      if (_estimate!.status == EstimateStatus.approved ||
+                          _estimate!.status == EstimateStatus.partiallyApproved) ...[
+                        _buildApprovalSuccessCard(isDark, borderColor),
+                        const SizedBox(height: 16),
+                      ] else if (_estimate!.status == EstimateStatus.rejected) ...[
+                        _buildRejectionBanner(isDark, borderColor),
+                        const SizedBox(height: 16),
+                      ],
+
+                      if (_errorMessage != null) ...[
+                        Container(
+                          padding: AppSpacing.p12,
+                          decoration: BoxDecoration(
+                            color: AppColors.danger.withValues(alpha: 0.12),
+                            borderRadius: AppSpacing.roundedSmall,
+                            border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            _errorMessage!,
+                            style: AppTypography.bodyMedium(color: AppColors.danger),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      if (_successMessage != null) ...[
+                        Container(
+                          padding: AppSpacing.p12,
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.12),
+                            borderRadius: AppSpacing.roundedSmall,
+                            border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            _successMessage!,
+                            style: AppTypography.bodyMedium(color: AppColors.success),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      _buildCostBreakdownCards(context, isDark, textColor, mutedColor, borderColor),
+                      const SizedBox(height: 16),
+                      _buildItemizedTableCard(context, isDark, textColor, mutedColor, borderColor),
+                      const SizedBox(height: 16),
+
+                      if (_estimate!.notes != null && _estimate!.notes!.isNotEmpty) ...[
+                        _buildWorkshopNotesCard(isDark, textColor, mutedColor, borderColor),
+                        const SizedBox(height: 16),
+                      ],
+
+                      _buildGrandTotalCard(context, isDark, textColor, mutedColor, borderColor),
+                      const SizedBox(height: 24),
+
+                      if (_estimate!.status == EstimateStatus.sent ||
+                          _estimate!.status == EstimateStatus.draft) ...[
+                        _buildDecisionActionRow(),
+                        const SizedBox(height: 24),
+                      ],
+                    ],
+                  ),
+                ),
+    );
+  }
+
+  Widget _buildEmptyState(
+    BuildContext context,
+    bool isDark,
+    Color textColor,
+    Color mutedColor,
+  ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: PitCard(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.request_quote_outlined,
+                  size: 56,
+                  color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No Repair Estimates Yet',
+                  style: AppTypography.headlineSmall(color: textColor),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage ??
+                      'When a mechanic finishes inspecting your vehicle and the workshop advisor sends a repair quote, it will appear here for your review.',
+                  style: AppTypography.bodyMedium(color: mutedColor),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => context.go(RoutePaths.customerTracking),
+                      icon: const Icon(Icons.track_changes, size: 18),
+                      label: const Text('LIVE TRACKING'),
                     ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (_successMessage != null) ...[
-                    Container(
-                      padding: AppSpacing.p12,
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.12),
-                        borderRadius: AppSpacing.roundedSmall,
-                        border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
-                      ),
-                      child: Text(
-                        _successMessage!,
-                        style: AppTypography.bodyMedium(color: AppColors.success),
-                      ),
+                    ElevatedButton.icon(
+                      onPressed: () => context.go(RoutePaths.bookService),
+                      icon: const Icon(Icons.calendar_month, size: 18),
+                      label: const Text('BOOK SERVICE'),
                     ),
-                    const SizedBox(height: 16),
                   ],
-
-                  // Parts vs Labor Breakdown Bar
-                  _buildCostBreakdownCards(context, isDark, textColor, mutedColor, borderColor),
-                  const SizedBox(height: 16),
-
-                  // Itemized Lines
-                  _buildItemizedTableCard(context, isDark, textColor, mutedColor, borderColor),
-                  const SizedBox(height: 16),
-
-                  // Workshop Notes
-                  if (_estimate.notes != null && _estimate.notes!.isNotEmpty) ...[
-                    _buildWorkshopNotesCard(isDark, textColor, mutedColor, borderColor),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // Grand Total & Tax Prominent Card
-                  _buildGrandTotalCard(context, isDark, textColor, mutedColor, borderColor),
-                  const SizedBox(height: 24),
-
-                  // Action Buttons (Approve / Reject) when status is pending
-                  if (_estimate.status == EstimateStatus.sent || _estimate.status == EstimateStatus.draft) ...[
-                    _buildDecisionActionRow(),
-                    const SizedBox(height: 24),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -555,6 +714,7 @@ class _CustomerEstimateApprovalScreenState
     Color mutedColor,
     Color borderColor,
   ) {
+    final est = _estimate!;
     return PitCard(
       padding: AppSpacing.p16,
       accentBorderLeft: AppColors.racingRed,
@@ -576,17 +736,18 @@ class _CustomerEstimateApprovalScreenState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _vehicleName,
+                      _vehicleName.isNotEmpty ? _vehicleName : 'Service Vehicle',
                       style: AppTypography.headlineMedium(color: textColor),
                     ),
                   ],
                 ),
               ),
               StatusBadge(
-                label: _estimate.status.displayName,
-                type: _estimate.status == EstimateStatus.approved
+                label: est.status.displayName,
+                type: est.status == EstimateStatus.approved ||
+                        est.status == EstimateStatus.partiallyApproved
                     ? StatusBadgeType.success
-                    : (_estimate.status == EstimateStatus.rejected
+                    : (est.status == EstimateStatus.rejected
                         ? StatusBadgeType.danger
                         : StatusBadgeType.warning),
               ),
@@ -597,9 +758,19 @@ class _CustomerEstimateApprovalScreenState
             spacing: 24,
             runSpacing: 10,
             children: [
-              _buildHeaderItem('LICENSE PLATE', _licensePlate, textColor, isMono: true),
-              _buildHeaderItem('SERVICE ORDER', _orderNumber, textColor, isMono: true),
-              _buildHeaderItem('REVISION', _estimate.revisionLabel, textColor),
+              _buildHeaderItem(
+                'LICENSE PLATE',
+                _licensePlate.isNotEmpty ? _licensePlate : '-',
+                textColor,
+                isMono: true,
+              ),
+              _buildHeaderItem(
+                'SERVICE ORDER',
+                _orderNumber.isNotEmpty ? _orderNumber : est.serviceOrderId,
+                textColor,
+                isMono: true,
+              ),
+              _buildHeaderItem('REVISION', est.revisionLabel, textColor),
               _buildHeaderItem('WORKSHOP', _workshopName, textColor),
             ],
           ),
@@ -642,11 +813,13 @@ class _CustomerEstimateApprovalScreenState
             children: [
               const Icon(Icons.check_circle, color: AppColors.success, size: 24),
               const SizedBox(width: 8),
-              Text(
-                'ESTIMATE AUTHORIZED & WORK APPROVED',
-                style: AppTypography.labelLarge(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  'ESTIMATE AUTHORIZED & WORK APPROVED',
+                  style: AppTypography.labelLarge(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -659,8 +832,11 @@ class _CustomerEstimateApprovalScreenState
           if (latestAuth != null && latestAuth.signatureToken != null) ...[
             const SizedBox(height: 8),
             Text(
-              'Digital Signature Token: ${latestAuth.signatureToken}',
-              style: AppTypography.telemetrySmall(color: AppColors.success, fontWeight: FontWeight.w700),
+              'Authorization Ref: ${latestAuth.signatureToken}',
+              style: AppTypography.telemetrySmall(
+                color: AppColors.success,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ],
@@ -806,6 +982,9 @@ class _CustomerEstimateApprovalScreenState
     Color mutedColor,
     Color borderColor,
   ) {
+    final canEditOptional = _estimate?.status == EstimateStatus.sent ||
+        _estimate?.status == EstimateStatus.draft;
+
     return PitCard(
       padding: AppSpacing.p16,
       child: Column(
@@ -837,10 +1016,26 @@ class _CustomerEstimateApprovalScreenState
             separatorBuilder: (context, index) => const Divider(height: 16),
             itemBuilder: (context, index) {
               final item = _items[index];
+              final isOptSelected = _selectedOptionalItemIds.contains(item.id);
 
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (item.isOptional && canEditOptional)
+                    Checkbox(
+                      key: Key('chk_optional_item_${item.id}'),
+                      value: isOptSelected,
+                      activeColor: AppColors.accentRed,
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            _selectedOptionalItemIds.add(item.id);
+                          } else {
+                            _selectedOptionalItemIds.remove(item.id);
+                          }
+                        });
+                      },
+                    ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
@@ -871,7 +1066,10 @@ class _CustomerEstimateApprovalScreenState
                       children: [
                         Text(
                           item.description,
-                          style: AppTypography.labelLarge(color: textColor, fontWeight: FontWeight.w600),
+                          style: AppTypography.labelLarge(
+                            color: textColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -941,7 +1139,7 @@ class _CustomerEstimateApprovalScreenState
           ),
           const SizedBox(height: 8),
           Text(
-            _estimate.notes!,
+            _estimate!.notes!,
             style: AppTypography.bodyMedium(color: mutedColor),
           ),
         ],
@@ -956,29 +1154,30 @@ class _CustomerEstimateApprovalScreenState
     Color mutedColor,
     Color borderColor,
   ) {
+    final est = _estimate!;
     return PitCard(
       padding: const EdgeInsets.all(20),
       accentBorderTop: AppColors.racingRed,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildSummaryLine('SUBTOTAL (PARTS + LABOR)', _estimate.formattedSubtotal, mutedColor, textColor),
-          const SizedBox(height: 8),
-          _buildSummaryLine(
-            'PPN (11% TAX)',
-            _estimate.formattedTax,
-            mutedColor,
-            isDark ? AppColors.infoDark : AppColors.info,
-          ),
-          if (_estimate.discountCents > 0) ...[
+          _buildSummaryLine('SUBTOTAL (PARTS + LABOR)', est.formattedSubtotal, mutedColor, textColor),
+          if (est.discountCents > 0) ...[
             const SizedBox(height: 8),
             _buildSummaryLine(
               'WORKSHOP DISCOUNT',
-              '-${_estimate.formattedDiscount}',
+              '-${est.formattedDiscount}',
               mutedColor,
               AppColors.success,
             ),
           ],
+          const SizedBox(height: 8),
+          _buildSummaryLine(
+            'PPN (11% TAX)',
+            est.formattedTax,
+            mutedColor,
+            isDark ? AppColors.infoDark : AppColors.info,
+          ),
           const Divider(height: 24),
           Wrap(
             alignment: WrapAlignment.spaceBetween,
@@ -1002,7 +1201,7 @@ class _CustomerEstimateApprovalScreenState
                 ],
               ),
               Text(
-                _estimate.formattedTotal,
+                est.formattedTotal,
                 key: const Key('customer_grand_total_text'),
                 style: AppTypography.telemetryLarge(
                   color: AppColors.racingRed,

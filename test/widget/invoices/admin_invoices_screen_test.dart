@@ -58,6 +58,7 @@ class _FakeInvoiceRepository implements IInvoiceRepository {
     required String serviceOrderId,
     double taxPercent = 11.0,
     int discountCents = 0,
+    String? discountReason,
     int depositCents = 0,
     int insuranceCents = 0,
     String? adminId,

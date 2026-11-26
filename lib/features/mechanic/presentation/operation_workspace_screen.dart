@@ -11,12 +11,14 @@ import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/inventory/data/models/part_request_model.dart';
 import 'package:pitmate/features/inventory/data/models/service_task_part_consumption_model.dart';
 import 'package:pitmate/features/inventory/data/repositories/part_operations_repository.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/features/service_operations/data/models/service_order_task_model.dart';
 import 'package:pitmate/features/service_operations/data/repositories/service_operations_repository.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/pit_error_dialog.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OperationWorkspaceScreen extends ConsumerStatefulWidget {
   const OperationWorkspaceScreen({super.key, required this.taskId});
@@ -33,6 +35,7 @@ class _OperationWorkspaceScreenState
   final _operationsRepo = ServiceOperationsRepository();
   final _partOpsRepo = PartOperationsRepository();
 
+  List<ServiceOrderTaskModel> _allTasks = [];
   ServiceOrderTaskModel? _task;
   List<PartRequestModel> _partRequests = [];
   List<ServiceTaskPartConsumptionModel> _consumptions = [];
@@ -45,7 +48,21 @@ class _OperationWorkspaceScreenState
     _loadTask();
   }
 
-  Future<void> _loadTask() async {
+  SupabaseClient? _tryGetClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _loadTask({String? overrideTaskId}) async {
+    final client = _tryGetClient();
+    if (client == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -53,22 +70,33 @@ class _OperationWorkspaceScreenState
 
     try {
       final auth = ref.read(authNotifierProvider);
-      final mechanicId = auth is AuthAuthenticated ? auth.userProfile.id : '';
+      final mechanicId = auth is AuthAuthenticated
+          ? auth.userProfile.id
+          : (client.auth.currentUser?.id ?? '');
       final tasks = mechanicId.isEmpty
           ? <ServiceOrderTaskModel>[]
           : await _operationsRepo.fetchTasksForMechanic(mechanicId);
-      final match = tasks.firstWhere(
-        (t) => t.id == widget.taskId,
-        orElse: () => tasks.isNotEmpty
-            ? tasks.first
-            : ServiceOrderTaskModel(
-                id: widget.taskId,
-                serviceOrderId: '',
-                title: 'Operation Not Found',
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-              ),
-      );
+
+      if (tasks.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _allTasks = [];
+            _task = null;
+            _partRequests = [];
+            _consumptions = [];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      final desiredId = overrideTaskId ?? _task?.id ?? widget.taskId;
+      final match = desiredId.isNotEmpty
+          ? tasks.firstWhere(
+              (t) => t.id == desiredId,
+              orElse: () => tasks.first,
+            )
+          : tasks.first;
 
       List<PartRequestModel> reqs = [];
       List<ServiceTaskPartConsumptionModel> cons = [];
@@ -82,6 +110,7 @@ class _OperationWorkspaceScreenState
 
       if (mounted) {
         setState(() {
+          _allTasks = tasks;
           _task = match;
           _partRequests = reqs;
           _consumptions = cons;
@@ -124,9 +153,7 @@ class _OperationWorkspaceScreenState
   }
 
   Future<void> _showPauseDialog() async {
-    final reasonController = TextEditingController(
-      text: 'Waiting for parts inspection',
-    );
+    final reasonController = TextEditingController();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final confirmed = await showDialog<bool>(
@@ -147,6 +174,7 @@ class _OperationWorkspaceScreenState
               controller: reasonController,
               decoration: const InputDecoration(
                 labelText: 'Pause Reason',
+                hintText: 'Waiting for parts inspection',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -230,9 +258,7 @@ class _OperationWorkspaceScreenState
   }
 
   Future<void> _showAssistanceDialog() async {
-    final reasonController = TextEditingController(
-      text: 'Need two-person caliper bleed procedure',
-    );
+    final reasonController = TextEditingController();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final confirmed = await showDialog<bool>(
@@ -254,6 +280,7 @@ class _OperationWorkspaceScreenState
               controller: reasonController,
               decoration: const InputDecoration(
                 labelText: 'Assistance Details',
+                hintText: 'Need two-person procedure assistance',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -368,11 +395,14 @@ class _OperationWorkspaceScreenState
     final textColor = isDark
         ? AppColors.textPrimaryDark
         : AppColors.graphitePrimary;
+    final auth = ref.watch(authNotifierProvider);
+    final mechanicName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Mechanic Telemetry',
-      userName: 'Max Verstappen',
-      userSubtitle: 'Lead Performance Tech',
+      userName: mechanicName,
+      userSubtitle: 'Workshop Technician',
       currentIndex: 1,
       showBackButton: true,
       onBack: () => context.go(RoutePaths.mechanic),
@@ -383,12 +413,20 @@ class _OperationWorkspaceScreenState
         currentIndex: 1,
       ),
       navItems: RoleNavigation.mechanicNavItems,
-      telemetryNotice: 'OPERATION EXECUTION ONLINE',
+      telemetryNotice: _task != null
+          ? 'OPERATION EXECUTION ONLINE'
+          : 'NO ASSIGNED OPERATIONS',
       onLogout: () async {
         await ref.read(authNotifierProvider.notifier).signOut();
         if (context.mounted) context.go(RoutePaths.login);
       },
       actions: [
+        const NotificationBellButton(),
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: _loadTask,
+          tooltip: 'Refresh Operations',
+        ),
         IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go(RoutePaths.mechanic),
@@ -412,6 +450,54 @@ class _OperationWorkspaceScreenState
                 ],
               ),
             )
+          : _task == null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 540),
+                  child: PitCard(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.build_circle_outlined,
+                          size: 48,
+                          color: isDark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No repair operations assigned yet',
+                          style: AppTypography.headlineSmall(color: textColor),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Assigned repair operations will appear here once Admin dispatches an approved estimate to your bay.',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodyMedium(
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.accentRed,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () => context.go(RoutePaths.mechanic),
+                          icon: const Icon(Icons.arrow_back, size: 18),
+                          label: const Text('RETURN TO MECHANIC HOME'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
@@ -423,6 +509,51 @@ class _OperationWorkspaceScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (_allTasks.length > 1) ...[
+                        PitCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.swap_horiz, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                'SWITCH OPERATION',
+                                style: AppTypography.labelSmall(
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    key: const Key('dropdown_task_switcher'),
+                                    value: _task!.id,
+                                    isExpanded: true,
+                                    items: _allTasks.map((t) {
+                                      return DropdownMenuItem<String>(
+                                        value: t.id,
+                                        child: Text(
+                                          '${t.title} [${t.status.label.toUpperCase()}]',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (nextId) {
+                                      if (nextId != null) {
+                                        _loadTask(overrideTaskId: nextId);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       // 1. Task Header Focal Card
                       _buildTaskHeaderCard(isDark, textColor),
                       const SizedBox(height: 16),
@@ -516,7 +647,7 @@ class _OperationWorkspaceScreenState
               ),
               const SizedBox(width: 4),
               Text(
-                task.vehiclePlate ?? 'Vehicle FL5',
+                task.vehiclePlate ?? 'No Plate',
                 style: AppTypography.telemetrySmall(color: textColor),
               ),
             ],
@@ -1189,7 +1320,7 @@ class _OperationWorkspaceScreenState
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'SKU: ${req.partSku ?? "—"} • Qty: ${req.quantityRequested} ${req.partUnit ?? "pcs"} (Fulfilled: ${req.quantityFulfilled})',
+                            'SKU: ${req.partSku ?? "-"} • Qty: ${req.quantityRequested} ${req.partUnit ?? "pcs"} (Fulfilled: ${req.quantityFulfilled})',
                             style: AppTypography.bodySmall(
                               color: isDark
                                   ? AppColors.textSecondaryDark

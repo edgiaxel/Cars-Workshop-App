@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -76,6 +78,7 @@ class _InspectionWorkspaceScreenState
   late final IInspectionRepository _repository;
   bool _isLoading = true;
   bool _isSubmitting = false;
+  String? _errorMessage;
 
   String? _inspectionId;
   ServiceOrderTelemetry? _telemetry;
@@ -114,89 +117,189 @@ class _InspectionWorkspaceScreenState
     }
   }
 
+  SupabaseClient? _tryGetClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _loadInspectionData() async {
+    final client = _tryGetClient();
+    if (client == null &&
+        widget.initialTelemetry == null &&
+        widget.repository == null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
+
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
-    final orderId = widget.serviceOrderId ?? 'SO-2026-0143';
+    try {
+      final auth = ref.read(authNotifierProvider);
+      final currentUserId = auth is AuthAuthenticated
+          ? auth.userProfile.id
+          : client?.auth.currentUser?.id;
 
-    // 1. Fetch telemetry
-    if (widget.initialTelemetry != null) {
-      _telemetry = widget.initialTelemetry;
-    } else {
-      final telemetryResult = await _repository.fetchOrderTelemetry(orderId);
-      if (telemetryResult.isSuccess && telemetryResult.dataOrNull != null) {
-        _telemetry = telemetryResult.dataOrNull;
-      } else {
-        // Fallback default telemetry for demo/test mode
-        _telemetry = const ServiceOrderTelemetry(
-          orderId: 'SO-2026-0143',
-          orderNumber: 'SO-2026-0143',
-          customerName: 'Alex Pratama',
-          customerPhone: '+62 812-9988-7766',
-          licensePlate: 'B 9912 SPO',
-          make: 'Honda',
-          model: 'Civic Type R (FL5)',
-          year: 2023,
-          odometer: 14250,
-          customerComplaint:
-              'Brake judder at high speeds, spongy pedal feel on deceleration',
-          assignedBay: 'Bay 02 • Hoist B',
-          fuelLevel: '75%',
-          status: 'inspection_pending',
-        );
-      }
-    }
+      String? orderId = widget.serviceOrderId;
+      String? targetInspectionId = widget.inspectionId;
 
-    // 2. Fetch or create inspection session
-    if (widget.inspectionId != null) {
-      _inspectionId = widget.inspectionId;
-    } else {
-      String? currentUserId;
-      try {
-        currentUserId = Supabase.instance.client.auth.currentUser?.id;
-      } catch (_) {}
+      if ((orderId == null || orderId.isEmpty) &&
+          (targetInspectionId == null || targetInspectionId.isEmpty) &&
+          client != null) {
+        final query = client
+            .from('inspections')
+            .select('id, service_order_id, mechanic_id, status, summary')
+            .inFilter('status', ['assigned', 'in_progress']);
+        final rowsRaw = (currentUserId != null && currentUserId.isNotEmpty)
+            ? await query
+                .or('mechanic_id.is.null,mechanic_id.eq.$currentUserId')
+                .order('created_at', ascending: false)
+                .limit(1)
+            : await query.order('created_at', ascending: false).limit(1);
 
-      final sessionResult = await _repository.createOrGetInspection(
-        orderId,
-        mechanicId: currentUserId,
-      );
-
-      if (sessionResult.isSuccess && sessionResult.dataOrNull != null) {
-        final session = sessionResult.dataOrNull!;
-        _inspectionId = session.id;
-        if (session.summary != null && session.summary!.isNotEmpty) {
-          _summaryController.text = session.summary!;
+        final rows = List<Map<String, dynamic>>.from(rowsRaw as List);
+        if (rows.isEmpty) {
+          if (mounted) {
+            setState(() {
+              _telemetry = null;
+              _inspectionId = null;
+              _isLoading = false;
+            });
+          }
+          return;
         }
-      } else {
-        _inspectionId = 'insp-${DateTime.now().millisecondsSinceEpoch}';
+        targetInspectionId = rows.first['id'] as String?;
+        orderId = rows.first['service_order_id'] as String?;
       }
-    }
 
-    // 3. Load existing findings if session exists
-    if (_inspectionId != null) {
-      final findingsResult = await _repository.fetchInspectionFindings(
-        _inspectionId!,
-      );
-      if (findingsResult.isSuccess && findingsResult.dataOrNull != null) {
-        for (final finding in findingsResult.dataOrNull!) {
-          final key = '${finding.category}::${finding.itemName}';
-          if (_itemsState.containsKey(key)) {
-            final state = _itemsState[key]!;
-            state.condition = finding.condition;
-            state.severity = finding.severity;
-            state.notes = finding.notes ?? '';
-            state.recommendedAction = finding.recommendedAction ?? '';
-            state.isEvaluated = true;
-            state.existingFindingId = finding.id;
+      if (orderId == null || orderId.isEmpty) {
+        if (widget.initialTelemetry == null) {
+          if (mounted) {
+            setState(() {
+              _telemetry = null;
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+        orderId = widget.initialTelemetry!.orderId;
+      }
+
+      // Claim unassigned inspection FIRST so RLS policy is_mechanic_assigned_to_order
+      // permits reading service_orders during telemetry fetch.
+      if (client != null &&
+          currentUserId != null &&
+          currentUserId.isNotEmpty) {
+        try {
+          if (targetInspectionId != null && targetInspectionId.isNotEmpty) {
+            await client
+                .from('inspections')
+                .update({
+                  'mechanic_id': currentUserId,
+                  'status': 'in_progress',
+                  'started_at': DateTime.now().toUtc().toIso8601String(),
+                })
+                .eq('id', targetInspectionId)
+                .isFilter('mechanic_id', null);
+          } else {
+            await client
+                .from('inspections')
+                .update({
+                  'mechanic_id': currentUserId,
+                  'status': 'in_progress',
+                  'started_at': DateTime.now().toUtc().toIso8601String(),
+                })
+                .eq('service_order_id', orderId)
+                .isFilter('mechanic_id', null);
+          }
+        } catch (_) {}
+      }
+
+      // 1. Fetch telemetry
+      if (widget.initialTelemetry != null) {
+        _telemetry = widget.initialTelemetry;
+      } else {
+        final telemetryResult = await _repository.fetchOrderTelemetry(orderId);
+        if (telemetryResult.isSuccess && telemetryResult.dataOrNull != null) {
+          _telemetry = telemetryResult.dataOrNull;
+        } else {
+          if (mounted) {
+            setState(() {
+              _telemetry = null;
+              _errorMessage = telemetryResult.exceptionOrNull?.message ??
+                  'Unable to load vehicle telemetry for service order $orderId.';
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+
+      // 2. Fetch or create inspection session
+      if (targetInspectionId != null && targetInspectionId.isNotEmpty) {
+        _inspectionId = targetInspectionId;
+      } else {
+        final sessionResult = await _repository.createOrGetInspection(
+          orderId,
+          mechanicId: currentUserId,
+        );
+
+        if (sessionResult.isSuccess && sessionResult.dataOrNull != null) {
+          final session = sessionResult.dataOrNull!;
+          _inspectionId = session.id;
+          if (session.summary != null && session.summary!.isNotEmpty) {
+            _summaryController.text = session.summary!;
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _errorMessage = sessionResult.exceptionOrNull?.message ??
+                  'Unable to initialize inspection session.';
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+
+      // 3. Load existing findings if session exists
+      if (_inspectionId != null) {
+        final findingsResult = await _repository.fetchInspectionFindings(
+          _inspectionId!,
+        );
+        if (findingsResult.isSuccess && findingsResult.dataOrNull != null) {
+          for (final finding in findingsResult.dataOrNull!) {
+            final key = '${finding.category}::${finding.itemName}';
+            if (_itemsState.containsKey(key)) {
+              final state = _itemsState[key]!;
+              state.condition = finding.condition;
+              state.severity = finding.severity;
+              state.notes = finding.notes ?? '';
+              state.recommendedAction = finding.recommendedAction ?? '';
+              state.isEvaluated = true;
+              state.existingFindingId = finding.id;
+            }
           }
         }
       }
-    }
 
-    if (mounted) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load inspection data: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -258,8 +361,18 @@ class _InspectionWorkspaceScreenState
     setState(() => _isSubmitting = true);
 
     try {
-      final inspId =
-          _inspectionId ?? 'insp-${DateTime.now().millisecondsSinceEpoch}';
+      final inspId = _inspectionId;
+      if (inspId == null || inspId.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No active inspection session available to submit.'),
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
+        return;
+      }
 
       // 1. Save all evaluated findings
       for (final item in _itemsState.values) {
@@ -373,11 +486,14 @@ class _InspectionWorkspaceScreenState
     final secondaryTextColor = isDark
         ? AppColors.textSecondaryDark
         : AppColors.textSecondaryLight;
+    final auth = ref.watch(authNotifierProvider);
+    final mechanicName =
+        auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Inspection Diagnostics',
-      userName: 'Max Verstappen',
-      userSubtitle: 'Lead Performance Tech',
+      userName: mechanicName,
+      userSubtitle: 'Workshop Technician',
       currentIndex: 2,
       navItems: RoleNavigation.mechanicNavItems,
       onNavIndexChanged: (i) => RoleNavigation.navigate(
@@ -398,8 +514,11 @@ class _InspectionWorkspaceScreenState
         await ref.read(authNotifierProvider.notifier).signOut();
         if (context.mounted) context.go(RoutePaths.login);
       },
-      telemetryNotice: '$_evaluatedItemsCount/$_totalItems CHECKED',
+      telemetryNotice: _telemetry != null
+          ? '$_evaluatedItemsCount/$_totalItems CHECKED'
+          : 'NO ACTIVE INSPECTION',
       actions: [
+        const NotificationBellButton(),
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
           child: Center(
@@ -414,7 +533,86 @@ class _InspectionWorkspaceScreenState
       ],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          : _errorMessage != null && _telemetry == null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: PitCard(
+                      accentBorderLeft: AppColors.danger,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppColors.danger,
+                            size: 40,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodyMedium(color: textColor),
+                          ),
+                          const SizedBox(height: 14),
+                          ElevatedButton.icon(
+                            onPressed: _loadInspectionData,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('RETRY'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              : _telemetry == null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 540),
+                          child: PitCard(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.fact_check_outlined,
+                                  size: 48,
+                                  color: secondaryTextColor,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No pending vehicle inspections assigned or available to claim',
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.headlineSmall(
+                                    color: textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Return to Mechanic Home to refresh your dispatch queue once Admin checks in a vehicle.',
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.bodyMedium(
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.accentRed,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  onPressed: () =>
+                                      context.go(RoutePaths.mechanic),
+                                  icon: const Icon(Icons.arrow_back, size: 18),
+                                  label: const Text('RETURN TO MECHANIC HOME'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
                 vertical: 20.0,

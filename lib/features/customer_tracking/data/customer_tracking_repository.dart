@@ -32,25 +32,21 @@ class CustomerTrackingRepository {
     required String customerId,
     String? orderId,
   }) async {
-    try {
-      final params = <String, dynamic>{
-        'p_customer_id': customerId,
-      };
-      if (orderId != null) {
-        params['p_order_id'] = orderId;
-      }
-
-      final res = await _supabase.rpc(
-        'get_customer_service_tracking',
-        params: params,
-      );
-
-      if (res is Map<String, dynamic>) {
-        return CustomerTrackingSummary.fromJson(res);
-      }
-      return const CustomerTrackingSummary(hasActiveOrder: false);
-    } catch (_) {
-      return const CustomerTrackingSummary(hasActiveOrder: false);
+    final params = <String, dynamic>{
+      'p_customer_id': customerId,
+    };
+    if (orderId != null) {
+      params['p_order_id'] = orderId;
     }
+
+    final res = await _supabase.rpc(
+      'get_customer_service_tracking',
+      params: params,
+    );
+
+    if (res is Map<String, dynamic>) {
+      return CustomerTrackingSummary.fromJson(res);
+    }
+    return const CustomerTrackingSummary(hasActiveOrder: false);
   }
 }

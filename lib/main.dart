@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app/router/app_router.dart';
@@ -7,6 +9,10 @@ import 'config/app_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    // Expose semantic DOM nodes on web for accessibility and browser automation.
+    SemanticsBinding.instance.ensureSemantics();
+  }
 
   if (AppConfig.isConfigured) {
     try {

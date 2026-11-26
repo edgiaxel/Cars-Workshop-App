@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import '../../../../app/router/route_paths.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -9,6 +11,9 @@ import '../../../../shared/navigation/role_navigation.dart';
 import '../../../../shared/widgets/pit_card.dart';
 import '../../../../shared/widgets/responsive_role_scaffold.dart';
 import '../../../../shared/widgets/status_badge.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
 import '../data/models/invoice_model.dart';
 import '../data/repositories/invoice_repository.dart';
 
@@ -45,7 +50,7 @@ class _CustomerInvoicesScreenState extends ConsumerState<CustomerInvoicesScreen>
 
   List<InvoiceModel> _invoices = [];
   String? _customerRecordId;
-  String _customerName = 'Alex Pratama';
+  String? _customerName;
 
   IInvoiceRepository get _repo =>
       widget.repository ?? ref.read(invoiceRepositoryProvider);
@@ -134,10 +139,14 @@ class _CustomerInvoicesScreenState extends ConsumerState<CustomerInvoicesScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final auth = ref.watch(authNotifierProvider);
+    final userName = auth is AuthAuthenticated
+        ? auth.userProfile.fullName
+        : (_customerName ?? 'User');
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Customer Portal',
-      userName: _customerName,
+      userName: userName,
       userSubtitle: 'Vehicle Owner Member',
       currentIndex: 4,
       navItems: RoleNavigation.customerNavItems,
@@ -147,7 +156,12 @@ class _CustomerInvoicesScreenState extends ConsumerState<CustomerInvoicesScreen>
         index,
         currentIndex: 4,
       ),
+      onLogout: () async {
+        await ref.read(authNotifierProvider.notifier).signOut();
+        if (context.mounted) context.go(RoutePaths.login);
+      },
       actions: [
+        const NotificationBellButton(),
         IconButton(
           icon: const Icon(Icons.refresh),
           tooltip: 'Refresh Invoices',

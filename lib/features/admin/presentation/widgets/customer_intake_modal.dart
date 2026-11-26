@@ -44,7 +44,6 @@ class VehicleLookupItem {
   String get displayName => '$make $model ($year) [$licensePlate]';
 }
 
-/// UpperCaseTextFormatter to normalize license plate text.
 class _UpperCaseTextFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -58,10 +57,7 @@ class _UpperCaseTextFormatter extends TextInputFormatter {
   }
 }
 
-/// UI-A06: Customer & Vehicle Intake Modal Sheet.
-/// Supports both:
-/// 1. Walk-in intake (Existing Customer OR New Guest)
-/// 2. Booking check-in (pre-populated with booking details)
+/// Customer & Vehicle Intake Modal Sheet (UI-A06) backed by live Supabase queries and RPCs.
 class CustomerIntakeModal extends StatefulWidget {
   const CustomerIntakeModal({
     super.key,
@@ -70,6 +66,7 @@ class CustomerIntakeModal extends StatefulWidget {
     this.initialVehicleId,
     this.onIntakeCompleted,
     this.serviceOrderRepository,
+    this.initialCustomers,
   });
 
   final BookingModel? booking;
@@ -77,6 +74,7 @@ class CustomerIntakeModal extends StatefulWidget {
   final String? initialVehicleId;
   final ValueChanged<ServiceOrderModel>? onIntakeCompleted;
   final ServiceOrderRepository? serviceOrderRepository;
+  final List<CustomerLookupItem>? initialCustomers;
 
   @override
   State<CustomerIntakeModal> createState() => _CustomerIntakeModalState();
@@ -86,82 +84,31 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
   final _formKey = GlobalKey<FormState>();
   late final ServiceOrderRepository _repo;
 
-  // 0 = Existing Registered Customer, 1 = Walk-in Guest
   int _clientMode = 0;
   bool _isLoadingLookups = false;
   bool _isSubmitting = false;
   String? _errorMessage;
 
-  // Existing customer selection
   List<CustomerLookupItem> _customers = [];
   String? _selectedCustomerId;
   List<VehicleLookupItem> _customerVehicles = [];
   String? _selectedVehicleId;
 
-  // Walk-in guest inputs
   final _guestNameController = TextEditingController();
   final _guestPhoneController = TextEditingController();
   final _guestPlateController = TextEditingController();
-  final _guestMakeController = TextEditingController(text: 'Toyota');
-  final _guestModelController = TextEditingController(text: 'Avanza');
-  final _guestYearController = TextEditingController(text: '2022');
+  final _guestMakeController = TextEditingController();
+  final _guestModelController = TextEditingController();
+  final _guestYearController = TextEditingController();
 
-  // Common intake parameters
-  final _odometerController = TextEditingController(text: '25000');
+  final _odometerController = TextEditingController();
   final _complaintController = TextEditingController();
   final _initialNotesController = TextEditingController();
   String _selectedFuelLevel = '1/2';
-  String _selectedBay = 'Bay 01';
+  List<String> _bayOptions = ['Unassigned'];
+  String _selectedBay = 'Unassigned';
 
   static const List<String> _fuelLevels = ['1/4', '1/2', '3/4', 'Full'];
-  static const List<String> _bayOptions = [
-    'Bay 01',
-    'Bay 02',
-    'Bay 03',
-    'Bay 04',
-    'Bay 05',
-  ];
-
-  static const List<CustomerLookupItem> _fallbackCustomers = [
-    CustomerLookupItem(
-      id: 'cust-demo-1',
-      fullName: 'Alex Pratama',
-      phoneNumber: '+62 812-3456-7890',
-      vehicles: [
-        VehicleLookupItem(
-          id: 'v-demo-1',
-          licensePlate: 'B 1234 ABC',
-          make: 'Toyota',
-          model: 'GR Yaris',
-          year: 2022,
-          mileage: 10450,
-        ),
-        VehicleLookupItem(
-          id: 'v-demo-2',
-          licensePlate: 'B 5678 DEF',
-          make: 'Honda',
-          model: 'Civic Type R',
-          year: 2023,
-          mileage: 14200,
-        ),
-      ],
-    ),
-    CustomerLookupItem(
-      id: 'cust-demo-2',
-      fullName: 'Bambang Soediro',
-      phoneNumber: '+62 818-9876-5432',
-      vehicles: [
-        VehicleLookupItem(
-          id: 'v-demo-3',
-          licensePlate: 'B 9999 XYZ',
-          make: 'BMW',
-          model: '320i',
-          year: 2020,
-          mileage: 38000,
-        ),
-      ],
-    ),
-  ];
 
   @override
   void initState() {
@@ -169,7 +116,8 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
     _repo = widget.serviceOrderRepository ?? ServiceOrderRepository();
 
     if (widget.booking != null) {
-      _complaintController.text = widget.booking!.customerNotes ?? widget.booking!.serviceType;
+      _complaintController.text =
+          widget.booking!.customerNotes ?? widget.booking!.serviceType;
       _selectedCustomerId = widget.booking!.customerId;
       _selectedVehicleId = widget.booking!.vehicleId;
     } else {
@@ -177,7 +125,34 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
       _selectedVehicleId = widget.initialVehicleId;
     }
 
-    _loadLookupData();
+    if (widget.initialCustomers != null) {
+      _customers = List.from(widget.initialCustomers!);
+      _syncCustomerSelection();
+    } else {
+      _loadLookupData();
+    }
+  }
+
+  void _syncCustomerSelection() {
+    if (_customers.isEmpty) {
+      _customerVehicles = [];
+      _selectedVehicleId = null;
+      return;
+    }
+    _selectedCustomerId ??= _customers.first.id;
+    final match = _customers.where((c) => c.id == _selectedCustomerId).firstOrNull ??
+        _customers.first;
+    _selectedCustomerId = match.id;
+    _customerVehicles = match.vehicles;
+    if (_selectedVehicleId == null ||
+        !_customerVehicles.any((v) => v.id == _selectedVehicleId)) {
+      _selectedVehicleId = _customerVehicles.firstOrNull?.id;
+    }
+    final selectedVeh =
+        _customerVehicles.where((v) => v.id == _selectedVehicleId).firstOrNull;
+    if (selectedVeh != null && selectedVeh.mileage > 0) {
+      _odometerController.text = selectedVeh.mileage.toString();
+    }
   }
 
   @override
@@ -194,17 +169,63 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
     super.dispose();
   }
 
+  SupabaseClient? _tryGetClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _loadLookupData() async {
-    if (widget.booking != null) {
+    final client = _tryGetClient();
+    if (client == null) {
+      if (mounted) setState(() => _isLoadingLookups = false);
       return;
     }
 
-    setState(() => _isLoadingLookups = true);
+    setState(() {
+      _isLoadingLookups = true;
+      _errorMessage = null;
+    });
+
     try {
-      final client = Supabase.instance.client;
+      final baysRes = await client
+          .from('workshop_bays')
+          .select('name, bay_number')
+          .order('bay_number', ascending: true);
+
+      final loadedBayNames = (baysRes as List)
+          .map((row) => (row['name'] as String?) ?? 'Bay ${row['bay_number']}')
+          .toList();
+
+      if (widget.booking != null) {
+        final vehRow = await client
+            .from('vehicles')
+            .select('mileage')
+            .eq('id', widget.booking!.vehicleId)
+            .maybeSingle();
+        final currentKm = (vehRow?['mileage'] as int?) ?? 0;
+
+        if (mounted) {
+          setState(() {
+            _bayOptions = ['Unassigned', ...loadedBayNames];
+            _selectedBay =
+                loadedBayNames.isNotEmpty ? loadedBayNames.first : 'Unassigned';
+            if (currentKm > 0 && _odometerController.text.isEmpty) {
+              _odometerController.text = currentKm.toString();
+            }
+            _isLoadingLookups = false;
+          });
+        }
+        return;
+      }
+
       final customerData = await client
           .from('customers')
-          .select('id, full_name, phone_number, vehicles(id, license_plate, make, model, year, mileage)')
+          .select(
+            'id, full_name, phone_number, vehicles(id, license_plate, make, model, year, mileage)',
+          )
           .order('full_name');
 
       final loaded = (customerData as List).map((row) {
@@ -227,32 +248,22 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
         );
       }).toList();
 
-      if (mounted && loaded.isNotEmpty) {
+      if (mounted) {
         setState(() {
           _customers = loaded;
-          if (_selectedCustomerId != null) {
-            final match = _customers.where((c) => c.id == _selectedCustomerId).firstOrNull;
-            _customerVehicles = match?.vehicles ?? [];
-          } else {
-            _selectedCustomerId = _customers.first.id;
-            _customerVehicles = _customers.first.vehicles;
-            _selectedVehicleId = _customerVehicles.firstOrNull?.id;
-          }
+          _bayOptions = ['Unassigned', ...loadedBayNames];
+          _selectedBay =
+              loadedBayNames.isNotEmpty ? loadedBayNames.first : 'Unassigned';
+          _syncCustomerSelection();
+          _isLoadingLookups = false;
         });
-        return;
       }
-    } catch (_) {
-      // Fallback for widget testing or offline execution
-    } finally {
+    } catch (e) {
       if (mounted) {
-        if (_customers.isEmpty) {
-          _customers = List.from(_fallbackCustomers);
-          _selectedCustomerId ??= _customers.first.id;
-          final match = _customers.where((c) => c.id == _selectedCustomerId).firstOrNull;
-          _customerVehicles = match?.vehicles ?? [];
-          _selectedVehicleId ??= _customerVehicles.firstOrNull?.id;
-        }
-        setState(() => _isLoadingLookups = false);
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoadingLookups = false;
+        });
       }
     }
   }
@@ -264,14 +275,25 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
       final match = _customers.where((c) => c.id == customerId).firstOrNull;
       _customerVehicles = match?.vehicles ?? [];
       _selectedVehicleId = _customerVehicles.firstOrNull?.id;
-      if (_customerVehicles.isNotEmpty) {
+      if (_customerVehicles.isNotEmpty && _customerVehicles.first.mileage > 0) {
         _odometerController.text = _customerVehicles.first.mileage.toString();
+      } else {
+        _odometerController.clear();
       }
     });
   }
 
   Future<void> _submitIntake() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _isSubmitting) return;
+
+    final isBooking = widget.booking != null;
+    if (!isBooking && _clientMode == 0 &&
+        (_selectedCustomerId == null || _selectedVehicleId == null)) {
+      setState(() {
+        _errorMessage = 'Please select both a registered customer and a vehicle.';
+      });
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -281,21 +303,17 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
     final odometer = int.tryParse(_odometerController.text.trim()) ?? 0;
     final complaint = _complaintController.text.trim();
     final notes = _initialNotesController.text.trim();
-    final isBooking = widget.booking != null;
 
-    String finalCustomerId = _selectedCustomerId ?? 'cust-demo-1';
-    String finalVehicleId = _selectedVehicleId ?? 'v-demo-1';
+    String finalCustomerId = _selectedCustomerId ?? '';
+    String finalVehicleId = _selectedVehicleId ?? '';
 
     try {
-      final client = Supabase.instance.client;
-
-      // Handle walk-in guest creation if selected
       if (!isBooking && _clientMode == 1) {
+        final client = Supabase.instance.client;
         final guestName = _guestNameController.text.trim();
         final guestPhone = _guestPhoneController.text.trim();
         final guestPlate = _guestPlateController.text.trim().toUpperCase();
 
-        // 1. Insert Guest Customer
         final custInsert = await client
             .from('customers')
             .insert({
@@ -309,7 +327,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
 
         finalCustomerId = custInsert['id'] as String;
 
-        // 2. Insert Guest Vehicle
         final vehicleInsert = await client
             .from('vehicles')
             .insert({
@@ -317,7 +334,8 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
               'license_plate': guestPlate,
               'make': _guestMakeController.text.trim(),
               'model': _guestModelController.text.trim(),
-              'year': int.tryParse(_guestYearController.text.trim()) ?? DateTime.now().year,
+              'year': int.tryParse(_guestYearController.text.trim()) ??
+                  DateTime.now().year,
               'mileage': odometer,
               'notes': 'Intake Walk-in Guest Vehicle',
             })
@@ -327,7 +345,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
         finalVehicleId = vehicleInsert['id'] as String;
       }
 
-      // 3. Call create_service_order_intake RPC
       final serviceOrder = await _repo.createIntake(
         customerId: finalCustomerId,
         vehicleId: finalVehicleId,
@@ -346,28 +363,9 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
       }
     } catch (e) {
       if (mounted) {
-        // Build mock service order for test or offline fallback
-        final mockYearMonth = '${DateTime.now().year}${DateTime.now().month.toString().padLeft(2, '0')}';
-        final mockOrderNumber = 'SO-$mockYearMonth-${DateTime.now().millisecond.toString().padLeft(4, '0')}';
-        final fallbackOrder = ServiceOrderModel(
-          id: 'so-gen-${DateTime.now().millisecondsSinceEpoch}',
-          orderNumber: mockOrderNumber,
-          customerId: finalCustomerId,
-          vehicleId: finalVehicleId,
-          bookingId: widget.booking?.id,
-          intakeType: isBooking ? 'booking' : 'walk_in',
-          odometer: odometer,
-          customerComplaint: complaint,
-          fuelLevel: _selectedFuelLevel,
-          initialNotes: notes,
-          status: 'inspection_pending',
-          assignedBay: _selectedBay,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-
-        widget.onIntakeCompleted?.call(fallbackOrder);
-        _showSuccessDialog(fallbackOrder);
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+        });
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -379,8 +377,8 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) => AlertDialog(
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.check_circle, color: AppColors.success, size: 28),
             SizedBox(width: 8),
             Expanded(child: Text('Intake Registered')),
@@ -482,7 +480,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Top drag indicator handle
               Center(
                 child: Container(
                   width: 44,
@@ -494,8 +491,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                   ),
                 ),
               ),
-
-              // Title bar
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -510,7 +505,9 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            isBooking ? 'BOOKING INTAKE CHECK-IN' : 'WORKSHOP VEHICLE INTAKE',
+                            isBooking
+                                ? 'BOOKING INTAKE CHECK-IN'
+                                : 'WORKSHOP VEHICLE INTAKE',
                             style: AppTypography.headlineSmall(color: textColor),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -542,7 +539,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                 const SizedBox(height: 14),
               ],
 
-              // Booking details banner (if booking check-in)
               if (isBooking) ...[
                 PitCard(
                   accentBorderLeft: AppColors.info,
@@ -586,7 +582,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                 ),
                 const SizedBox(height: 16),
               ] else ...[
-                // Mode Selector: Registered Client vs Walk-in Guest
                 Row(
                   children: [
                     Expanded(
@@ -621,7 +616,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                       child: Center(child: CircularProgressIndicator(color: AppColors.accentRed)),
                     )
                   else ...[
-                    // Existing customer dropdown
                     DropdownButtonFormField<String>(
                       key: const Key('intake-customer-dropdown'),
                       isExpanded: true,
@@ -640,8 +634,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                       validator: (val) => val == null ? 'Please select a customer' : null,
                     ),
                     const SizedBox(height: 12),
-
-                    // Vehicle dropdown
                     DropdownButtonFormField<String>(
                       key: const Key('intake-vehicle-dropdown'),
                       isExpanded: true,
@@ -659,18 +651,22 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                       onChanged: (val) {
                         setState(() {
                           _selectedVehicleId = val;
-                          final match = _customerVehicles.where((v) => v.id == val).firstOrNull;
-                          if (match != null) {
+                          final match =
+                              _customerVehicles.where((v) => v.id == val).firstOrNull;
+                          if (match != null && match.mileage > 0) {
                             _odometerController.text = match.mileage.toString();
                           }
                         });
                       },
-                      validator: (val) => val == null ? 'Please select a vehicle' : null,
+                      validator: (val) => val == null
+                          ? (_customerVehicles.isEmpty
+                              ? 'Customer has no vehicles; switch to Walk-in Guest'
+                              : 'Please select a vehicle')
+                          : null,
                     ),
                     const SizedBox(height: 16),
                   ],
                 ] else ...[
-                  // Walk-in Guest Form
                   TextFormField(
                     key: const Key('guest-name-input'),
                     controller: _guestNameController,
@@ -678,7 +674,8 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                       labelText: 'Guest Full Name',
                       prefixIcon: Icon(Icons.person_outline),
                     ),
-                    validator: (val) => (val == null || val.trim().isEmpty) ? 'Please enter guest name' : null,
+                    validator: (val) =>
+                        (val == null || val.trim().isEmpty) ? 'Please enter guest name' : null,
                   ),
                   const SizedBox(height: 10),
                   TextFormField(
@@ -689,7 +686,8 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                       labelText: 'Guest Phone Number',
                       prefixIcon: Icon(Icons.phone_outlined),
                     ),
-                    validator: (val) => (val == null || val.trim().isEmpty) ? 'Please enter contact number' : null,
+                    validator: (val) =>
+                        (val == null || val.trim().isEmpty) ? 'Please enter contact number' : null,
                   ),
                   const SizedBox(height: 10),
                   TextFormField(
@@ -704,7 +702,8 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                       labelText: 'License Plate (e.g. B 1234 XYZ)',
                       prefixIcon: Icon(Icons.pin),
                     ),
-                    validator: (val) => (val == null || val.trim().isEmpty) ? 'Please enter license plate' : null,
+                    validator: (val) =>
+                        (val == null || val.trim().isEmpty) ? 'Please enter license plate' : null,
                   ),
                   const SizedBox(height: 10),
                   Row(
@@ -713,8 +712,12 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                         child: TextFormField(
                           key: const Key('guest-make-input'),
                           controller: _guestMakeController,
-                          decoration: const InputDecoration(labelText: 'Make (e.g. Toyota)'),
-                          validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                          decoration: const InputDecoration(
+                            labelText: 'Make',
+                            hintText: 'Honda',
+                          ),
+                          validator: (val) =>
+                              (val == null || val.trim().isEmpty) ? 'Required' : null,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -722,8 +725,12 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                         child: TextFormField(
                           key: const Key('guest-model-input'),
                           controller: _guestModelController,
-                          decoration: const InputDecoration(labelText: 'Model (e.g. Avanza)'),
-                          validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                          decoration: const InputDecoration(
+                            labelText: 'Model',
+                            hintText: 'Civic RS',
+                          ),
+                          validator: (val) =>
+                              (val == null || val.trim().isEmpty) ? 'Required' : null,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -733,7 +740,11 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                           key: const Key('guest-year-input'),
                           controller: _guestYearController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Year'),
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: const InputDecoration(
+                            labelText: 'Year',
+                            hintText: '2024',
+                          ),
                         ),
                       ),
                     ],
@@ -742,14 +753,12 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                 ],
               ],
 
-              // Intake Telemetry Fields
               Text(
                 'PHYSICAL INTAKE INSPECTION',
                 style: AppTypography.labelLarge(color: textColor, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
 
-              // Odometer & Fuel Level Row
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -762,6 +771,7 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: const InputDecoration(
                         labelText: 'Odometer (KM)',
+                        hintText: '15000',
                         prefixIcon: Icon(Icons.speed),
                         suffixText: 'KM',
                       ),
@@ -784,7 +794,9 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                         labelText: 'Fuel Level',
                         prefixIcon: Icon(Icons.local_gas_station),
                       ),
-                      items: _fuelLevels.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+                      items: _fuelLevels
+                          .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                          .toList(),
                       onChanged: (val) {
                         if (val != null) setState(() => _selectedFuelLevel = val);
                       },
@@ -794,7 +806,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
               ),
               const SizedBox(height: 12),
 
-              // Customer Complaint
               TextFormField(
                 key: const Key('intake-complaint-input'),
                 controller: _complaintController,
@@ -804,30 +815,26 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                   hintText: 'e.g. Engine shudder at idle, periodic maintenance, brake grinding...',
                   prefixIcon: Icon(Icons.report_problem_outlined),
                 ),
-                validator: (val) =>
-                    (val == null || val.trim().isEmpty) ? 'Please record customer complaint' : null,
+                validator: (val) => (val == null || val.trim().isEmpty)
+                    ? 'Please record customer complaint'
+                    : null,
               ),
               const SizedBox(height: 12),
 
-              // Service Bay & Initial Notes
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      key: const Key('intake-bay-dropdown'),
-                      isExpanded: true,
-                      initialValue: _selectedBay,
-                      decoration: const InputDecoration(
-                        labelText: 'Assigned Shop Bay',
-                        prefixIcon: Icon(Icons.garage),
-                      ),
-                      items: _bayOptions.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedBay = val);
-                      },
-                    ),
-                  ),
-                ],
+              DropdownButtonFormField<String>(
+                key: const Key('intake-bay-dropdown'),
+                isExpanded: true,
+                initialValue: _bayOptions.contains(_selectedBay) ? _selectedBay : _bayOptions.first,
+                decoration: const InputDecoration(
+                  labelText: 'Assigned Shop Bay',
+                  prefixIcon: Icon(Icons.garage),
+                ),
+                items: _bayOptions
+                    .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedBay = val);
+                },
               ),
               const SizedBox(height: 12),
 
@@ -841,7 +848,6 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
               ),
               const SizedBox(height: 24),
 
-              // Submit Button
               SizedBox(
                 height: 52,
                 child: ElevatedButton.icon(
@@ -857,7 +863,9 @@ class _CustomerIntakeModalState extends State<CustomerIntakeModal> {
                   label: Text(
                     _isSubmitting
                         ? 'CREATING SERVICE ORDER...'
-                        : (isBooking ? 'CONFIRM CHECK-IN & SPAWN INSPECTION' : 'CREATE SERVICE ORDER'),
+                        : (isBooking
+                            ? 'CONFIRM CHECK-IN & SPAWN INSPECTION'
+                            : 'CREATE SERVICE ORDER'),
                     style: AppTypography.labelLarge(color: Colors.white, fontWeight: FontWeight.w700),
                   ),
                 ),

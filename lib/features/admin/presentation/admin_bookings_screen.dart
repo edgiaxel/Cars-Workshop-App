@@ -2,157 +2,123 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pitmate/app/router/route_paths.dart';
-import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/app/theme/app_colors.dart';
 import 'package:pitmate/app/theme/app_spacing.dart';
 import 'package:pitmate/app/theme/app_typography.dart';
 import 'package:pitmate/features/admin/presentation/widgets/customer_intake_modal.dart';
 import 'package:pitmate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:pitmate/features/auth/presentation/providers/auth_state.dart';
 import 'package:pitmate/features/bookings/data/models/booking_model.dart';
 import 'package:pitmate/features/bookings/data/repositories/booking_repository.dart';
+import 'package:pitmate/features/notifications/presentation/widgets/notification_bell_button.dart';
+import 'package:pitmate/shared/navigation/role_navigation.dart';
 import 'package:pitmate/shared/widgets/pit_card.dart';
 import 'package:pitmate/shared/widgets/responsive_role_scaffold.dart';
 import 'package:pitmate/shared/widgets/status_badge.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// UI-A07: Admin Workshop Bookings Screen for booking triage, scheduling, and intake dispatch.
+/// Admin Workshop Bookings Screen for booking triage, scheduling, and intake dispatch.
 class AdminBookingsScreen extends ConsumerStatefulWidget {
   const AdminBookingsScreen({
     super.key,
     this.bookingRepository,
+    this.initialBookings,
   });
 
   final BookingRepository? bookingRepository;
+  final List<BookingModel>? initialBookings;
 
   @override
   ConsumerState<AdminBookingsScreen> createState() => _AdminBookingsScreenState();
 }
 
 class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
-
   late final BookingRepository _repo;
 
   bool _isLoading = false;
+  String? _errorMessage;
   String _searchQuery = '';
   BookingStatus? _filterStatus;
-
-  static final List<BookingModel> _defaultBookings = [
-    BookingModel(
-      id: 'bk-adm-01',
-      customerId: 'cust-1',
-      vehicleId: 'v-1',
-      bookingDate: DateTime.now(),
-      timeSlot: '08:00 - 10:00',
-      serviceType: 'Brake Service',
-      customerNotes: 'Brake pedal soft, replace front rotors and pads.',
-      status: BookingStatus.confirmed,
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      customerName: 'Alex Pratama',
-      customerPhone: '+62 812-3456-7890',
-      vehiclePlate: 'B 1234 ABC',
-      vehicleMake: 'Toyota',
-      vehicleModel: 'GR Yaris',
-    ),
-    BookingModel(
-      id: 'bk-adm-02',
-      customerId: 'cust-2',
-      vehicleId: 'v-2',
-      bookingDate: DateTime.now(),
-      timeSlot: '10:00 - 12:00',
-      serviceType: 'Engine Diagnostics',
-      customerNotes: 'Check engine light on; misfire on cylinder 2.',
-      status: BookingStatus.pending,
-      createdAt: DateTime.now().subtract(const Duration(hours: 4)),
-      updatedAt: DateTime.now(),
-      customerName: 'Bambang Soediro',
-      customerPhone: '+62 818-9876-5432',
-      vehiclePlate: 'B 9999 XYZ',
-      vehicleMake: 'BMW',
-      vehicleModel: '320i F30',
-    ),
-    BookingModel(
-      id: 'bk-adm-03',
-      customerId: 'cust-3',
-      vehicleId: 'v-3',
-      bookingDate: DateTime.now().add(const Duration(days: 1)),
-      timeSlot: '13:00 - 15:00',
-      serviceType: 'Periodic Service',
-      customerNotes: 'Scheduled 20,000 KM service interval.',
-      status: BookingStatus.confirmed,
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      updatedAt: DateTime.now(),
-      customerName: 'Rian Hidayat',
-      customerPhone: '+62 813-2222-3333',
-      vehiclePlate: 'B 8080 RFS',
-      vehicleMake: 'Honda',
-      vehicleModel: 'Civic Type R',
-    ),
-    BookingModel(
-      id: 'bk-adm-04',
-      customerId: 'cust-4',
-      vehicleId: 'v-4',
-      bookingDate: DateTime.now().subtract(const Duration(days: 1)),
-      timeSlot: '15:00 - 17:00',
-      serviceType: 'General Repair',
-      customerNotes: 'Suspension squeak over speed bumps.',
-      status: BookingStatus.checked_in,
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      customerName: 'Hendra Wijaya',
-      customerPhone: '+62 817-4444-5555',
-      vehiclePlate: 'B 7777 WXY',
-      vehicleMake: 'Mercedes-Benz',
-      vehicleModel: 'C200 AMG',
-    ),
-  ];
-
-  List<BookingModel> _bookings = List.from(_defaultBookings);
+  List<BookingModel> _bookings = [];
 
   @override
   void initState() {
     super.initState();
     _repo = widget.bookingRepository ?? BookingRepository();
-    _loadBookings();
+    if (widget.initialBookings != null) {
+      _bookings = List.from(widget.initialBookings!);
+    } else {
+      _loadBookings();
+    }
+  }
+
+  bool get _hasSupabase {
+    try {
+      Supabase.instance.client;
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _loadBookings() async {
-    setState(() => _isLoading = true);
+    if (widget.bookingRepository == null && !_hasSupabase) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
       final loaded = await _repo.fetchAdminBookings();
-      if (mounted && loaded.isNotEmpty) {
-        setState(() => _bookings = loaded);
+      if (mounted) {
+        setState(() {
+          _bookings = loaded;
+          _isLoading = false;
+        });
       }
-    } catch (_) {
-      // Fallback for test or offline execution
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
     }
   }
 
   void _onNavChanged(int index) {
-    RoleNavigation.navigate(context, RoleNavigation.adminNavItems, index, currentIndex: 3);
+    RoleNavigation.navigate(
+      context,
+      RoleNavigation.adminNavItems,
+      index,
+      currentIndex: 3,
+    );
   }
 
   Future<void> _confirmBooking(BookingModel booking) async {
     try {
       await _repo.updateBookingStatus(booking.id, BookingStatus.confirmed);
       await _loadBookings();
-    } catch (_) {
-      setState(() {
-        final idx = _bookings.indexWhere((b) => b.id == booking.id);
-        if (idx != -1) {
-          _bookings[idx] = _bookings[idx].copyWith(status: BookingStatus.confirmed);
-        }
-      });
-    }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Booking for ${booking.customerName ?? "Customer"} confirmed.'),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Booking for ${booking.customerName ?? "Customer"} confirmed.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to confirm booking: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
     }
   }
 
@@ -206,25 +172,23 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
           adminNotes: reason.isNotEmpty ? reason : 'Booking declined by workshop dispatch',
         );
         await _loadBookings();
-      } catch (_) {
-        setState(() {
-          final idx = _bookings.indexWhere((b) => b.id == booking.id);
-          if (idx != -1) {
-            _bookings[idx] = _bookings[idx].copyWith(
-              status: BookingStatus.rejected,
-              adminNotes: reason,
-            );
-          }
-        });
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Booking rejected.'),
-            backgroundColor: AppColors.warning,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Booking rejected.'),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to reject booking: ${e.toString().replaceAll('Exception: ', '')}'),
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
       }
     }
   }
@@ -299,26 +263,23 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
       try {
         await _repo.rescheduleBooking(booking.id, pickedDate, pickedSlot);
         await _loadBookings();
-      } catch (_) {
-        setState(() {
-          final idx = _bookings.indexWhere((b) => b.id == booking.id);
-          if (idx != -1) {
-            _bookings[idx] = _bookings[idx].copyWith(
-              bookingDate: pickedDate,
-              timeSlot: pickedSlot,
-              status: BookingStatus.rescheduled,
-            );
-          }
-        });
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Booking rescheduled successfully.'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Booking rescheduled successfully.'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to reschedule booking: ${e.toString().replaceAll('Exception: ', '')}'),
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
       }
     }
   }
@@ -331,14 +292,6 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
       builder: (modalCtx) => CustomerIntakeModal(
         booking: booking,
         onIntakeCompleted: (order) {
-          if (booking != null) {
-            setState(() {
-              final idx = _bookings.indexWhere((b) => b.id == booking.id);
-              if (idx != -1) {
-                _bookings[idx] = _bookings[idx].copyWith(status: BookingStatus.checked_in);
-              }
-            });
-          }
           _loadBookings();
         },
       ),
@@ -381,6 +334,8 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final auth = ref.watch(authNotifierProvider);
+    final userName = auth is AuthAuthenticated ? auth.userProfile.fullName : 'User';
 
     final filtered = _bookings.where((b) {
       if (_filterStatus != null && b.status != _filterStatus) return false;
@@ -389,7 +344,7 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
       return (b.customerName?.toLowerCase().contains(q) ?? false) ||
           (b.customerPhone?.contains(q) ?? false) ||
           (b.vehiclePlate?.toLowerCase().contains(q) ?? false) ||
-          (b.serviceType.toLowerCase().contains(q)) ||
+          b.serviceType.toLowerCase().contains(q) ||
           b.id.toLowerCase().contains(q);
     }).toList();
 
@@ -399,7 +354,7 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Workshop Bookings',
-      userName: 'Toto Wolf',
+      userName: userName,
       userSubtitle: 'Workshop Director',
       showBackButton: true,
       onBack: () => context.go(RoutePaths.admin),
@@ -412,6 +367,7 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
         if (context.mounted) context.go(RoutePaths.login);
       },
       actions: [
+        const NotificationBellButton(),
         IconButton(
           icon: const Icon(Icons.refresh, size: 20),
           onPressed: _loadBookings,
@@ -434,7 +390,29 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top KPI Summary row
+                if (_errorMessage != null) ...[
+                  PitCard(
+                    accentBorderLeft: AppColors.danger,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: AppColors.danger),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: AppTypography.bodySmall(color: AppColors.danger),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _loadBookings,
+                          child: const Text('RETRY'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 Row(
                   children: [
                     Expanded(
@@ -519,7 +497,6 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Search & Walk-in Action Bar
                 Row(
                   children: [
                     Expanded(
@@ -549,7 +526,6 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Filter Chips
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -604,7 +580,9 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'No bookings match the current filter or search criteria.',
+                            _bookings.isEmpty
+                                ? 'No service bookings submitted yet.'
+                                : 'No bookings match the current filter or search criteria.',
                             style: AppTypography.bodyMedium(
                               color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
@@ -642,7 +620,6 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Client Name, Plate, Status Badge
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -698,8 +675,6 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
             ],
           ),
           const SizedBox(height: 10),
-
-          // Schedule Details & Service
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -739,7 +714,6 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
               ],
             ),
           ),
-
           if (booking.customerNotes != null && booking.customerNotes!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
@@ -749,7 +723,6 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
               ),
             ),
           ],
-
           if (booking.adminNotes != null && booking.adminNotes!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
@@ -757,12 +730,9 @@ class _AdminBookingsScreenState extends ConsumerState<AdminBookingsScreen> {
               style: AppTypography.bodySmall(color: AppColors.warning),
             ),
           ],
-
           const SizedBox(height: 12),
           const Divider(height: 1),
           const SizedBox(height: 8),
-
-          // Action Buttons Row
           Wrap(
             spacing: 8,
             runSpacing: 8,

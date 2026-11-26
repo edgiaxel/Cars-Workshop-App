@@ -228,6 +228,9 @@ class _AdminHandoverScreenState extends ConsumerState<AdminHandoverScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.graphitePrimary;
+    final authState = ref.watch(authNotifierProvider);
+    final userName =
+        authState is AuthAuthenticated ? authState.userProfile.fullName : 'User';
 
     final telemetryNotice = _pendingOrders.isEmpty
         ? 'ALL DELIVERIES COMPLETE'
@@ -235,7 +238,7 @@ class _AdminHandoverScreenState extends ConsumerState<AdminHandoverScreen> {
 
     return ResponsiveRoleScaffold(
       roleTitle: 'Vehicle Handover & Delivery',
-      userName: 'Toto Wolf',
+      userName: userName,
       userSubtitle: 'Workshop Director',
       currentIndex: 10,
       navItems: RoleNavigation.adminNavItems,

@@ -35,7 +35,7 @@ class ResponsiveRoleScaffold extends StatelessWidget {
     this.mobileNavItems,
     this.currentIndex = 0,
     this.onNavIndexChanged,
-    this.userName = 'Marcus T.',
+    this.userName = 'User',
     this.userSubtitle = 'Workshop Admin',
     this.actions,
     this.floatingActionButton,

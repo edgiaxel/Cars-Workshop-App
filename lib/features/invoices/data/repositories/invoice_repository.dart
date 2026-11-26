@@ -29,6 +29,7 @@ abstract class IInvoiceRepository {
     int depositCents = 0,
     int insuranceCents = 0,
     String? adminId,
+    String? discountReason,
   });
 
   Future<Result<String>> recordPayment({
@@ -245,6 +246,7 @@ class InvoiceRepository implements IInvoiceRepository {
     int depositCents = 0,
     int insuranceCents = 0,
     String? adminId,
+    String? discountReason,
   }) async {
     try {
       final effectiveAdminId = adminId ?? _client.auth.currentUser?.id;
@@ -258,6 +260,7 @@ class InvoiceRepository implements IInvoiceRepository {
           'p_deposit_cents': depositCents,
           'p_insurance_cents': insuranceCents,
           'p_admin_id': effectiveAdminId,
+          'p_discount_reason': discountReason,
         },
       );
 
@@ -372,12 +375,19 @@ class InvoiceRepository implements IInvoiceRepository {
               license_plate,
               make,
               model
+            ),
+            invoices(
+              id,
+              status
             )
           ''')
-          .inFilter('status', ['completed', 'qc_pending', 'ready_for_pickup', 'in_progress'])
+          .eq('status', 'completed')
           .order('created_at', ascending: false);
 
-      final rows = (response as List).cast<Map<String, dynamic>>();
+      final rows = (response as List).cast<Map<String, dynamic>>().where((row) {
+        final existingInvoices = (row['invoices'] as List?) ?? [];
+        return !existingInvoices.any((inv) => (inv as Map)['status'] != 'cancelled');
+      }).toList();
       return Result.success(rows);
     } on sb.PostgrestException catch (e) {
       return Result.failure(
